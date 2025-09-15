@@ -1,0 +1,332 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+	<PropertyGroup>
+		<TargetFramework>net6.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <Compile Remove="Models\Admin\Categories\**" />
+	  <Compile Remove="Models\Admin\ExchangeRates\**" />
+	  <Compile Remove="Models\Admin\Inventories\**" />
+	  <Compile Remove="Models\Admin\Statisticals\**" />
+	  <Compile Remove="Models\Admin\Stocks\**" />
+	  <Compile Remove="Models\Front\InventoriesInfo\**" />
+	  <Compile Remove="Models\Front\Reports\**" />
+	  <Compile Remove="Models\Front\StockVisualizations\**" />
+	  <Compile Remove="Views\Admin\Categories\**" />
+	  <Compile Remove="Views\Admin\ExchangeRates\**" />
+	  <Compile Remove="Views\Admin\Inventories\**" />
+	  <Compile Remove="Views\Admin\StatisticalCats\**" />
+	  <Compile Remove="Views\Admin\StatisticalFactories\**" />
+	  <Compile Remove="Views\Admin\Stocks\**" />
+	  <Compile Remove="Views\Front\InventoryInfos\**" />
+	  <Compile Remove="Views\Front\InventoryInfo\**" />
+	  <Compile Remove="Views\Front\Reports\**" />
+	  <Compile Remove="Views\Front\StockVisualizations\**" />
+	  <Compile Remove="WorkerService\**" />
+	  <Content Remove="Models\Admin\Categories\**" />
+	  <Content Remove="Models\Admin\ExchangeRates\**" />
+	  <Content Remove="Models\Admin\Inventories\**" />
+	  <Content Remove="Models\Admin\Statisticals\**" />
+	  <Content Remove="Models\Admin\Stocks\**" />
+	  <Content Remove="Models\Front\InventoriesInfo\**" />
+	  <Content Remove="Models\Front\Reports\**" />
+	  <Content Remove="Models\Front\StockVisualizations\**" />
+	  <Content Remove="Views\Admin\Categories\**" />
+	  <Content Remove="Views\Admin\ExchangeRates\**" />
+	  <Content Remove="Views\Admin\Inventories\**" />
+	  <Content Remove="Views\Admin\StatisticalCats\**" />
+	  <Content Remove="Views\Admin\StatisticalFactories\**" />
+	  <Content Remove="Views\Admin\Stocks\**" />
+	  <Content Remove="Views\Front\InventoryInfos\**" />
+	  <Content Remove="Views\Front\InventoryInfo\**" />
+	  <Content Remove="Views\Front\Reports\**" />
+	  <Content Remove="Views\Front\StockVisualizations\**" />
+	  <Content Remove="WorkerService\**" />
+	  <EmbeddedResource Remove="Models\Admin\Categories\**" />
+	  <EmbeddedResource Remove="Models\Admin\ExchangeRates\**" />
+	  <EmbeddedResource Remove="Models\Admin\Inventories\**" />
+	  <EmbeddedResource Remove="Models\Admin\Statisticals\**" />
+	  <EmbeddedResource Remove="Models\Admin\Stocks\**" />
+	  <EmbeddedResource Remove="Models\Front\InventoriesInfo\**" />
+	  <EmbeddedResource Remove="Models\Front\Reports\**" />
+	  <EmbeddedResource Remove="Models\Front\StockVisualizations\**" />
+	  <EmbeddedResource Remove="Views\Admin\Categories\**" />
+	  <EmbeddedResource Remove="Views\Admin\ExchangeRates\**" />
+	  <EmbeddedResource Remove="Views\Admin\Inventories\**" />
+	  <EmbeddedResource Remove="Views\Admin\StatisticalCats\**" />
+	  <EmbeddedResource Remove="Views\Admin\StatisticalFactories\**" />
+	  <EmbeddedResource Remove="Views\Admin\Stocks\**" />
+	  <EmbeddedResource Remove="Views\Front\InventoryInfos\**" />
+	  <EmbeddedResource Remove="Views\Front\InventoryInfo\**" />
+	  <EmbeddedResource Remove="Views\Front\Reports\**" />
+	  <EmbeddedResource Remove="Views\Front\StockVisualizations\**" />
+	  <EmbeddedResource Remove="WorkerService\**" />
+	  <None Remove="Models\Admin\Categories\**" />
+	  <None Remove="Models\Admin\ExchangeRates\**" />
+	  <None Remove="Models\Admin\Inventories\**" />
+	  <None Remove="Models\Admin\Statisticals\**" />
+	  <None Remove="Models\Admin\Stocks\**" />
+	  <None Remove="Models\Front\InventoriesInfo\**" />
+	  <None Remove="Models\Front\Reports\**" />
+	  <None Remove="Models\Front\StockVisualizations\**" />
+	  <None Remove="Views\Admin\Categories\**" />
+	  <None Remove="Views\Admin\ExchangeRates\**" />
+	  <None Remove="Views\Admin\Inventories\**" />
+	  <None Remove="Views\Admin\StatisticalCats\**" />
+	  <None Remove="Views\Admin\StatisticalFactories\**" />
+	  <None Remove="Views\Admin\Stocks\**" />
+	  <None Remove="Views\Front\InventoryInfos\**" />
+	  <None Remove="Views\Front\InventoryInfo\**" />
+	  <None Remove="Views\Front\Reports\**" />
+	  <None Remove="Views\Front\StockVisualizations\**" />
+	  <None Remove="WorkerService\**" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Compile Remove="BaseCommon\EnumSource.cs" />
+	  <Compile Remove="BaseCommon\EnumStatusInventory.cs" />
+	  <Compile Remove="BaseCommon\EnumTaxonomy.cs" />
+	  <Compile Remove="BaseCommon\EnumTypeStatistical.cs" />
+	  <Compile Remove="Controllers\Admin\CategoriesController.cs" />
+	  <Compile Remove="Controllers\Admin\ExchangeRateController.cs" />
+	  <Compile Remove="Controllers\Admin\InventoryController.cs" />
+	  <Compile Remove="Controllers\Admin\StatisticalCatController.cs" />
+	  <Compile Remove="Controllers\Admin\StatisticalFactoryController.cs" />
+	  <Compile Remove="Controllers\Admin\StockController.cs" />
+	  <Compile Remove="Controllers\Front\InventoryInfoController.cs" />
+	  <Compile Remove="Controllers\Front\ReportController.cs" />
+	  <Compile Remove="Controllers\Front\StockVisualizationController.cs" />
+	  <Compile Remove="Migrations\20220510025408_InitDatabase.cs" />
+	  <Compile Remove="Migrations\20220510025408_InitDatabase.Designer.cs" />
+	  <Compile Remove="Migrations\20220510071647_InstallIdentity.cs" />
+	  <Compile Remove="Migrations\20220510071647_InstallIdentity.Designer.cs" />
+	  <Compile Remove="Migrations\20220510072617_AddIdentityIntoDbContext.cs" />
+	  <Compile Remove="Migrations\20220510072617_AddIdentityIntoDbContext.Designer.cs" />
+	  <Compile Remove="Migrations\20220510082852_AddTableBasic.cs" />
+	  <Compile Remove="Migrations\20220510082852_AddTableBasic.Designer.cs" />
+	  <Compile Remove="Migrations\20220512030906_edit_ColAvatar_Table_Users.cs" />
+	  <Compile Remove="Migrations\20220512030906_edit_ColAvatar_Table_Users.Designer.cs" />
+	  <Compile Remove="Migrations\20220512031613_edit2_ColAvatar_Table_Users.cs" />
+	  <Compile Remove="Migrations\20220512031613_edit2_ColAvatar_Table_Users.Designer.cs" />
+	  <Compile Remove="Migrations\20220512070945_edit_ColPhoneNumber_Table_Users.cs" />
+	  <Compile Remove="Migrations\20220512070945_edit_ColPhoneNumber_Table_Users.Designer.cs" />
+	  <Compile Remove="Migrations\20220512081131_edit_col_Description_table_Menus.cs" />
+	  <Compile Remove="Migrations\20220512081131_edit_col_Description_table_Menus.Designer.cs" />
+	  <Compile Remove="Migrations\20220513101138_edit_ColName_Table_Roles.cs" />
+	  <Compile Remove="Migrations\20220513101138_edit_ColName_Table_Roles.Designer.cs" />
+	  <Compile Remove="Migrations\20220620065221_create_Table_Categories.cs" />
+	  <Compile Remove="Migrations\20220620065221_create_Table_Categories.Designer.cs" />
+	  <Compile Remove="Migrations\20220620085457_add_col_created_updated_Table_Categories.cs" />
+	  <Compile Remove="Migrations\20220620085457_add_col_created_updated_Table_Categories.Designer.cs" />
+	  <Compile Remove="Migrations\20220623041516_create_Table_Product.cs" />
+	  <Compile Remove="Migrations\20220623041516_create_Table_Product.Designer.cs" />
+	  <Compile Remove="Migrations\20220624065530_add_col_Min_Max_table_Product.cs" />
+	  <Compile Remove="Migrations\20220624065530_add_col_Min_Max_table_Product.Designer.cs" />
+	  <Compile Remove="Migrations\20220628050746_edit_col_PartNo_in_table_Product.cs" />
+	  <Compile Remove="Migrations\20220628050746_edit_col_PartNo_in_table_Product.Designer.cs" />
+	  <Compile Remove="Migrations\20220705040100_create_Stocks_table.cs" />
+	  <Compile Remove="Migrations\20220705040100_create_Stocks_table.Designer.cs" />
+	  <Compile Remove="Migrations\20220707044658_add_col_Product_Stock_table.cs" />
+	  <Compile Remove="Migrations\20220707044658_add_col_Product_Stock_table.Designer.cs" />
+	  <Compile Remove="Migrations\20220712014756_create_Inventories_table.cs" />
+	  <Compile Remove="Migrations\20220712014756_create_Inventories_table.Designer.cs" />
+	  <Compile Remove="Migrations\20220727035407_add_col_StockBegin_to_Inventory_table.cs" />
+	  <Compile Remove="Migrations\20220727035407_add_col_StockBegin_to_Inventory_table.Designer.cs" />
+	  <Compile Remove="Migrations\20220727062610_add_col_InOut_to_Inventory_table.cs" />
+	  <Compile Remove="Migrations\20220727062610_add_col_InOut_to_Inventory_table.Designer.cs" />
+	  <Compile Remove="Migrations\20220728043411_edit_col_Inventory_table.cs" />
+	  <Compile Remove="Migrations\20220728043411_edit_col_Inventory_table.Designer.cs" />
+	  <Compile Remove="Migrations\20220728044702_edit2_col_Inventory_table.cs" />
+	  <Compile Remove="Migrations\20220728044702_edit2_col_Inventory_table.Designer.cs" />
+	  <Compile Remove="Migrations\20220802064411_add_col_ProductPlanQty_into_Inventories_table.cs" />
+	  <Compile Remove="Migrations\20220802064411_add_col_ProductPlanQty_into_Inventories_table.Designer.cs" />
+	  <Compile Remove="Migrations\20220802091128_edit_col_into_Inventories_table.cs" />
+	  <Compile Remove="Migrations\20220802091128_edit_col_into_Inventories_table.Designer.cs" />
+	  <Compile Remove="Migrations\20220804054752_add_col_Min_Max_into_Inventories_table.cs" />
+	  <Compile Remove="Migrations\20220804054752_add_col_Min_Max_into_Inventories_table.Designer.cs" />
+	  <Compile Remove="Migrations\20220804081537_add_col_into_Product_table.cs" />
+	  <Compile Remove="Migrations\20220804081537_add_col_into_Product_table.Designer.cs" />
+	  <Compile Remove="Migrations\20220804081754_add_col_into_Inventories_table.cs" />
+	  <Compile Remove="Migrations\20220804081754_add_col_into_Inventories_table.Designer.cs" />
+	  <Compile Remove="Migrations\20220811071511_add_col_LineName_Inventory_table.cs" />
+	  <Compile Remove="Migrations\20220811071511_add_col_LineName_Inventory_table.Designer.cs" />
+	  <Compile Remove="Migrations\20220812023922_add_col_Total_Inventory_table.cs" />
+	  <Compile Remove="Migrations\20220812023922_add_col_Total_Inventory_table.Designer.cs" />
+	  <Compile Remove="Migrations\20220824083158_edit_ThemeOption_table.cs" />
+	  <Compile Remove="Migrations\20220824083158_edit_ThemeOption_table.Designer.cs" />
+	  <Compile Remove="Migrations\20221011034128_add_col_NextProductR_into_table_Inventories.cs" />
+	  <Compile Remove="Migrations\20221011034128_add_col_NextProductR_into_table_Inventories.Designer.cs" />
+	  <Compile Remove="Migrations\20221012080956_add_col_Currency_into_table_Product.cs" />
+	  <Compile Remove="Migrations\20221012080956_add_col_Currency_into_table_Product.Designer.cs" />
+	  <Compile Remove="Migrations\20221013025919_add_table_ExchangeRate.cs" />
+	  <Compile Remove="Migrations\20221013025919_add_table_ExchangeRate.Designer.cs" />
+	  <Compile Remove="Migrations\20221013031445_add_ExchangeRate_table.cs" />
+	  <Compile Remove="Migrations\20221013031445_add_ExchangeRate_table.Designer.cs" />
+	  <Compile Remove="Migrations\20221014020809_add_Statisticals_table.cs" />
+	  <Compile Remove="Migrations\20221014020809_add_Statisticals_table.Designer.cs" />
+	  <Compile Remove="Migrations\20221014100957_edit_col_ExRateUSD_into_ExchangeRates_table.cs" />
+	  <Compile Remove="Migrations\20221014100957_edit_col_ExRateUSD_into_ExchangeRates_table.Designer.cs" />
+	  <Compile Remove="Migrations\20221014101616_edit2_col_ExRateUSD_into_ExchangeRates_table.cs" />
+	  <Compile Remove="Migrations\20221014101616_edit2_col_ExRateUSD_into_ExchangeRates_table.Designer.cs" />
+	  <Compile Remove="Migrations\20221103031649_add_col_Fixing_to_Inventory_table.cs" />
+	  <Compile Remove="Migrations\20221103031649_add_col_Fixing_to_Inventory_table.Designer.cs" />
+	  <Compile Remove="Migrations\20221104025601_add_col_ProductPlanQtyCat_into_Inventory_table.cs" />
+	  <Compile Remove="Migrations\20221104025601_add_col_ProductPlanQtyCat_into_Inventory_table.Designer.cs" />
+	  <Compile Remove="Migrations\20221104050735_add_col_NextReceivingQty_into_Inventory_table.cs" />
+	  <Compile Remove="Migrations\20221104050735_add_col_NextReceivingQty_into_Inventory_table.Designer.cs" />
+	  <Compile Remove="Migrations\20221104074400_add_col_NotKpi_into_Product_table.cs" />
+	  <Compile Remove="Migrations\20221104074400_add_col_NotKpi_into_Product_table.Designer.cs" />
+	  <Compile Remove="Migrations\MaterialsStockVisualizationContextModelSnapshot.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Content Remove="Views\Front\Home\ShowTv.cshtml" />
+	  <Content Remove="Views\Shared\Layout\Front\_LayoutTv.cshtml" />
+	  <Content Remove="wwwroot\templates\export_excel\Excel_20220628084523.xlsx" />
+	  <Content Remove="wwwroot\templates\export_excel\Excel_20220628090942.xlsx" />
+	  <Content Remove="wwwroot\templates\export_excel\Excel_20230215111814.xlsx" />
+	  <Content Remove="wwwroot\templates\export_excel\Excel_20230215111903.xlsx" />
+	  <Content Remove="wwwroot\templates\export_excel\Excel_20240828151157.xlsx" />
+	  <Content Remove="wwwroot\UploadExcel\637918401571828558_Master data.xlsx" />
+	  <Content Remove="wwwroot\UploadExcel\637918415305708499_Master data2.xlsx" />
+	  <Content Remove="wwwroot\UploadExcel\637952234457186056_Master data 1.xlsx" />
+	  <Content Remove="wwwroot\UploadExcel\638016029023898995_import_statistical.xlsx" />
+	  <Content Remove="wwwroot\UploadExcel\638016045160256931_import_statistical.xlsx" />
+	  <Content Remove="wwwroot\UploadExcel\638016054003282252_import_statistical.xlsx" />
+	  <Content Remove="wwwroot\UploadExcel\638016169576941668_import_statistical_cat.xlsx" />
+	  <Content Remove="wwwroot\UploadExcel\638016170758459450_import_statistical_cat.xlsx" />
+	  <Content Remove="wwwroot\UploadExcel\638016171227280977_import_statistical%281%29.xlsx" />
+	  <Content Remove="wwwroot\UploadExcel\638016172230937981_import_statistical.xlsx" />
+	  <Content Remove="wwwroot\UploadExcel\638016172685678599_import_statistical_cat.xlsx" />
+	  <Content Remove="wwwroot\UploadExcel\638016172738353225_import_statistical_cat.xlsx" />
+	  <Content Remove="wwwroot\UploadExcel\638034115740517906_Excel_20221107095107.xlsx" />
+	  <Content Remove="wwwroot\UploadExcel\638034123683310254_Excel_20221107100527.xlsx" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Remove="Logs\log-20221220.txt" />
+	  <None Remove="Logs\log-20230131.txt" />
+	  <None Remove="Logs\log-20230207.txt" />
+	  <None Remove="Logs\log-20230208.txt" />
+	  <None Remove="Logs\log-20230209.txt" />
+	  <None Remove="Logs\log-20230210.txt" />
+	  <None Remove="Logs\log-20230211.txt" />
+	  <None Remove="Logs\log-20230212.txt" />
+	  <None Remove="Logs\log-20230213.txt" />
+	  <None Remove="Logs\log-20230214.txt" />
+	  <None Remove="Logs\log-20230215.txt" />
+	  <None Remove="Logs\log-20230216.txt" />
+	  <None Remove="Logs\log-20230529.txt" />
+	  <None Remove="Logs\log-20230614.txt" />
+	  <None Remove="Logs\log-20230704.txt" />
+	  <None Remove="Logs\log-20240311.txt" />
+	  <None Remove="Logs\log-20240321.txt" />
+	  <None Remove="Logs\log-20240325.txt" />
+	  <None Remove="Logs\log-20240606.txt" />
+	  <None Remove="Logs\log-20240607.txt" />
+	  <None Remove="Logs\log-20240731.txt" />
+	  <None Remove="Logs\log-20240828.txt" />
+	  <None Remove="Logs\log-20240911.txt" />
+	  <None Remove="Logs\log-20241025.txt" />
+	  <None Remove="Logs\log-20241122.txt" />
+	  <None Remove="Logs\log-20241125.txt" />
+	  <None Remove="Logs\log-20241126.txt" />
+	  <None Remove="Logs\log-20241127.txt" />
+	  <None Remove="Logs\log-20241128.txt" />
+	  <None Remove="Logs\log-20241129.txt" />
+	  <None Remove="Logs\log-20241224.txt" />
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="bblanchon.PDFium" Version="140.0.7295" />
+		<PackageReference Include="FreeSpire.Barcode" Version="6.6.0" />
+		<PackageReference Include="iTextSharp.LGPLv2.Core" Version="3.7.4" />
+		<PackageReference Include="PdfiumPrinter" Version="1.4.1" />
+		<PackageReference Include="PuppeteerSharp" Version="20.2.2" />
+		<PackageReference Include="Spire.PDF" Version="8.1.0" />
+		<PackageReference Include="System.IO.Compression" Version="4.3.0" />
+		<PackageReference Include="System.ServiceModel.Duplex" Version="4.8.*" />
+		<PackageReference Include="System.ServiceModel.Federation" Version="4.8.*" />
+		<PackageReference Include="System.ServiceModel.Http" Version="4.8.*" />
+		<PackageReference Include="System.ServiceModel.NetTcp" Version="4.8.*" />
+		<PackageReference Include="System.ServiceModel.Security" Version="4.8.*" />
+		
+		<PackageReference Include="FreeSpire.Office" Version="8.2.0" />
+		<PackageReference Include="Microsoft.AspNet.WebApi.Client" Version="5.2.9" />
+		<PackageReference Include="Microsoft.AspNetCore.Hosting" Version="2.2.7" />
+		<PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="6.0.4" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.4" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="6.0.4">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="6.0.4" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="6.0.4" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="6.0.4">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="6.0.6" />
+		<PackageReference Include="MimeKit" Version="4.8.0" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+		<PackageReference Include="ReflectionIT.Mvc.Paging" Version="4.0.0" />
+		<PackageReference Include="Serilog.AspNetCore" Version="5.0.0" />
+		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.3.0" />
+		<PackageReference Include="System.ServiceProcess.ServiceController" Version="6.0.0" />
+		<PackageReference Include="ThoughtWorks.QRCodeCore" Version="1.0.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Folder Include="Logs\" />
+		<Folder Include="Migrations\" />
+		<Folder Include="Models\ViewModel\" />
+		<Folder Include="wwwroot\assets\categories\" />
+		<Folder Include="wwwroot\assets\ckgallery\" />
+		<Folder Include="wwwroot\assets\summernote\" />
+		<Folder Include="wwwroot\assets\users\" />
+		<Folder Include="wwwroot\ExportExcel\" />
+		<Folder Include="wwwroot\Output\" />
+		<Folder Include="wwwroot\UploadExcel\" />
+		<Folder Include="wwwroot\FileDownload\" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Include="wwwroot\js\site.js" />
+		<None Include="wwwroot\lib\AdminLTE\.github\ISSUE_TEMPLATE\bug-report-for-adminlte-v3-x.md" />
+		<None Include="wwwroot\lib\AdminLTE\.github\ISSUE_TEMPLATE\feature-request-for-adminlte-v3-x.md" />
+		<None Include="wwwroot\lib\AdminLTE\.github\workflows\node-install.yml" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Reference Include="zxing">
+	    <HintPath>..\..\TestScanPdfQr\TestScanPdfQr\bin\Debug\netcoreapp3.1\zxing.dll</HintPath>
+	  </Reference>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Compile Update="Resources\Message.Shared.Designer.cs">
+	    <DesignTime>True</DesignTime>
+	    <AutoGen>True</AutoGen>
+	    <DependentUpon>Message.Shared.resx</DependentUpon>
+	  </Compile>
+	  <Compile Update="Resources\SharedResource.Designer.cs">
+	    <DesignTime>True</DesignTime>
+	    <AutoGen>True</AutoGen>
+	    <DependentUpon>SharedResource.resx</DependentUpon>
+	  </Compile>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <EmbeddedResource Update="Resources\Message.Shared.resx">
+	    <Generator>PublicResXFileCodeGenerator</Generator>
+	    <LastGenOutput>Message.Shared.Designer.cs</LastGenOutput>
+	  </EmbeddedResource>
+	  <EmbeddedResource Update="Resources\SharedResource.resx">
+	    <Generator>PublicResXFileCodeGenerator</Generator>
+	    <LastGenOutput>SharedResource.Designer.cs</LastGenOutput>
+	  </EmbeddedResource>
+	</ItemGroup>
+
+</Project>

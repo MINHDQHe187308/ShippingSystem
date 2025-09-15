@@ -1,0 +1,375 @@
+﻿@using ASP.BaseCommon
+@using ASP.Controllers.Admin
+@using ASP.Models
+@using ASP.Policies
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Http.Extensions
+@using ReflectionIT.Mvc.Paging
+@inject IAuthorizationService AuthorizationService
+@addTagHelper *, ReflectionIT.Mvc.Paging
+
+@{
+    ViewData["Title"] = "Home";
+    Layout = "../Shared/Layout/Front/_Layout";
+    string strScaleTd = "";
+    if (ViewBag.TotalCats > 0)
+    {
+        double scaleTd = 84 / ViewBag.TotalCats;
+        strScaleTd = $"{scaleTd}%";
+    }
+    var dtNow = DateTime.Now.Date.ToString("MM/dd/yyyy");
+    var tDay = DateTime.Today.ToString("dd-MMM-yyyy");
+}
+<style>
+    .h-button {
+        margin-top: 10px;
+    }
+
+    #table-visualize {
+        font-size: 22px;
+        text-align: center;
+    }
+
+    .breadcrumb{ float: right;}
+
+    fieldset {
+        min-width: 0;
+        padding: 0 5px;
+        margin: 0;
+        border: 0;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+
+    legend {
+        display: block;
+        width: inherit;
+        max-width: 100%;
+        padding: 0 10px;
+        margin-bottom: .5rem;
+        font-size: 1.1rem;
+        line-height: inherit;
+        color: inherit;
+        white-space: normal;
+        margin-left: 18px;
+    }
+
+    .box-message span.badge {
+        margin-right: 5px;
+    }
+
+    #example1 thead th {
+        vertical-align: middle;
+        text-align: center;
+    }
+
+    .table > :not(:last-child) > :last-child > * { border-bottom-color: #dee2e6!important; }
+
+    .a-handle{ cursor: pointer; }
+
+    .nested-table-row {
+        background-color: white;
+    }
+
+    .divShadow {
+        box-shadow: 0.5px 0.5px 0.5px 0.5px #999;
+    }
+
+    .sub-table {
+        margin-top: 10px;
+    }
+
+    .sub-table thead th {
+        background-color: #b0c4de;
+    }
+
+    .sub-table tbody {
+        background-color: white;
+    }
+</style>
+
+<div class="content-wrapper" style="min-height: 422px;">
+    <div class="content-header">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-12 col-sm-12">
+                    @* <div class="row">
+                        <div class="col-md-6 col-sm-6">
+                            @if ((await AuthorizationService.AuthorizeAsync(User, new DocumentAuth(), PolicyOperations.ODCSOrderProcessingImport)).Succeeded)
+                            {
+                                <a href="~/OrderProcessing" class="btn btn-success add-button"><i class="fas fa-plus-square"></i> Thêm mới</a>
+                            }
+                        </div>
+                        <div class="col-md-6 col-sm-6">
+                            <ol class="breadcrumb">
+                                <li class="breadcrumb-item"><a href="~/Home"><i class="fas fa-home"></i> Home</a></li>
+                                <li class="breadcrumb-item active">Order Simulation</li>
+                            </ol>
+                        </div>
+                    </div> *@
+                    <div class="row">
+                        <div class="col-md-12 col-sm-12" align="right">
+                            <b>Date: @tDay</b>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+   @*  <section class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-lg-12 col-md-12 col-xs-12">
+                    <div class="box">
+                        <!-- /.box-header -->
+                        <div class="clearfix box-body p-2">
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <form method="get" class="search-form">
+                                        <fieldset>
+                                            <legend>Bộ lọc:</legend>
+                                            <div class="row">
+                                                <div class="col-sm-3">
+                                                    <div class="form-group">
+                                                        <label for="fCompanyId">Company</label>
+                                                        <input class="form-control" id="psize" name="psize" type="hidden" value="@Model.RouteValue["psize"]">
+                                                        <select asp-items="@ViewBag.SltCompany" asp-for="@Model.RouteValue["fCompanyId"]" id="fHouse" name="fCompanyId" class="form-control">
+                                                            <option value="">-- Tất cả --</option>
+                                                        </select>
+                                                    </div>
+                                                </div><!-- /col -->
+                                                <div class="col-sm-3">
+                                                    <div class="form-group">
+                                                        <label for="fProductName">Product Name</label>
+                                                        <select asp-items="@ViewBag.SltProductName" asp-for="@Model.RouteValue["fProductName"]" id="fProductName" name="fProductName" class="form-control">
+                                                            <option value="">-- Tất cả --</option>
+                                                        </select>
+                                                    </div>
+                                                </div><!-- /col -->
+                                                <div class="col-sm-3">
+                                                    <div class="form-group">
+                                                        <label for="fProcessYear">Process Year</label>
+                                                        <input placeholder="Tìm kiếm theo: Process Date Year ..." class="form-control" id="fProcessYear" name="fProcessYear" type="text" value="@Model.RouteValue["fProcessYear"]">
+                                                    </div>
+                                                </div><!-- /col -->
+                                                <div class="col-sm-3">
+                                                    <div class="form-group">
+                                                        <label for="fProcessMonth">Process Month</label>
+                                                        <input placeholder="Tìm kiếm theo: Process Date Month ..." class="form-control" id="fProcessMonth" name="fProcessMonth" type="text" value="@Model.RouteValue["fProcessMonth"]">
+                                                    </div>
+                                                </div><!-- /col -->
+                                                <div class="col-sm-12 text-right">
+                                                    <div class="form-group">
+                                                        <label for=""></label>
+                                                        <button type="submit" class="btn btn-info">
+                                                            <i class="fas fa-search"></i> Tìm kiếm
+                                                        </button>
+                                                    </div>
+                                                </div><!-- /col -->
+                                                <div class="col-12">
+                                                    <div class="form-group">
+                                                        <div class="box-message box-message-export bg-light"></div><!-- .box-message -->
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </fieldset>
+                                    </form>
+                                    <h1 class="clearfix"></h1>
+                                </div>
+                            </div>
+                            <table id="example1" class="table table-bordered table-striped">
+                                <thead>
+                                    <tr>
+                                        <th class="text-center">#</th>
+                                        <th>@Html.DisplayNameFor(model => model.OPId)</th>
+                                        <th>@Html.SortableHeaderFor(model => model.CustomerId, "CustomerId")</th>
+                                        <th>@Html.DisplayNameFor(model => model.ProductName)</th>
+                                        <th>@Html.DisplayNameFor(model => model.ProcessDate)</th>
+                                        <th>@Html.DisplayNameFor(model => model.TotalProduct)</th>
+                                        <th>@Html.DisplayNameFor(model => model.ProductList)</th>
+                                        <th>@Html.DisplayNameFor(model => model.IssuedBy)</th>
+                                        <th>@Html.SortableHeaderFor(model => model.UpdatedDate)</th>
+                                        <th>Tác vụ</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @{
+                                        int count = 0;
+                                        string sub = "", su = "";
+                                    }
+                                    @foreach (var item in Model)
+                                    {
+                                        count++;
+                                        su = item.OPId.ToString();
+                                        sub = su.Substring(su.Length - 6);
+                                        <tr>
+                                            <td class="text-center">@count</td>
+                                            <td>@sub</td>
+                                            <td>@item.CustomerId</td>
+                                            <td>@item.ProductName</td>
+                                            <td>@item.ProcessDate.ToString("dd-MMM-yy")</td>
+                                            <td>@item.TotalProduct</td>
+                                            <td>@item.ProductList</td>
+                                            <td>@item.IssuedBy</td>
+                                            <td>@item.UpdatedDate.ToString("dd-MMM-yy HH:mm")</td>
+                                            <td>
+                                                @if ((await AuthorizationService.AuthorizeAsync(User, new DocumentAuth(), PolicyOperations.ODCSOrderProcessingImport)).Succeeded)
+                                                {
+                                                    <a class="badge badge-success a-handle" title="Export" onclick="exportToEIS('@item.OPId', '@item.ProductName')"><i class="fas fa-file-export"></i> EIS</a>
+                                                    <a class="badge badge-primary a-handle" title="Export" onclick="exportSimulation('@item.OPId', '@item.ProductName')"><i class="fas fa-file-export"></i> Simulation</a>
+                                                    <a class="badge badge-info a-handle" title="Export" onclick="exportData('@item.OPId', '@item.ProductName')"><i class="fas fa-file-export"></i> Check</a>
+                                                }
+                                                @if ((await AuthorizationService.AuthorizeAsync(User, new DocumentAuth(), PolicyOperations.ODCSOrderProcessingImport)).Succeeded)
+                                                {
+                                                    <a onclick="return confirm('Tác vụ này sẽ xóa các dữ liệu quan(Tồn kho) và không thể phục hồi. Bạn muốn xóa bản ghi này?')" title="Xóa!" class="badge badge-danger a-handle"><i class="far fa-trash-alt"></i> Xóa</a>
+                                                }
+                                                <a class="badge badge-secondary a-handle toggle-nested-table"><i class="fas fa-caret-square-down"></i></a>
+                                            </td>
+                                        </tr>
+                                        <tr class="nested-table-row" style="display: none">
+                                            <td colspan="14">
+                                                <table class="table table-sm table-bordered nested-table sub-table divShadow">
+                                                    <thead>
+                                                        <tr>
+                                                            <th rowspan="2" width="10%">DMVN P/No.</th>
+                                                            <th rowspan="2" width="10%">Customer P/No.</th>
+                                                            <th rowspan="2" width="6%">Order Lot size</th>
+                                                            <th colspan="3">D.O.H</th>
+                                                            <th rowspan="2" width="6%">Fixed period</th>
+                                                            <th colspan="2">Fixed range</th>
+                                                            <th colspan="2">Firm range</th>
+                                                            <th colspan="2">Forecast range</th>                                                            
+                                                        </tr>
+                                                        <tr>
+                                                            <th width="6%">Min</th>
+                                                            <th width="6%">Avg.</th>
+                                                            <th width="6%">Max</th>
+                                                            <th width="6%">From</th>
+                                                            <th width="6%">To</th>
+                                                            <th width="6%">From</th>
+                                                            <th width="6%">To</th>
+                                                            <th width="6%">From</th>
+                                                            <th width="6%">To</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @if (item.ProductProcessings != null)
+                                                        {
+                                                            @foreach (var cItem in item.ProductProcessings)
+                                                            {
+                                                                <tr>
+                                                                    <td class="text-center">@cItem.PartNumber</td>
+                                                                    <td class="text-center">@cItem.CustomerPartNumber</td>
+                                                                    <td class="text-center">@cItem.LotSize</td>
+                                                                    <td class="text-center">@cItem.MinDoh</td>
+                                                                    <td class="text-center">@cItem.AvgDoh</td>
+                                                                    <td class="text-center">@cItem.MaxDoh</td>                                                                    
+                                                                    <td class="text-center">@cItem.FixedPeriod</td>
+                                                                    <td class="text-center">@cItem.FixedFrom.ToString("dd-MMM-yy")</td>
+                                                                    <td class="text-center">@cItem.FixedTo.ToString("dd-MMM-yy")</td>
+                                                                    <td class="text-center">@cItem.FirmFrom.ToString("dd-MMM-yy")</td>
+                                                                    <td class="text-center">@cItem.FirmTo.ToString("dd-MMM-yy")</td>
+                                                                    <td class="text-center">@cItem.ForecastFrom.ToString("dd-MMM-yy")</td>
+                                                                    <td class="text-center">@cItem.ForecastTo.ToString("dd-MMM-yy")</td>                                                                    
+                                                                </tr>
+                                                            }
+                                                        }
+                                                    </tbody>
+                                                </table>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                            <section class="sct-pagination">
+                                <span class="page-count">Trang @Model.PageIndex / @Model.PageCount</span><span>, &nbsp;&nbsp;Tổng số bản ghi: @Model.TotalRecordCount</span>
+                                <span>, &nbsp;&nbsp;Số bản ghi/trang</span>
+                                <select asp-items="@PIS.BaseCommon.BaseController.BasePageSize()" asp-for="@Model.RouteValue["psize"]" class="slt-psize" name="slt-psize">
+                                    <option value="">-- Any --</option>
+                                </select>
+                                <div class="pagination pagination-sm m-0 float-right">
+                                    <nav aria-label="Products navigation example">
+                                        <vc:pager paging-list="@Model" />
+                                    </nav>
+                                </div>
+                            </section>
+                        </div>
+                        <!-- /.box-body -->
+                    </div>
+                    <!-- /.box -->
+                </div>
+                <!-- /.col -->
+        </div>
+    </section> *@
+</div>
+
+@section Scripts {
+<script type="text/javascript">
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.toggle-nested-table').forEach(function (button) {
+            button.addEventListener('click', function () {
+                const nestedRow = this.closest('tr').nextElementSibling;
+                if (nestedRow.style.display === 'none') {
+                    nestedRow.style.display = '';
+                } else {
+                    nestedRow.style.display = 'none';
+                }
+            });
+        })
+    });
+
+    function exportData(id, prod) {
+        downloadExportFile(id, prod, '@Url.Action("ExportData", "Home")');
+    }
+
+    function exportToEIS(id, prod) {
+        downloadExportFile(id, prod, '@Url.Action("ExportEISUpload", "Home")');
+    }
+
+    function exportSimulation(id, prod){
+        downloadExportFile(id, prod, '@Url.Action("ExportSimulationData", "Home")');
+    }
+
+    function downloadExportFile(id, prod, _url) 
+    {
+        let confirmMsg = "Bạn muốn thực hiện tác vụ này?";
+
+        if (confirm(confirmMsg) == true) {
+            $.ajax({
+                type: 'GET',
+                url: _url,
+                contentType: "application/json; charset=utf-8",
+                data: {
+                    uId: id,
+                    prodName: prod,
+                },
+                beforeSend: function () {
+                    $('#sct-loading').show();
+                    $("#btn-export").removeAttr('disabled');
+                },
+                success: function (data) {
+                    $('.box-message-export').html(data.message);
+                    if(data.result == false){
+                        alert(data.message);
+                    }else{
+                        if (data.fileName != "") {
+                            window.location.href = "@Url.Action("DownloadEx", "Home")?file=" + data.fileName + "&rootsPath=" + data.rootsPath;
+                        }
+                    }
+                },
+                complete: function () {
+                    $("#btn-export").removeAttr('disabled');
+                    $('#sct-loading').hide();
+                },
+                error: function () {
+                    $("#btn-export").removeAttr('disabled');
+                    $('#sct-loading').hide();
+                    alert("error");
+                }
+            });
+        }else {
+            console.log("Bạn đã hủy tác vụ!");
+        }
+    }
+</script>
+}

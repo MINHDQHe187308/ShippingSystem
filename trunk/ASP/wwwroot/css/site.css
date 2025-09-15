@@ -1,0 +1,121 @@
+html {
+  font-size: 14px;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+html {
+  position: relative;
+  min-height: 100%;
+}
+
+body {
+  margin-bottom: 60px;
+}
+/**
+    ** loading
+*/
+
+/**
+    ** loading
+*/
+#sct-loading {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    top: 0px;
+    left: 0px;
+    text-align: center;
+    background-color: #363636;
+    opacity: .7;
+    z-index: 9999;
+    display: none;
+}
+
+    #sct-loading button {
+        position: relative;
+        top: 45%;
+    }
+
+.note-editor img {
+    max-width: 100%;
+}
+
+.sp-language img {
+    max-width: 30px;
+    height: auto;
+    border: 1px solid #ccc;
+}
+
+.preview-image-user img {
+    max-width: 200px;
+}
+/**
+    animation
+    **/
+@keyframes flickerAnimation {
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+@-o-keyframes flickerAnimation {
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+@-moz-keyframes flickerAnimation {
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+@-webkit-keyframes flickerAnimation {
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+.animate-flicker {
+    -webkit-animation: flickerAnimation 1s infinite;
+    -moz-animation: flickerAnimation 1s infinite;
+    -o-animation: flickerAnimation 1s infinite;
+    animation: flickerAnimation 1s infinite;
+}

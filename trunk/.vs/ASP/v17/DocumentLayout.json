@@ -1,0 +1,276 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "D:\\Projects\\2025\\00. Shipping Progress\\trunk\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{E956087A-1AFE-475A-B9CC-B74F159B31EE}|ASP\\ASP.csproj|d:\\projects\\2025\\00. shipping progress\\trunk\\asp\\models\\menu.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E956087A-1AFE-475A-B9CC-B74F159B31EE}|ASP\\ASP.csproj|solutionrelative:asp\\models\\menu.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E956087A-1AFE-475A-B9CC-B74F159B31EE}|ASP\\ASP.csproj|d:\\projects\\2025\\00. shipping progress\\trunk\\asp\\viewcomponents\\front\\sidebarviewcomponent.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E956087A-1AFE-475A-B9CC-B74F159B31EE}|ASP\\ASP.csproj|solutionrelative:asp\\viewcomponents\\front\\sidebarviewcomponent.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E956087A-1AFE-475A-B9CC-B74F159B31EE}|ASP\\ASP.csproj|d:\\projects\\2025\\00. shipping progress\\trunk\\asp\\viewcomponents\\front\\headerviewcomponent.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E956087A-1AFE-475A-B9CC-B74F159B31EE}|ASP\\ASP.csproj|solutionrelative:asp\\viewcomponents\\front\\headerviewcomponent.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E956087A-1AFE-475A-B9CC-B74F159B31EE}|ASP\\ASP.csproj|d:\\projects\\2025\\00. shipping progress\\trunk\\asp\\models\\admin\\menus\\menurepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E956087A-1AFE-475A-B9CC-B74F159B31EE}|ASP\\ASP.csproj|solutionrelative:asp\\models\\admin\\menus\\menurepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E956087A-1AFE-475A-B9CC-B74F159B31EE}|ASP\\ASP.csproj|d:\\projects\\2025\\00. shipping progress\\trunk\\asp\\models\\log.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E956087A-1AFE-475A-B9CC-B74F159B31EE}|ASP\\ASP.csproj|solutionrelative:asp\\models\\log.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E956087A-1AFE-475A-B9CC-B74F159B31EE}|ASP\\ASP.csproj|d:\\projects\\2025\\00. shipping progress\\trunk\\asp\\models\\admin\\logs\\logrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E956087A-1AFE-475A-B9CC-B74F159B31EE}|ASP\\ASP.csproj|solutionrelative:asp\\models\\admin\\logs\\logrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E956087A-1AFE-475A-B9CC-B74F159B31EE}|ASP\\ASP.csproj|d:\\projects\\2025\\00. shipping progress\\trunk\\asp\\models\\aspmodel\\aspdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E956087A-1AFE-475A-B9CC-B74F159B31EE}|ASP\\ASP.csproj|solutionrelative:asp\\models\\aspmodel\\aspdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E956087A-1AFE-475A-B9CC-B74F159B31EE}|ASP\\ASP.csproj|d:\\projects\\2025\\00. shipping progress\\trunk\\asp\\models\\admin\\baseentity.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E956087A-1AFE-475A-B9CC-B74F159B31EE}|ASP\\ASP.csproj|solutionrelative:asp\\models\\admin\\baseentity.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E956087A-1AFE-475A-B9CC-B74F159B31EE}|ASP\\ASP.csproj|d:\\projects\\2025\\00. shipping progress\\trunk\\asp\\models\\admin\\logs\\log.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E956087A-1AFE-475A-B9CC-B74F159B31EE}|ASP\\ASP.csproj|solutionrelative:asp\\models\\admin\\logs\\log.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E956087A-1AFE-475A-B9CC-B74F159B31EE}|ASP\\ASP.csproj|d:\\projects\\2025\\00. shipping progress\\trunk\\asp\\controllers\\admin\\menucontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E956087A-1AFE-475A-B9CC-B74F159B31EE}|ASP\\ASP.csproj|solutionrelative:asp\\controllers\\admin\\menucontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E956087A-1AFE-475A-B9CC-B74F159B31EE}|ASP\\ASP.csproj|d:\\projects\\2025\\00. shipping progress\\trunk\\asp\\controllers\\admin\\themeoptioncontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E956087A-1AFE-475A-B9CC-B74F159B31EE}|ASP\\ASP.csproj|solutionrelative:asp\\controllers\\admin\\themeoptioncontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E956087A-1AFE-475A-B9CC-B74F159B31EE}|ASP\\ASP.csproj|d:\\projects\\2025\\00. shipping progress\\trunk\\asp\\models\\admin\\themeoptions\\themeoption.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E956087A-1AFE-475A-B9CC-B74F159B31EE}|ASP\\ASP.csproj|solutionrelative:asp\\models\\admin\\themeoptions\\themeoption.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E956087A-1AFE-475A-B9CC-B74F159B31EE}|ASP\\ASP.csproj|d:\\projects\\2025\\00. shipping progress\\trunk\\asp\\models\\front\\themeoption\\themeoption.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E956087A-1AFE-475A-B9CC-B74F159B31EE}|ASP\\ASP.csproj|solutionrelative:asp\\models\\front\\themeoption\\themeoption.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 6,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{3ae79031-e1bc-11d0-8f78-00a0c9110057}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:1:0:{d212f56b-c48a-434c-a121-1c5d80b59b9f}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:128:0:{116d2292-e37d-41cd-a077-ebacac4c8cc4}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{1c4feeaa-4718-4aa9-859d-94ce25d182ba}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{aa2115a1-9712-457b-9047-dbb71ca2cdd2}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{40ea2e6b-2121-4bb8-a43e-c83c04b51041}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Menu.cs",
+              "DocumentMoniker": "D:\\Projects\\2025\\00. Shipping Progress\\trunk\\ASP\\Models\\Menu.cs",
+              "RelativeDocumentMoniker": "ASP\\Models\\Menu.cs",
+              "ToolTip": "D:\\Projects\\2025\\00. Shipping Progress\\trunk\\ASP\\Models\\Menu.cs",
+              "RelativeToolTip": "ASP\\Models\\Menu.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-15T04:58:43.942Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "Log.cs",
+              "DocumentMoniker": "D:\\Projects\\2025\\00. Shipping Progress\\trunk\\ASP\\Models\\Log.cs",
+              "RelativeDocumentMoniker": "ASP\\Models\\Log.cs",
+              "ToolTip": "D:\\Projects\\2025\\00. Shipping Progress\\trunk\\ASP\\Models\\Log.cs",
+              "RelativeToolTip": "ASP\\Models\\Log.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAQAAAAkAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-15T04:53:55.403Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "MenuRepository.cs",
+              "DocumentMoniker": "D:\\Projects\\2025\\00. Shipping Progress\\trunk\\ASP\\Models\\Admin\\Menus\\MenuRepository.cs",
+              "RelativeDocumentMoniker": "ASP\\Models\\Admin\\Menus\\MenuRepository.cs",
+              "ToolTip": "D:\\Projects\\2025\\00. Shipping Progress\\trunk\\ASP\\Models\\Admin\\Menus\\MenuRepository.cs",
+              "RelativeToolTip": "ASP\\Models\\Admin\\Menus\\MenuRepository.cs",
+              "ViewState": "AgIAAAMAAAAAAAAAAAAvwA0AAAAaAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-15T04:16:33.149Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "HeaderViewComponent.cs",
+              "DocumentMoniker": "D:\\Projects\\2025\\00. Shipping Progress\\trunk\\ASP\\ViewComponents\\Front\\HeaderViewComponent.cs",
+              "RelativeDocumentMoniker": "ASP\\ViewComponents\\Front\\HeaderViewComponent.cs",
+              "ToolTip": "D:\\Projects\\2025\\00. Shipping Progress\\trunk\\ASP\\ViewComponents\\Front\\HeaderViewComponent.cs",
+              "RelativeToolTip": "ASP\\ViewComponents\\Front\\HeaderViewComponent.cs",
+              "ViewState": "AgIAABkAAAAAAAAAAIA8wCMAAABCAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-15T04:16:08.147Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "LogRepository.cs",
+              "DocumentMoniker": "D:\\Projects\\2025\\00. Shipping Progress\\trunk\\ASP\\Models\\Admin\\Logs\\LogRepository.cs",
+              "RelativeDocumentMoniker": "ASP\\Models\\Admin\\Logs\\LogRepository.cs",
+              "ToolTip": "D:\\Projects\\2025\\00. Shipping Progress\\trunk\\ASP\\Models\\Admin\\Logs\\LogRepository.cs",
+              "RelativeToolTip": "ASP\\Models\\Admin\\Logs\\LogRepository.cs",
+              "ViewState": "AgIAACoAAAAAAAAAAAAvwDgAAAAZAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-15T04:15:06.923Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "ASPDbContext.cs",
+              "DocumentMoniker": "D:\\Projects\\2025\\00. Shipping Progress\\trunk\\ASP\\Models\\ASPModel\\ASPDbContext.cs",
+              "RelativeDocumentMoniker": "ASP\\Models\\ASPModel\\ASPDbContext.cs",
+              "ToolTip": "D:\\Projects\\2025\\00. Shipping Progress\\trunk\\ASP\\Models\\ASPModel\\ASPDbContext.cs",
+              "RelativeToolTip": "ASP\\Models\\ASPModel\\ASPDbContext.cs",
+              "ViewState": "AgIAADUAAAAAAAAAAAAswDwAAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-15T04:13:32.65Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "SidebarViewComponent.cs",
+              "DocumentMoniker": "D:\\Projects\\2025\\00. Shipping Progress\\trunk\\ASP\\ViewComponents\\Front\\SidebarViewComponent.cs",
+              "RelativeDocumentMoniker": "ASP\\ViewComponents\\Front\\SidebarViewComponent.cs",
+              "ToolTip": "D:\\Projects\\2025\\00. Shipping Progress\\trunk\\ASP\\ViewComponents\\Front\\SidebarViewComponent.cs",
+              "RelativeToolTip": "ASP\\ViewComponents\\Front\\SidebarViewComponent.cs",
+              "ViewState": "AgIAAAsAAAAAAAAAAAAjwCIAAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-15T04:16:28.228Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "BaseEntity.cs",
+              "DocumentMoniker": "D:\\Projects\\2025\\00. Shipping Progress\\trunk\\ASP\\Models\\Admin\\BaseEntity.cs",
+              "RelativeDocumentMoniker": "ASP\\Models\\Admin\\BaseEntity.cs",
+              "ToolTip": "D:\\Projects\\2025\\00. Shipping Progress\\trunk\\ASP\\Models\\Admin\\BaseEntity.cs",
+              "RelativeToolTip": "ASP\\Models\\Admin\\BaseEntity.cs",
+              "ViewState": "AgIAAAMAAAAAAAAAAAAswBMAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-15T04:54:22.139Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "Log.cs",
+              "DocumentMoniker": "D:\\Projects\\2025\\00. Shipping Progress\\trunk\\ASP\\Models\\Admin\\Logs\\Log.cs",
+              "RelativeDocumentMoniker": "ASP\\Models\\Admin\\Logs\\Log.cs",
+              "ToolTip": "D:\\Projects\\2025\\00. Shipping Progress\\trunk\\ASP\\Models\\Admin\\Logs\\Log.cs",
+              "RelativeToolTip": "ASP\\Models\\Admin\\Logs\\Log.cs",
+              "ViewState": "AgIAABIAAAAAAAAAAAA/wAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-15T04:54:16.939Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "MenuController.cs",
+              "DocumentMoniker": "D:\\Projects\\2025\\00. Shipping Progress\\trunk\\ASP\\Controllers\\Admin\\MenuController.cs",
+              "RelativeDocumentMoniker": "ASP\\Controllers\\Admin\\MenuController.cs",
+              "ToolTip": "D:\\Projects\\2025\\00. Shipping Progress\\trunk\\ASP\\Controllers\\Admin\\MenuController.cs",
+              "RelativeToolTip": "ASP\\Controllers\\Admin\\MenuController.cs",
+              "ViewState": "AgIAAAkAAAAAAAAAAAAAAA0AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-15T03:57:01.075Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "ThemeOptionController.cs",
+              "DocumentMoniker": "D:\\Projects\\2025\\00. Shipping Progress\\trunk\\ASP\\Controllers\\Admin\\ThemeOptionController.cs",
+              "RelativeDocumentMoniker": "ASP\\Controllers\\Admin\\ThemeOptionController.cs",
+              "ToolTip": "D:\\Projects\\2025\\00. Shipping Progress\\trunk\\ASP\\Controllers\\Admin\\ThemeOptionController.cs",
+              "RelativeToolTip": "ASP\\Controllers\\Admin\\ThemeOptionController.cs",
+              "ViewState": "AgIAACoAAAAAAAAAAAAywAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-15T03:56:40.722Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "ThemeOption.cs",
+              "DocumentMoniker": "D:\\Projects\\2025\\00. Shipping Progress\\trunk\\ASP\\Models\\Front\\ThemeOption\\ThemeOption.cs",
+              "RelativeDocumentMoniker": "ASP\\Models\\Front\\ThemeOption\\ThemeOption.cs",
+              "ToolTip": "D:\\Projects\\2025\\00. Shipping Progress\\trunk\\ASP\\Models\\Front\\ThemeOption\\ThemeOption.cs",
+              "RelativeToolTip": "ASP\\Models\\Front\\ThemeOption\\ThemeOption.cs",
+              "ViewState": "AgIAAAQAAAAAAAAAAAAIwBAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-15T03:52:54.434Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "ThemeOption.cs",
+              "DocumentMoniker": "D:\\Projects\\2025\\00. Shipping Progress\\trunk\\ASP\\Models\\Admin\\ThemeOptions\\ThemeOption.cs",
+              "RelativeDocumentMoniker": "ASP\\Models\\Admin\\ThemeOptions\\ThemeOption.cs",
+              "ToolTip": "D:\\Projects\\2025\\00. Shipping Progress\\trunk\\ASP\\Models\\Admin\\ThemeOptions\\ThemeOption.cs",
+              "RelativeToolTip": "ASP\\Models\\Admin\\ThemeOptions\\ThemeOption.cs",
+              "ViewState": "AgIAAA0AAAAAAAAAAAAAwBsAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-15T03:52:50.535Z"
+            }
+          ]
+        },
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": -1,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{d78612c7-9962-4b83-95d9-268046dad23a}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:5:0:{e8034f19-ab72-4f06-83fd-f6832b41aa63}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
