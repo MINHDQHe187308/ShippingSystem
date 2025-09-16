@@ -1,21 +1,22 @@
-﻿using ASP.Hubs;
+﻿using ASP.BaseCommon;
+using ASP.Hubs;
+using ASP.Models.Admin.Accounts;
 using ASP.Models.Admin.Auths;
 using ASP.Models.Admin.Logs;
 using ASP.Models.Admin.Menus;
 using ASP.Models.Admin.Roles;
+using ASP.Models.Admin.ThemeOptions;
+using ASP.Models.ASPModel;
+using ASP.Policies;
+using ASP.SeedData;
+using ASP.Utilss;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Options;
 using ReflectionIT.Mvc.Paging;
 using Serilog;
-using ASP.BaseCommon;
-using ASP.Models.Admin.Accounts;
-using ASP.Models.Admin.ThemeOptions;
-using ASP.Policies;
-using ASP.SeedData;
-using Microsoft.Extensions.Options;
-using Microsoft.Extensions.FileProviders;
-using ASP.Models.ASPModel;
 
 var builder = WebApplication.CreateBuilder(args);
 #region signalR
@@ -138,7 +139,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapRazorPages();
 app.UseRequestLocalization();
-
+ResourceValidator.ValidateResourceKeys(typeof(Register));
 #region route config
 app.UseEndpoints(endpoints =>
 {

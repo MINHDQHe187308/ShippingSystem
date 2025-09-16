@@ -370,5 +370,7 @@ namespace ASP.Controllers.Admin
             TempData["mess-detail"] = BaseController.BaseMessage("create_fails");
             return View("../Admin/Auth/Register", user);
         }
+   
     }
+
 }
