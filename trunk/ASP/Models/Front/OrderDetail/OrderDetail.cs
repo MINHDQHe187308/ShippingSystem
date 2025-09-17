@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-
+using System.ComponentModel.DataAnnotations;
+using ASP.Models.Admin; 
 namespace ASP.Models.Front.OrderDetail
 {
-    public partial class OrderDetail
+    public partial class OrderDetail : BaseEntity
     {
+        [Key]
         public Guid Uid { get; set; }
         public Guid Oid { get; set; }
         public long ShippingId { get; set; }
@@ -16,7 +18,6 @@ namespace ASP.Models.Front.OrderDetail
         public int TotalPallet { get; set; }
         public string Warehouse { get; set; } = null!;
         public short BookContStatus { get; set; }
-        public DateTime CreatedDate { get; set; }
-        public DateTime UpdatedDate { get; set; }
+      
     }
 }

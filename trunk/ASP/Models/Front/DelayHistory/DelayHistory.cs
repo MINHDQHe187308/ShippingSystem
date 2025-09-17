@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-
+using System.ComponentModel.DataAnnotations;
+using ASP.Models.Admin;
 namespace ASP.Models.Front.DelayHistory
 {
-    public partial class DelayHistory
+    public partial class DelayHistory: BaseEntity
     {
+        [Key]
         public Guid Uid { get; set; }
         public Guid Old { get; set; }
         public short DelayType { get; set; }
@@ -12,7 +14,6 @@ namespace ASP.Models.Front.DelayHistory
         public DateTime StartTime { get; set; }
         public DateTime ChangeTime { get; set; }
         public double DelayTime { get; set; }
-        public DateTime CreatedDate { get; set; }
-        public DateTime UpdatedDate { get; set; }
+       
     }
 }

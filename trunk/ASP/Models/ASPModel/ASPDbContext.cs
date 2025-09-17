@@ -1,12 +1,20 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore;
-using ASP.Models.Admin.Logs;
-using ASP.Models.Admin.ThemeOptions;
+﻿using ASP.Models.Admin;
 using ASP.Models.Admin.Accounts;
+using ASP.Models.Admin.Logs;
 using ASP.Models.Admin.Menus;
 using ASP.Models.Admin.Roles;
-using ASP.Models.Admin;
-using ASP.Models.Front.ThemeOption;
+using ASP.Models.Admin.ThemeOptions;
+using ASP.Models.Front;
+using ASP.Models.Front.Customer;
+using ASP.Models.Front.DelayHistory;
+using ASP.Models.Front.LeadtimeMaster;
+using ASP.Models.Front.Order;
+using ASP.Models.Front.OrderDetail;
+using ASP.Models.Front.ShoppingList;
+using ASP.Models.Front.ThreePointCheck;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
 
 namespace ASP.Models.ASPModel
 {
@@ -65,5 +73,19 @@ namespace ASP.Models.ASPModel
         public DbSet<Admin.ThemeOptions.ThemeOption> ThemeOptions { get; set; }
 
         public DbSet<Menu> Menus { get; set; }
-    }
+
+        public DbSet<Customer> Customers { get; set; }
+
+        public DbSet<DelayHistory> DelayHistory { get; set; }
+
+        public DbSet<LeadtimeMaster> LeadtimeMasters { get; set; }
+
+        public DbSet<Order> Orders { get; set; }
+
+        public DbSet<OrderDetail> OrderDetails { get; set; }
+
+        public DbSet<ShoppingList> ShoppingLists { get; set; }
+
+        public DbSet<ThreePointCheck> ThreePointChecks { get; set; } 
+        }
 }

@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-
+using System.ComponentModel.DataAnnotations;
+using ASP.Models.Admin;
 namespace ASP.Models.Front.Order
 {
-    public partial class Order
+    public partial class Order : BaseEntity
     {
+        [Key]
         public Guid Uid { get; set; }
         public string PoorderId { get; set; } = null!;
         public DateTime ShipDate { get; set; }
@@ -23,9 +25,7 @@ namespace ASP.Models.Front.Order
         public DateTime? AcAsyTime { get; set; }
         public DateTime? AcDocumentsTime { get; set; }
         public DateTime? AcDeliveryTime { get; set; }
-        public string CreateBy { get; set; } = null!;
-        public string UpdateBy { get; set; } = null!;
-        public DateTime CreatedDate { get; set; }
-        public DateTime UpdatedDate { get; set; }
+   
+     
     }
 }

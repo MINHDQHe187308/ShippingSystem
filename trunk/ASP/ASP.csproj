@@ -280,7 +280,6 @@
 
 	<ItemGroup>
 		<Folder Include="Logs\" />
-		<Folder Include="Migrations\" />
 		<Folder Include="Models\ViewModel\" />
 		<Folder Include="wwwroot\assets\categories\" />
 		<Folder Include="wwwroot\assets\ckgallery\" />
