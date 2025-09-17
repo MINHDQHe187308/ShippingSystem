@@ -189,7 +189,7 @@ namespace ASP.Migrations
                     b.ToTable("ThemeOptions");
                 });
 
-            modelBuilder.Entity("ASP.Models.Front.Customer.Customer", b =>
+            modelBuilder.Entity("ASP.Models.Front.Customer", b =>
                 {
                     b.Property<string>("CustomerCode")
                         .HasColumnType("nvarchar(450)");
@@ -220,9 +220,9 @@ namespace ASP.Migrations
                     b.ToTable("Customers");
                 });
 
-            modelBuilder.Entity("ASP.Models.Front.DelayHistory.DelayHistory", b =>
+            modelBuilder.Entity("ASP.Models.Front.DelayHistory", b =>
                 {
-                    b.Property<Guid>("Uid")
+                    b.Property<Guid>("UId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
@@ -238,12 +238,13 @@ namespace ASP.Migrations
                     b.Property<short>("DelayType")
                         .HasColumnType("smallint");
 
-                    b.Property<Guid>("Old")
+                    b.Property<Guid>("OId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Reason")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
 
                     b.Property<DateTime>("StartTime")
                         .HasColumnType("datetime2");
@@ -251,12 +252,14 @@ namespace ASP.Migrations
                     b.Property<DateTime>("UpdatedDate")
                         .HasColumnType("datetime2");
 
-                    b.HasKey("Uid");
+                    b.HasKey("UId");
+
+                    b.HasIndex("OId");
 
                     b.ToTable("DelayHistory");
                 });
 
-            modelBuilder.Entity("ASP.Models.Front.LeadtimeMaster.LeadtimeMaster", b =>
+            modelBuilder.Entity("ASP.Models.Front.LeadtimeMaster", b =>
                 {
                     b.Property<string>("CustomerCode")
                         .HasColumnType("nvarchar(450)");
@@ -293,9 +296,9 @@ namespace ASP.Migrations
                     b.ToTable("LeadtimeMasters");
                 });
 
-            modelBuilder.Entity("ASP.Models.Front.Order.Order", b =>
+            modelBuilder.Entity("ASP.Models.Front.Order", b =>
                 {
-                    b.Property<Guid>("Uid")
+                    b.Property<Guid>("UId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
@@ -316,7 +319,8 @@ namespace ASP.Migrations
 
                     b.Property<string>("CustomerCode")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(5)
+                        .HasColumnType("nvarchar(5)");
 
                     b.Property<DateTime>("OrderCreateDate")
                         .HasColumnType("datetime2");
@@ -324,9 +328,15 @@ namespace ASP.Migrations
                     b.Property<short>("OrderStatus")
                         .HasColumnType("smallint");
 
+                    b.Property<string>("PCOrderId")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<string>("PartList")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
 
                     b.Property<DateTime>("PlanAsyTime")
                         .HasColumnType("datetime2");
@@ -336,10 +346,6 @@ namespace ASP.Migrations
 
                     b.Property<DateTime>("PlanDocumentsTime")
                         .HasColumnType("datetime2");
-
-                    b.Property<string>("PoorderId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("ShipDate")
                         .HasColumnType("datetime2");
@@ -352,7 +358,8 @@ namespace ASP.Migrations
 
                     b.Property<string>("TransCd")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(3)
+                        .HasColumnType("nvarchar(3)");
 
                     b.Property<short>("TransMethod")
                         .HasColumnType("smallint");
@@ -360,14 +367,14 @@ namespace ASP.Migrations
                     b.Property<DateTime>("UpdatedDate")
                         .HasColumnType("datetime2");
 
-                    b.HasKey("Uid");
+                    b.HasKey("UId");
 
                     b.ToTable("Orders");
                 });
 
-            modelBuilder.Entity("ASP.Models.Front.OrderDetail.OrderDetail", b =>
+            modelBuilder.Entity("ASP.Models.Front.OrderDetail", b =>
                 {
-                    b.Property<Guid>("Uid")
+                    b.Property<Guid>("UId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
@@ -383,7 +390,7 @@ namespace ASP.Migrations
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("Oid")
+                    b.Property<Guid>("OId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("PalletSize")
@@ -391,7 +398,8 @@ namespace ASP.Migrations
 
                     b.Property<string>("PartNo")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(15)
+                        .HasColumnType("nvarchar(15)");
 
                     b.Property<int>("Quantity")
                         .HasColumnType("int");
@@ -407,16 +415,19 @@ namespace ASP.Migrations
 
                     b.Property<string>("Warehouse")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
 
-                    b.HasKey("Uid");
+                    b.HasKey("UId");
+
+                    b.HasIndex("OId");
 
                     b.ToTable("OrderDetails");
                 });
 
-            modelBuilder.Entity("ASP.Models.Front.ShoppingList.ShoppingList", b =>
+            modelBuilder.Entity("ASP.Models.Front.ShoppingList", b =>
                 {
-                    b.Property<Guid>("Uid")
+                    b.Property<Guid>("UId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
@@ -432,7 +443,7 @@ namespace ASP.Migrations
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("Odid")
+                    b.Property<Guid>("ODId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<long>("PalletId")
@@ -444,20 +455,23 @@ namespace ASP.Migrations
                     b.Property<DateTime>("UpdatedDate")
                         .HasColumnType("datetime2");
 
-                    b.HasKey("Uid");
+                    b.HasKey("UId");
+
+                    b.HasIndex("ODId");
 
                     b.ToTable("ShoppingLists");
                 });
 
-            modelBuilder.Entity("ASP.Models.Front.ThreePointCheck.ThreePointCheck", b =>
+            modelBuilder.Entity("ASP.Models.Front.ThreePointCheck", b =>
                 {
-                    b.Property<Guid>("Uid")
+                    b.Property<Guid>("UId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("CasemarkQrContent")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
 
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
@@ -467,19 +481,23 @@ namespace ASP.Migrations
 
                     b.Property<string>("PalletMarkQrContent")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(125)
+                        .HasColumnType("nvarchar(125)");
 
                     b.Property<string>("PalletNoQrContent")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
-                    b.Property<Guid>("Spid")
+                    b.Property<Guid>("SPId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("UpdatedDate")
                         .HasColumnType("datetime2");
 
-                    b.HasKey("Uid");
+                    b.HasKey("UId");
+
+                    b.HasIndex("SPId");
 
                     b.ToTable("ThreePointChecks");
                 });
@@ -688,6 +706,50 @@ namespace ASP.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("ASP.Models.Front.DelayHistory", b =>
+                {
+                    b.HasOne("ASP.Models.Front.Order", "Order")
+                        .WithMany("DelayHistories")
+                        .HasForeignKey("OId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+                });
+
+            modelBuilder.Entity("ASP.Models.Front.OrderDetail", b =>
+                {
+                    b.HasOne("ASP.Models.Front.Order", "Order")
+                        .WithMany("OrderDetails")
+                        .HasForeignKey("OId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+                });
+
+            modelBuilder.Entity("ASP.Models.Front.ShoppingList", b =>
+                {
+                    b.HasOne("ASP.Models.Front.OrderDetail", "OrderDetail")
+                        .WithMany("ShoppingLists")
+                        .HasForeignKey("ODId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("OrderDetail");
+                });
+
+            modelBuilder.Entity("ASP.Models.Front.ThreePointCheck", b =>
+                {
+                    b.HasOne("ASP.Models.Front.ShoppingList", "ShoppingList")
+                        .WithMany("ThreePointChecks")
+                        .HasForeignKey("SPId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ShoppingList");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("ASP.Models.Admin.Roles.Role", null)
@@ -737,6 +799,23 @@ namespace ASP.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("ASP.Models.Front.Order", b =>
+                {
+                    b.Navigation("DelayHistories");
+
+                    b.Navigation("OrderDetails");
+                });
+
+            modelBuilder.Entity("ASP.Models.Front.OrderDetail", b =>
+                {
+                    b.Navigation("ShoppingLists");
+                });
+
+            modelBuilder.Entity("ASP.Models.Front.ShoppingList", b =>
+                {
+                    b.Navigation("ThreePointChecks");
                 });
 #pragma warning restore 612, 618
         }

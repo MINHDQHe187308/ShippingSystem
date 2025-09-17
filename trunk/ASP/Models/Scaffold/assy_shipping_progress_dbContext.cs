@@ -1,14 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using ASP.Models.ASPModel;
-using ASP.Models.Front.Customer;
-using ASP.Models.Front.DelayHistory;
-using ASP.Models.Front.LeadtimeMaster;
-using ASP.Models.Front.Order;
-using ASP.Models.Front.OrderDetail;
-using ASP.Models.Front.ShoppingList;
-using ASP.Models.Front.ThemeOption;
-using ASP.Models.Front.ThreePointCheck;
+using ASP.Models.Front;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 

@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ASP.Migrations
 {
     [DbContext(typeof(ASPDbContext))]
-    [Migration("20250916074832_init_db")]
-    partial class init_db
+    [Migration("20250917075256_InitDb")]
+    partial class InitDb
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -189,6 +189,319 @@ namespace ASP.Migrations
                     b.HasKey("ID");
 
                     b.ToTable("ThemeOptions");
+                });
+
+            modelBuilder.Entity("ASP.Models.Front.Customer", b =>
+                {
+                    b.Property<string>("CustomerCode")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("CreateBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CustomerName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Descriptions")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UpdateBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("CustomerCode");
+
+                    b.ToTable("Customers");
+                });
+
+            modelBuilder.Entity("ASP.Models.Front.DelayHistory", b =>
+                {
+                    b.Property<Guid>("UId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("ChangeTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<double>("DelayTime")
+                        .HasColumnType("float");
+
+                    b.Property<short>("DelayType")
+                        .HasColumnType("smallint");
+
+                    b.Property<Guid>("OId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<DateTime>("StartTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("UId");
+
+                    b.HasIndex("OId");
+
+                    b.ToTable("DelayHistory");
+                });
+
+            modelBuilder.Entity("ASP.Models.Front.LeadtimeMaster", b =>
+                {
+                    b.Property<string>("CustomerCode")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<double>("CollectTimePerPallet")
+                        .HasColumnType("float");
+
+                    b.Property<string>("CreateBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<double>("LoadingTimePerColumn")
+                        .HasColumnType("float");
+
+                    b.Property<double>("PrepareTimePerPallet")
+                        .HasColumnType("float");
+
+                    b.Property<string>("TransCd")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UpdateBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("CustomerCode");
+
+                    b.ToTable("LeadtimeMasters");
+                });
+
+            modelBuilder.Entity("ASP.Models.Front.Order", b =>
+                {
+                    b.Property<Guid>("UId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("AcAsyTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("AcDeliveryTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("AcDocumentsTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<short>("ContSize")
+                        .HasColumnType("smallint");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CustomerCode")
+                        .IsRequired()
+                        .HasMaxLength(5)
+                        .HasColumnType("nvarchar(5)");
+
+                    b.Property<DateTime>("OrderCreateDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<short>("OrderStatus")
+                        .HasColumnType("smallint");
+
+                    b.Property<string>("PCOrderId")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("PartList")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<DateTime>("PlanAsyTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("PlanDeliveryTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("PlanDocumentsTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ShipDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("TotalColumn")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TotalPallet")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TransCd")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("nvarchar(3)");
+
+                    b.Property<short>("TransMethod")
+                        .HasColumnType("smallint");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("UId");
+
+                    b.ToTable("Orders");
+                });
+
+            modelBuilder.Entity("ASP.Models.Front.OrderDetail", b =>
+                {
+                    b.Property<Guid>("UId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<long>("BookContDetailId")
+                        .HasColumnType("bigint");
+
+                    b.Property<short>("BookContStatus")
+                        .HasColumnType("smallint");
+
+                    b.Property<int>("ContNo")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("OId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("PalletSize")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PartNo")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("nvarchar(15)");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<long>("ShippingId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("TotalPallet")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Warehouse")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.HasKey("UId");
+
+                    b.HasIndex("OId");
+
+                    b.ToTable("OrderDetails");
+                });
+
+            modelBuilder.Entity("ASP.Models.Front.ShoppingList", b =>
+                {
+                    b.Property<Guid>("UId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CollectedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<long>("CollectionId")
+                        .HasColumnType("bigint");
+
+                    b.Property<short>("CollectionStatus")
+                        .HasColumnType("smallint");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("ODId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<long>("PalletId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("PalletNo")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("UId");
+
+                    b.HasIndex("ODId");
+
+                    b.ToTable("ShoppingLists");
+                });
+
+            modelBuilder.Entity("ASP.Models.Front.ThreePointCheck", b =>
+                {
+                    b.Property<Guid>("UId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CasemarkQrContent")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("IssuedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PalletMarkQrContent")
+                        .IsRequired()
+                        .HasMaxLength(125)
+                        .HasColumnType("nvarchar(125)");
+
+                    b.Property<string>("PalletNoQrContent")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<Guid>("SPId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("UId");
+
+                    b.HasIndex("SPId");
+
+                    b.ToTable("ThreePointChecks");
                 });
 
             modelBuilder.Entity("ASP.Models.Log", b =>
@@ -395,6 +708,50 @@ namespace ASP.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("ASP.Models.Front.DelayHistory", b =>
+                {
+                    b.HasOne("ASP.Models.Front.Order", "Order")
+                        .WithMany("DelayHistories")
+                        .HasForeignKey("OId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+                });
+
+            modelBuilder.Entity("ASP.Models.Front.OrderDetail", b =>
+                {
+                    b.HasOne("ASP.Models.Front.Order", "Order")
+                        .WithMany("OrderDetails")
+                        .HasForeignKey("OId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+                });
+
+            modelBuilder.Entity("ASP.Models.Front.ShoppingList", b =>
+                {
+                    b.HasOne("ASP.Models.Front.OrderDetail", "OrderDetail")
+                        .WithMany("ShoppingLists")
+                        .HasForeignKey("ODId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("OrderDetail");
+                });
+
+            modelBuilder.Entity("ASP.Models.Front.ThreePointCheck", b =>
+                {
+                    b.HasOne("ASP.Models.Front.ShoppingList", "ShoppingList")
+                        .WithMany("ThreePointChecks")
+                        .HasForeignKey("SPId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ShoppingList");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("ASP.Models.Admin.Roles.Role", null)
@@ -444,6 +801,23 @@ namespace ASP.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("ASP.Models.Front.Order", b =>
+                {
+                    b.Navigation("DelayHistories");
+
+                    b.Navigation("OrderDetails");
+                });
+
+            modelBuilder.Entity("ASP.Models.Front.OrderDetail", b =>
+                {
+                    b.Navigation("ShoppingLists");
+                });
+
+            modelBuilder.Entity("ASP.Models.Front.ShoppingList", b =>
+                {
+                    b.Navigation("ThreePointChecks");
                 });
 #pragma warning restore 612, 618
         }
