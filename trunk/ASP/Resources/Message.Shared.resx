@@ -216,4 +216,13 @@
   <data name="lbl_enum_status_user_active" xml:space="preserve">
     <value />
   </data>
+  <data name="\" xml:space="preserve">
+    <value />
+  </data>
+  <data name="lbl_account" xml:space="preserve">
+    <value>Tài khoản</value>
+  </data>
+  <data name="lbl_re_password" xml:space="preserve">
+    <value />
+  </data>
 </root>

@@ -163,7 +163,7 @@
     <value>Mật khẩu nhập lại không dưới 8 ký tự</value>
   </data>
   <data name="msg_err_re_password_not_match" xml:space="preserve">
-    <value>Giá trị xác nhận trong trường &lt;strong&gt;&lt;/strong&gt; không khớp</value>
+    <value>Giá trị xác nhận trong trường &lt;strong&gt;Mật Khẩu&lt;/strong&gt; không khớp</value>
   </data>
   <data name="msg_err_menu_title_max_length" xml:space="preserve">
     <value>Tiêu đề Menu không vượt quá 50 ký tự</value>
