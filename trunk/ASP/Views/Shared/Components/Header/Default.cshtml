@@ -20,11 +20,12 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                <ul class="navbar-nav flex-grow-1">
+                <!-- Menu bên trái -->
+                <ul class="navbar-nav me-auto">
                     @foreach (var item in Model)
                     {
-                        bool chkChildren = (item.children != null) ? true : false;
-                        var strActive = (chkChildren == true) ? "dropdown" : "";
+                        bool chkChildren = (item.children != null);
+                        var strActive = chkChildren ? "dropdown" : "";
                         <li class="nav-item @strActive">
                             @if (chkChildren)
                             {
@@ -33,7 +34,7 @@
                                     @foreach (var item2 in item.children)
                                     {
                                         <li>
-                                            <a class="nav-link text-dark cccc" href="~/@item2.url" target="@item2.target">@item2.name</a>
+                                            <a class="nav-link text-dark" href="~/@item2.url" target="@item2.target">@item2.name</a>
                                         </li>
                                     }
                                 </ul>
@@ -44,26 +45,33 @@
                             }
                         </li>
                     }
+                </ul>
+
+                <!-- Menu bên phải -->
+                <ul class="navbar-nav ms-auto">
                     @if (!User.Identity.IsAuthenticated)
                     {
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-route="admin.auths.login">Login</a>
+                            <a class="nav-link text-dark" asp-route="admin.auths.login">
+                                <i class="fas fa-sign-in-alt"></i> Login
+                            </a>
                         </li>
                     }
                     else
                     {
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                Hello (@User.Identity.Name)
+                            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="navbarDropdownUser" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-user-circle me-1"></i> Hello (@User.Identity.Name)
                             </a>
-                            <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-                                <li><a class="dropdown-item" href="~/admin">Admin page</a></li>
-                                <li><a class="dropdown-item" asp-route="admin.auth.logout">Logout</a></li>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownUser">
+                                <li><a class="dropdown-item" href="~/admin"><i class="fas fa-cog me-1"></i> Admin page</a></li>
+                                <li><a class="dropdown-item" asp-route="admin.auth.logout"><i class="fas fa-sign-out-alt me-1"></i> Logout</a></li>
                             </ul>
                         </li>
                     }
                 </ul>
             </div>
+
         </div>
     </nav>
 </header>

@@ -116,16 +116,16 @@ builder.Services.Configure<RequestLocalizationOptions>(options => {
 
 var app = builder.Build();
 
-//#region seed data
-//using (var scope = app.Services.CreateScope())
-//{
-//    var services = scope.ServiceProvider;
-//    var dbContext = services.GetRequiredService<ASPDbContext>();
+#region seed data
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var dbContext = services.GetRequiredService<ASPDbContext>();
 
-//    await dbContext.Database.MigrateAsync();
-//    await ApplicationUsersSeeder.SeedRolesAndAdminAsyn(services);
-//}
-//#endregion
+    await dbContext.Database.MigrateAsync();
+    await ApplicationUsersSeeder.SeedRolesAndAdminAsyn(services);
+}
+#endregion
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

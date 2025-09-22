@@ -30,6 +30,8 @@
     <link rel="stylesheet" href="~/lib/AdminLTE/plugins/fontawesome-free/css/all.min.css">
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/front-style.css" asp-append-version="true" />
+    
+
     <style type="text/css">
         .dropdown-menu {
             max-width: 17rem !important;
@@ -42,20 +44,28 @@
     </style>
 </head>
 <body>
-    @await Component.InvokeAsync("Header", new { isDone = false })
-    <div class="container-fluid">
-        <main role="main" class="pb-3 vvvv">
+    <div class="page-wrapper d-flex flex-column min-vh-100">
+        <!-- Header -->
+        @await Component.InvokeAsync("Header", new { isDone = false })
+
+        <!-- Main Content -->
+        <main role="main" class="flex-fill container-fluid pb-3">
             @RenderBody()
         </main>
+
+        <!-- Footer -->
+        <footer class="custom-footer mt-auto">
+            @await Component.InvokeAsync("Footer", new { isDone = false })
+        </footer>
     </div>
 
-    @await Component.InvokeAsync("Footer", new { isDone = false })
     <section id="sct-loading">
         <button class="btn btn-primary" type="button" disabled>
             <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
             Loading...
         </button>
     </section>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <!-- jQuery UI 1.11.4 -->
     <script src="~/lib/AdminLTE/plugins/jquery-ui/jquery-ui.min.js"></script>
