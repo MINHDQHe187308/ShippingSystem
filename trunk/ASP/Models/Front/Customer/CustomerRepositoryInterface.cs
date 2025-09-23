@@ -8,7 +8,7 @@ namespace ASP.Models.Front
         Task<List<Customer>> GetAllCustomers();
         Task<Customer?> GetCustomerByCode(string customerCode);
         Task<bool> CreateCustomer(Customer customer);
-        Task<bool> UpdateCustomerByCode(string code, Customer customer);
+        Task<(bool Success, string Message)> UpdateCustomerByCode(string code, Customer customer);
         Task<bool> RemoveCustomerByCode(string code);
     }
 }

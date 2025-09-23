@@ -1,8 +1,9 @@
 ﻿@model List<ASP.Models.Front.Customer>
 
 @{
-    ViewData["Title"] = "Customer List";
+    ViewData["Title"] = "Suplier List";
     Layout = "../Shared/Layout/Front/_Layout";
+    bool isAdmin = User.IsInRole("Admin");
 }
 
 <h2>@ViewData["Title"]</h2>
@@ -13,6 +14,11 @@
         @TempData["ErrorMessage"]
     </div>
 }
+
+<!-- Nút thêm supplier -->
+<button type="button" class="btn btn-primary mt-3" data-bs-toggle="modal" data-bs-target="#addSupplierModal">
+    Add new Supplier
+</button>
 
 @if (Model == null || Model.Count == 0)
 {
@@ -28,6 +34,7 @@ else
                 <th>Customer Code</th>
                 <th>Customer Name</th>
                 <th>Description</th>
+                <th>Action</th>
             </tr>
         </thead>
         <tbody>
@@ -37,16 +44,23 @@ else
                     <td>@customer.CustomerCode</td>
                     <td>@customer.CustomerName</td>
                     <td>@customer.Descriptions</td>
+                    <td>
+                        <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#updateSupplierModal"
+                                onclick="populateUpdateForm('@customer.CustomerCode', '@customer.CustomerName', '@customer.Descriptions')">
+                            Update
+                        </button>
+                        @if (isAdmin)
+                        {
+                            <button type="button" class="btn btn-danger btn-sm" onclick="deleteSupplier('@customer.CustomerCode')">
+                                Delete
+                            </button>
+                        }
+                    </td>
                 </tr>
             }
         </tbody>
     </table>
 }
-
-<!-- Nút mở popup thêm supplier -->
-<button type="button" class="btn btn-primary mt-3" data-bs-toggle="modal" data-bs-target="#addSupplierModal">
-    Add new Supplier
-</button>
 
 <!-- Modal thêm supplier -->
 <div class="modal fade" id="addSupplierModal" tabindex="-1" aria-labelledby="addSupplierModalLabel" aria-hidden="true">
@@ -71,7 +85,7 @@ else
                         <textarea class="form-control" id="description" name="Descriptions"></textarea>
                     </div>
                 </form>
-                <div id="addSupplierMessage" class="text-success"></div>
+                <div id="addSupplierMessage"></div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -80,9 +94,59 @@ else
         </div>
     </div>
 </div>
+
+<!-- Modal cập nhật supplier -->
+<div class="modal fade" id="updateSupplierModal" tabindex="-1" aria-labelledby="updateSupplierModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="updateSupplierModalLabel">Update Supplier</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="updateSupplierForm">
+                    <div class="mb-3">
+                        <label for="updateCustomerCode" class="form-label">Customer Code</label>
+                        <input type="text" class="form-control" id="updateCustomerCode" name="CustomerCode" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label for="updateCustomerName" class="form-label">Customer Name</label>
+                        <input type="text" class="form-control" id="updateCustomerName" name="CustomerName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="updateDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="updateDescription" name="Descriptions"></textarea>
+                    </div>
+                </form>
+                <div id="updateSupplierMessage"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="btnUpdateSupplier">Update Supplier</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
+    <style>
+        #addSupplierMessage.success, #updateSupplierMessage.success {
+            color: green;
+        }
+
+        #addSupplierMessage.error, #updateSupplierMessage.error {
+            color: red;
+        }
+
+        .btn-primary.mt-3 {
+            display: inline-block !important;
+        }
+        /* Đảm bảo nút Add Supplier hiển thị */
+    </style>
     <script>
         var addSupplierUrl = '@Url.Action("AddSupplier", "Customer")';
+        var updateSupplierUrl = '@Url.Action("UpdateSupplier", "Customer")';
+        var deleteSupplierUrl = '@Url.Action("DeleteSupplier", "Customer")';
     </script>
     <script src="~/js/customer.js"></script>
 }
