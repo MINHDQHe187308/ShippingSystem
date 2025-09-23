@@ -1,0 +1,88 @@
+﻿@model List<ASP.Models.Front.Customer>
+
+@{
+    ViewData["Title"] = "Customer List";
+    Layout = "../Shared/Layout/Front/_Layout";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["ErrorMessage"]
+    </div>
+}
+
+@if (Model == null || Model.Count == 0)
+{
+    <div class="alert alert-info">
+        No customers found.
+    </div>
+}
+else
+{
+    <table class="table table-bordered table-striped">
+        <thead class="thead-dark">
+            <tr>
+                <th>Customer Code</th>
+                <th>Customer Name</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var customer in Model)
+            {
+                <tr>
+                    <td>@customer.CustomerCode</td>
+                    <td>@customer.CustomerName</td>
+                    <td>@customer.Descriptions</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<!-- Nút mở popup thêm supplier -->
+<button type="button" class="btn btn-primary mt-3" data-bs-toggle="modal" data-bs-target="#addSupplierModal">
+    Add new Supplier
+</button>
+
+<!-- Modal thêm supplier -->
+<div class="modal fade" id="addSupplierModal" tabindex="-1" aria-labelledby="addSupplierModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addSupplierModalLabel">Add Supplier</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addSupplierForm">
+                    <div class="mb-3">
+                        <label for="customerCode" class="form-label">Customer Code</label>
+                        <input type="text" class="form-control" id="customerCode" name="CustomerCode" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="customerName" class="form-label">Customer Name</label>
+                        <input type="text" class="form-control" id="customerName" name="CustomerName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="Descriptions"></textarea>
+                    </div>
+                </form>
+                <div id="addSupplierMessage" class="text-success"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="btnAddSupplier">Add Supplier</button>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <script>
+        var addSupplierUrl = '@Url.Action("AddSupplier", "Customer")';
+    </script>
+    <script src="~/js/customer.js"></script>
+}

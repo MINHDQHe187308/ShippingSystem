@@ -7,7 +7,7 @@
 @using ReflectionIT.Mvc.Paging
 @inject IAuthorizationService AuthorizationService
 @addTagHelper *, ReflectionIT.Mvc.Paging
-
+<link rel="stylesheet" href="~/css/Home.css" />
 @{
     ViewData["Title"] = "Home";
     Layout = "../Shared/Layout/Front/_Layout";
@@ -20,93 +20,18 @@
     var dtNow = DateTime.Now.Date.ToString("MM/dd/yyyy");
     var tDay = DateTime.Today.ToString("dd-MMM-yyyy");
 }
-<style>
-    .h-button {
-        margin-top: 10px;
-    }
 
-    #table-visualize {
-        font-size: 22px;
-        text-align: center;
-    }
-
-    .breadcrumb{ float: right;}
-
-    fieldset {
-        min-width: 0;
-        padding: 0 5px;
-        margin: 0;
-        border: 0;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-    }
-
-    legend {
-        display: block;
-        width: inherit;
-        max-width: 100%;
-        padding: 0 10px;
-        margin-bottom: .5rem;
-        font-size: 1.1rem;
-        line-height: inherit;
-        color: inherit;
-        white-space: normal;
-        margin-left: 18px;
-    }
-
-    .box-message span.badge {
-        margin-right: 5px;
-    }
-
-    #example1 thead th {
-        vertical-align: middle;
-        text-align: center;
-    }
-
-    .table > :not(:last-child) > :last-child > * { border-bottom-color: #dee2e6!important; }
-
-    .a-handle{ cursor: pointer; }
-
-    .nested-table-row {
-        background-color: white;
-    }
-
-    .divShadow {
-        box-shadow: 0.5px 0.5px 0.5px 0.5px #999;
-    }
-
-    .sub-table {
-        margin-top: 10px;
-    }
-
-    .sub-table thead th {
-        background-color: #b0c4de;
-    }
-
-    .sub-table tbody {
-        background-color: white;
-    }
-</style>
 
 <div class="content-wrapper" style="min-height: 422px;">
+    <!-- Welcome Section - Simplified -->
+    <section class="welcome-section">
+        <h1 class="welcome-title">Welcome to Shipping System</h1>
+    </section>
+
     <div class="content-header">
         <div class="container-fluid">
             <div class="row">
                 <div class="col-md-12 col-sm-12">
-                    @* <div class="row">
-                        <div class="col-md-6 col-sm-6">
-                            @if ((await AuthorizationService.AuthorizeAsync(User, new DocumentAuth(), PolicyOperations.ODCSOrderProcessingImport)).Succeeded)
-                            {
-                                <a href="~/OrderProcessing" class="btn btn-success add-button"><i class="fas fa-plus-square"></i> Thêm mới</a>
-                            }
-                        </div>
-                        <div class="col-md-6 col-sm-6">
-                            <ol class="breadcrumb">
-                                <li class="breadcrumb-item"><a href="~/Home"><i class="fas fa-home"></i> Home</a></li>
-                                <li class="breadcrumb-item active">Order Simulation</li>
-                            </ol>
-                        </div>
-                    </div> *@
                     <div class="row">
                         <div class="col-md-12 col-sm-12" align="right">
                             <b>Date: @tDay</b>
@@ -116,7 +41,8 @@
             </div>
         </div>
     </div>
-   @*  <section class="content">
+
+    @*  <section class="content">
         <div class="container-fluid">
             <div class="row">
                 <div class="col-lg-12 col-md-12 col-xs-12">
@@ -304,72 +230,73 @@
 </div>
 
 @section Scripts {
-<script type="text/javascript">
-    document.addEventListener('DOMContentLoaded', function () {
-        document.querySelectorAll('.toggle-nested-table').forEach(function (button) {
-            button.addEventListener('click', function () {
-                const nestedRow = this.closest('tr').nextElementSibling;
-                if (nestedRow.style.display === 'none') {
-                    nestedRow.style.display = '';
-                } else {
-                    nestedRow.style.display = 'none';
-                }
-            });
-        })
-    });
-
-    function exportData(id, prod) {
-        downloadExportFile(id, prod, '@Url.Action("ExportData", "Home")');
-    }
-
-    function exportToEIS(id, prod) {
-        downloadExportFile(id, prod, '@Url.Action("ExportEISUpload", "Home")');
-    }
-
-    function exportSimulation(id, prod){
-        downloadExportFile(id, prod, '@Url.Action("ExportSimulationData", "Home")');
-    }
-
-    function downloadExportFile(id, prod, _url) 
-    {
-        let confirmMsg = "Bạn muốn thực hiện tác vụ này?";
-
-        if (confirm(confirmMsg) == true) {
-            $.ajax({
-                type: 'GET',
-                url: _url,
-                contentType: "application/json; charset=utf-8",
-                data: {
-                    uId: id,
-                    prodName: prod,
-                },
-                beforeSend: function () {
-                    $('#sct-loading').show();
-                    $("#btn-export").removeAttr('disabled');
-                },
-                success: function (data) {
-                    $('.box-message-export').html(data.message);
-                    if(data.result == false){
-                        alert(data.message);
-                    }else{
-                        if (data.fileName != "") {
-                            window.location.href = "@Url.Action("DownloadEx", "Home")?file=" + data.fileName + "&rootsPath=" + data.rootsPath;
-                        }
+    <script type="text/javascript">
+        document.addEventListener('DOMContentLoaded', function () {
+            // Toggle nested table functionality
+            document.querySelectorAll('.toggle-nested-table').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    const nestedRow = this.closest('tr').nextElementSibling;
+                    if (nestedRow.style.display === 'none') {
+                        nestedRow.style.display = '';
+                    } else {
+                        nestedRow.style.display = 'none';
                     }
-                },
-                complete: function () {
-                    $("#btn-export").removeAttr('disabled');
-                    $('#sct-loading').hide();
-                },
-                error: function () {
-                    $("#btn-export").removeAttr('disabled');
-                    $('#sct-loading').hide();
-                    alert("error");
-                }
+                });
             });
-        }else {
-            console.log("Bạn đã hủy tác vụ!");
+        });
+
+        function exportData(id, prod) {
+            downloadExportFile(id, prod, '@Url.Action("ExportData", "Home")');
         }
-    }
-</script>
+
+        function exportToEIS(id, prod) {
+            downloadExportFile(id, prod, '@Url.Action("ExportEISUpload", "Home")');
+        }
+
+        function exportSimulation(id, prod){
+            downloadExportFile(id, prod, '@Url.Action("ExportSimulationData", "Home")');
+        }
+
+        function downloadExportFile(id, prod, _url)
+        {
+            let confirmMsg = "Bạn muốn thực hiện tác vụ này?";
+
+            if (confirm(confirmMsg) == true) {
+                $.ajax({
+                    type: 'GET',
+                    url: _url,
+                    contentType: "application/json; charset=utf-8",
+                    data: {
+                        uId: id,
+                        prodName: prod,
+                    },
+                    beforeSend: function () {
+                        $('#sct-loading').show();
+                        $("#btn-export").removeAttr('disabled');
+                    },
+                    success: function (data) {
+                        $('.box-message-export').html(data.message);
+                        if(data.result == false){
+                            alert(data.message);
+                        }else{
+                            if (data.fileName != "") {
+                                window.location.href = "@Url.Action("DownloadEx", "Home")?file=" + data.fileName + "&rootsPath=" + data.rootsPath;
+                            }
+                        }
+                    },
+                    complete: function () {
+                        $("#btn-export").removeAttr('disabled');
+                        $('#sct-loading').hide();
+                    },
+                    error: function () {
+                        $("#btn-export").removeAttr('disabled');
+                        $('#sct-loading').hide();
+                        alert("error");
+                    }
+                });
+            }else {
+                console.log("Bạn đã hủy tác vụ!");
+            }
+        }
+    </script>
 }
