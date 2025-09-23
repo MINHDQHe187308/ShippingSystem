@@ -7,6 +7,7 @@ using ASP.Models.Admin.Menus;
 using ASP.Models.Admin.Roles;
 using ASP.Models.Admin.ThemeOptions;
 using ASP.Models.ASPModel;
+using ASP.Models.Front;
 using ASP.Policies;
 using ASP.SeedData;
 using ASP.Utilss;
@@ -54,6 +55,7 @@ builder.Services.AddScoped<RoleRepositoryInterface, RoleRepository>();
 builder.Services.AddScoped<ThemeOptionRepositoryInterface, ThemeOptionRepository>();
 builder.Services.AddScoped<AuthRepositoryInterface, AuthRepository>();
 builder.Services.AddScoped<MenuRepositoryInterface, MenuRepository>();
+builder.Services.AddScoped<CustomerRepositoryInterface, CustomerRepository>();
 // frontend
 //policies
 builder.Services.AddSingleton<IAuthorizationHandler, UserPolicyAuthorizationHandler>();

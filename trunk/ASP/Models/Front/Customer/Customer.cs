@@ -13,6 +13,6 @@ public partial class Customer : BaseEntity
     public string CustomerName { get; set; } = null!;
     public string Descriptions { get; set; } = null!;
     public string CreateBy { get; set; } = null!;
-    public string? UpdateBy { get; set; }
+    public string? UpdateBy { get; set; }   
    
 }
