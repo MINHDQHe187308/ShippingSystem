@@ -39,13 +39,21 @@ namespace ASP.Controllers.Front
 
         // Cập nhật Customer
         [HttpPost]
-        public async Task<JsonResult> UpdateSupplier(string code, Customer request)
+        public async Task<JsonResult> UpdateSupplier([FromBody] Customer request)
         {
-            var success = await _customerRepository.UpdateCustomerByCode(code, request);
-            if (success)
-                return Json(new { success = true });
-            return Json(new { success = false, message = "Cannot update supplier" });
+            if (request == null || string.IsNullOrEmpty(request.CustomerCode))
+            {
+                return Json(new { success = false, message = "Mã khách hàng không hợp lệ" });
+            }
+
+            var result = await _customerRepository.UpdateCustomerByCode(request.CustomerCode, request);
+
+            if (result.Success)
+                return Json(new { success = true, message = result.Message });
+
+            return Json(new { success = false, message = result.Message });
         }
+
 
         // Xóa Customer
         [HttpPost]

@@ -50,8 +50,8 @@ namespace ASP.SeedData
                 }
             }
 
-            var adminUser = "Admin";
-            var adminPass = "H@i220990";
+            var adminUser = "User";
+            var adminPass = "Minh031124";
 
             var checkExist = await userManager.FindByNameAsync(adminUser);
             if (checkExist == null) {
