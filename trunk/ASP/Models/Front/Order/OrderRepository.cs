@@ -104,7 +104,19 @@ namespace ASP.Models.Front
                 await _context.Orders.AddAsync(newOrder);
             }
         }
-        public async Task SaveChangesAsync()
+        public async Task<List<Order>> GetOrdersByDate(DateTime date)
+        {
+            return await _context.Orders
+                .Where(o => o.ShipDate.Date == date.Date) // Filter theo ngày
+                .Include(o => o.OrderDetails) // Include nếu cần details
+                .ToListAsync();
+        }
+
+        // Nếu muốn filter theo PlanAsyTime thay vì ShipDate, thay bằng:
+        // .Where(o => o.PlanAsyTime.Date == date.Date)
+    
+
+public async Task SaveChangesAsync()
         {
             await _context.SaveChangesAsync(); 
         }

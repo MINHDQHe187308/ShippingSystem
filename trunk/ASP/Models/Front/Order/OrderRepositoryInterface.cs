@@ -8,5 +8,6 @@ namespace ASP.Models.Front
         public Task<Order?> GetOrderByPCOrderIdAsync(string pcOrderId);
         public Task UpsertOrderAsync(OrderDTO orderDto);
         public Task SaveChangesAsync();
+        Task<List<Order>> GetOrdersByDate(DateTime date); 
     }
 }

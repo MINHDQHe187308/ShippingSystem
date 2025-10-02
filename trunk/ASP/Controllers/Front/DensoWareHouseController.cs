@@ -5,31 +5,66 @@ namespace ASP.Controllers.Front
 {
     public class DensoWareHouseController : Controller
     {
-        public IActionResult Calendar()
+        private readonly OrderRepositoryInterface _orderRepository;
+        private readonly CustomerRepositoryInterface _customerRepository;
+
+        public DensoWareHouseController(OrderRepositoryInterface orderRepository, CustomerRepositoryInterface customerRepository)
         {
-            var orders = new[]
-             {
-                new {
-                    Resource = "TMV",
-                    PlanAsyTime = "2025-09-26T10:30:00",
-                    PlanDeliveryTime = "2025-09-26T12:00:00",
-                    Status = "processing"
-                },
-                new {
-                    Resource = "DENSO",
-                    PlanAsyTime = "2025-09-26T11:00:00",
-                    PlanDeliveryTime = "2025-09-26T13:30:00",
-                    Status = "done"
-                },
-                new {
-                    Resource = "NISSAN",
-                    PlanAsyTime = "2025-09-26T14:00:00",
-                    PlanDeliveryTime = "2025-09-26T15:30:00",
-                    Status = "delay"
-                }
+            _orderRepository = orderRepository;
+            _customerRepository = customerRepository;
+        }
+
+        public async Task<IActionResult> Calendar()
+        {
+            var today = DateTime.Today;
+
+            // Lấy orders từ DB, filter theo ShipDate = hôm nay
+            var orders = await _orderRepository.GetOrdersByDate(today);
+
+            // Lấy tất cả customers từ DB
+            var allCustomers = await _customerRepository.GetAllCustomers();
+
+            // Lọc chỉ những customers có order trong ngày hiện tại
+            var customerCodesWithOrders = orders.Select(o => o.CustomerCode).Distinct().ToHashSet();
+            var customers = allCustomers.Where(c => customerCodesWithOrders.Contains(c.CustomerCode)).ToList();
+
+            // Map orders sang anonymous object
+            var ordersForView = orders.Select(o => new
+            {
+                Resource = o.CustomerCode,
+                PlanAsyTime = o.PlanAsyTime.ToString("yyyy-MM-ddTHH:mm:ss"),
+                PlanDeliveryTime = o.PlanDeliveryTime.ToString("yyyy-MM-ddTHH:mm:ss"),
+                Status = MapOrderStatusToString(o.OrderStatus) // Map short sang string
+            }).ToArray();
+
+            // Map customers sang anonymous object
+            var customersForView = customers.Select(c => new
+            {
+                CustomerCode = c.CustomerCode,
+                CustomerName = c.CustomerName
+            }).ToArray();
+
+            // Trả về model chứa cả orders và customers
+            var modelForView = new
+            {
+                Orders = ordersForView,
+                Customers = customersForView
             };
 
-            return View("~/Views/Front/DensoWareHouse/Calendar.cshtml", orders);
+            return View("~/Views/Front/DensoWareHouse/Calendar.cshtml", modelForView);
+        }
+
+        // Helper method để map OrderStatus (short) sang string (dựa trên enum hoặc logic của bạn)
+        private string MapOrderStatusToString(short orderStatus)
+        {
+            return orderStatus switch
+            {
+                0 => "Planned",
+                1 => "Pending",
+                2 => "Shipped",
+                3 => "Completed",
+                _ => "Planned"
+            };
         }
     }
 }

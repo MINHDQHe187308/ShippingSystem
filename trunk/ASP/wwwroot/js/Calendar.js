@@ -35,50 +35,74 @@
 
     let timeRange = getTimeRange();
 
-    // --- Dữ liệu demo Plan & Actual với status
-    const eventsData = [
-        // TMV Plans
-        { id: '1', resourceId: 'TMV', start: '2025-10-01T08:00:00', end: '2025-10-01T09:30:00', title: 'Plan Xuất hàng TMV A', status: 'Planned', classNames: ['plan-event'] },
-        { id: '2', resourceId: 'TMV', start: '2025-10-01T10:00:00', end: '2025-10-01T11:30:00', title: 'Plan Xuất hàng TMV B', status: 'Planned', classNames: ['plan-event'] },
-        { id: '3', resourceId: 'TMV', start: '2025-10-01T13:00:00', end: '2025-10-01T14:30:00', title: 'Plan Xuất hàng TMV C', status: 'Planned', classNames: ['plan-event'] },
+    // --- Mapping status từ số sang string
+    const statusMap = {
+        0: 'Planned',
+        1: 'Pending',
+        2: 'Shipped',
+        3: 'Completed'
+    };
 
-        // DENSO Plans
-        { id: '4', resourceId: 'DENSO', start: '2025-10-01T09:00:00', end: '2025-10-01T10:30:00', title: 'Plan Xuất hàng DENSO A', status: 'Planned', classNames: ['plan-event'] },
-        { id: '5', resourceId: 'DENSO', start: '2025-10-01T12:00:00', end: '2025-10-01T13:30:00', title: 'Plan Xuất hàng DENSO B', status: 'Planned', classNames: ['plan-event'] },
-        { id: '6', resourceId: 'DENSO', start: '2025-10-01T15:00:00', end: '2025-10-01T16:30:00', title: 'Plan Xuất hàng DENSO C', status: 'Planned', classNames: ['plan-event'] },
+    // Tạo customer map để lấy tên
+    const customerMap = {};
+    customers.forEach(c => {
+        customerMap[c.CustomerCode] = c.CustomerName;
+    });
 
-        // NISSAN Plans
-        { id: '7', resourceId: 'NISSAN', start: '2025-10-01T07:30:00', end: '2025-10-01T09:00:00', title: 'Plan Xuất hàng NISSAN A', status: 'Planned', classNames: ['plan-event'] },
-        { id: '8', resourceId: 'NISSAN', start: '2025-10-01T11:00:00', end: '2025-10-01T12:30:00', title: 'Plan Xuất hàng NISSAN B', status: 'Planned', classNames: ['plan-event'] },
-        { id: '9', resourceId: 'NISSAN', start: '2025-10-01T14:00:00', end: '2025-10-01T15:30:00', title: 'Plan Xuất hàng NISSAN C', status: 'Planned', classNames: ['plan-event'] },
+    // Tạo event data từ dữ liệu Order trong Database - hiển thị cả plan và actual nếu có
+    const eventsData = orders.flatMap((order, index) => {
+        const status = statusMap[order.Status] || 'Planned';
+        const isPlan = order.Status === 0;
+        const resourceName = customerMap[order.Resource] || order.Resource;
 
-        // HONDA Plans
-        { id: '10', resourceId: 'HONDA', start: '2025-10-01T08:30:00', end: '2025-10-01T10:00:00', title: 'Plan Xuất hàng HONDA A', status: 'Planned', classNames: ['plan-event'] },
-        { id: '11', resourceId: 'HONDA', start: '2025-10-01T11:30:00', end: '2025-10-01T13:00:00', title: 'Plan Xuất hàng HONDA B', status: 'Planned', classNames: ['plan-event'] },
-        { id: '12', resourceId: 'HONDA', start: '2025-10-01T14:30:00', end: '2025-10-01T16:00:00', title: 'Plan Xuất hàng HONDA C', status: 'Planned', classNames: ['plan-event'] },
+        // Luôn tạo plan event
+        const planEvent = {
+            id: `plan-${index}`,
+            resourceId: order.Resource,
+            start: order.PlanAsyTime,
+            end: order.PlanDeliveryTime,
+            title: `Plan ${order.Resource}`,
+            status: 'Planned',
+            classNames: ['plan-event']
+        };
 
-        // Actuals với status tương ứng
-        { id: '1a', resourceId: 'TMV', start: '2025-10-01T08:15:00', end: '2025-10-01T09:45:00', title: 'Actual Xuất hàng TMV A', status: 'Preparing', classNames: ['actual-event'] },
-        { id: '2a', resourceId: 'DENSO', start: '2025-10-01T12:15:00', end: '2025-10-01T13:45:00', title: 'Actual Xuất hàng DENSO B', status: 'Loaded', classNames: ['actual-event'] },
-        { id: '3a', resourceId: 'NISSAN', start: '2025-10-01T14:15:00', end: '2025-10-01T15:45:00', title: 'Actual Xuất hàng NISSAN C', status: 'Loading', classNames: ['actual-event'] },
-        { id: '4a', resourceId: 'HONDA', start: '2025-10-01T11:45:00', end: '2025-10-01T13:15:00', title: 'Actual Xuất hàng HONDA B', status: 'Delayed', classNames: ['actual-event'] }
-    ];
+        // Tạo actual event nếu không phải plan và có AcAsyTime
+        let actualEvent = null;
+        if (!isPlan && order.AcAsyTime) {
+            actualEvent = {
+                id: `actual-${index}`,
+                resourceId: order.Resource,
+                start: order.AcAsyTime,
+                end: order.AcDeliveryTime || order.PlanDeliveryTime,
+                title: `Actual ${order.Resource}`,
+                status: status,
+                classNames: ['actual-event']
+            };
+        }
+
+        return [planEvent, ...(actualEvent ? [actualEvent] : [])];
+    });
+
+    // Tạo resources từ customers hiển thị CustomerName theo CustomerCode
+    const resources = customers.map(c => ({
+        id: c.CustomerCode,
+        title: c.CustomerName
+    }));
 
     // --- Hàm lấy màu dựa trên status
     function getColorByStatus(status) {
         const colors = {
             'Planned': '#000000',
-            'Preparing': '#007bff',
-            'Loading': '#ffc107',
-            'Loaded': '#28a745',
-            'Delayed': '#dc3545'
+            'Pending': '#007bff',
+            'Completed': '#28a745',
+            'Shipped': '#ffc107'
         };
         return colors[status] || '#d3d3d3';
     }
 
-    // --- Hàm lấy textColor dựa trên status (trắng cho nền tối, đen cho nền sáng)
+    // --- Hàm lấy textColor dựa trên status
     function getTextColorByStatus(status) {
-        const darkBgs = ['#000000', '#007bff', '#28a745', '#dc3545'];
+        const darkBgs = ['#000000', '#007bff', '#28a745'];
         const bgColor = getColorByStatus(status);
         return darkBgs.includes(bgColor) ? '#fff' : '#000';
     }
@@ -106,12 +130,7 @@
 
         resourceAreaHeaderContent: 'Suppliers',
         resourceAreaWidth: '120px',
-        resources: [
-            { id: 'TMV', title: 'Toyota' },
-            { id: 'DENSO', title: 'Denso' },
-            { id: 'NISSAN', title: 'Nissan' },
-            { id: 'HONDA', title: 'Honda' }
-        ],
+        resources: resources,
 
         events: eventsData.map(e => ({
             ...e,
@@ -124,7 +143,7 @@
 
     calendar.render();
 
-    // --- Vạch đỏ hiển thị thời gian hiện tại
+    // --- Vạch đỏ hiển thị thời gian hiện tại (giữ nguyên logic cũ)
     const calComputed = window.getComputedStyle(calendarEl);
     if (calComputed.position === 'static') calendarEl.style.position = 'relative';
 

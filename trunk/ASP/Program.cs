@@ -48,7 +48,7 @@ builder.Services.AddPaging(options =>
 #endregion
 #region dependency injection 
 builder.Services.AddScoped<BaseController>();
-// backend
+//backend  
 builder.Services.AddTransient<LogRepositoryInterface, LogRepository>();
 builder.Services.AddScoped<AccountRepositoryInterface, AccountRepository>();
 builder.Services.AddScoped<RoleRepositoryInterface, RoleRepository>();
@@ -56,6 +56,7 @@ builder.Services.AddScoped<ThemeOptionRepositoryInterface, ThemeOptionRepository
 builder.Services.AddScoped<AuthRepositoryInterface, AuthRepository>();
 builder.Services.AddScoped<MenuRepositoryInterface, MenuRepository>();
 builder.Services.AddScoped<CustomerRepositoryInterface, CustomerRepository>();
+builder.Services.AddScoped<OrderRepositoryInterface, OrderRepository>();
 // frontend
 //policies
 builder.Services.AddSingleton<IAuthorizationHandler, UserPolicyAuthorizationHandler>();
@@ -118,16 +119,16 @@ builder.Services.Configure<RequestLocalizationOptions>(options => {
 
 var app = builder.Build();
 
-#region seed data
-using (var scope = app.Services.CreateScope())
-{
-    var services = scope.ServiceProvider;
-    var dbContext = services.GetRequiredService<ASPDbContext>();
+//#region seed data
+//using (var scope = app.Services.CreateScope())
+//{
+//    var services = scope.ServiceProvider;
+//    var dbContext = services.GetRequiredService<ASPDbContext>();
 
-    await dbContext.Database.MigrateAsync();
-    await ApplicationUsersSeeder.SeedRolesAndAdminAsyn(services);
-}
-#endregion
+//    await dbContext.Database.MigrateAsync();
+//    await ApplicationUsersSeeder.SeedRolesAndAdminAsyn(services);
+//}
+//#endregion
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
