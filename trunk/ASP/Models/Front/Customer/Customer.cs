@@ -9,6 +9,7 @@ namespace ASP.Models.Front;
 public partial class Customer : BaseEntity
 {
     [Key]
+    [MaxLength(5)]
     public string CustomerCode { get; set; } = null!;
     public string CustomerName { get; set; } = null!;
     public string Descriptions { get; set; } = null!;
