@@ -51,38 +51,37 @@
 
     // Tạo event data từ dữ liệu Order trong Database - hiển thị cả plan và actual nếu có
     const eventsData = orders.flatMap((order, index) => {
-        const status = statusMap[order.Status] || 'Planned';
-        const isPlan = order.Status === 0;
-        const resourceName = customerMap[order.Resource] || order.Resource;
+        const status = statusMap[order.Status] || 'Planned';  
+        const isPlan = order.Status === 0;  
+        const resourceName = customerMap[order.Resource] || order.Resource;  
 
-        // Luôn tạo plan event
+        // Luôn tạo plan event - MẶC ĐỊNH MÀU ĐEN (Planned)
         const planEvent = {
             id: `plan-${index}`,
-            resourceId: order.Resource,
-            start: order.PlanAsyTime,
-            end: order.PlanDeliveryTime,
-            title: `Plan ${order.Resource}`,
-            status: 'Planned',
+            resourceId: order.Resource, 
+            start: order.PlanAsyTime ? new Date(order.PlanAsyTime) : null, 
+            end: order.PlanDeliveryTime ? new Date(order.PlanDeliveryTime) : null,
+            title: `Plan ${resourceName}`,
+            status: 'Planned',  
             classNames: ['plan-event']
         };
 
-        // Tạo actual event nếu không phải plan và có AcAsyTime
+        // Tạo actual event nếu không phải plan VÀ có AcAsyTime
         let actualEvent = null;
         if (!isPlan && order.AcAsyTime) {
             actualEvent = {
                 id: `actual-${index}`,
                 resourceId: order.Resource,
-                start: order.AcAsyTime,
-                end: order.AcDeliveryTime || order.PlanDeliveryTime,
-                title: `Actual ${order.Resource}`,
-                status: status,
+                start: new Date(order.AcAsyTime), 
+                end: order.AcDeliveryTime ? new Date(order.AcDeliveryTime) : new Date(order.PlanDeliveryTime),
+                title: `Actual ${resourceName}`,
+                status: status,  
                 classNames: ['actual-event']
             };
         }
 
-        return [planEvent, ...(actualEvent ? [actualEvent] : [])];
+        return [planEvent, ...(actualEvent ? [actualEvent] : [])].filter(e => e.start && e.end);  // ← THÊM: Lọc event null dates
     });
-
     // Tạo resources từ customers hiển thị CustomerName theo CustomerCode
     const resources = customers.map(c => ({
         id: c.CustomerCode,
