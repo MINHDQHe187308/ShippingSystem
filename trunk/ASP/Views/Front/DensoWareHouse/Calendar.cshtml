@@ -1,15 +1,13 @@
 ﻿@{
     ViewData["Title"] = "Denso Warehouse Calendar";
     Layout = "../Shared/Layout/Front/_Layout";
-    var ordersJson = Newtonsoft.Json.JsonConvert.SerializeObject(Model);
+    var modelJson = Newtonsoft.Json.JsonConvert.SerializeObject(Model);
 }
 
 <h1 class="text-center mt-3">Denso Warehouse Calendar</h1>
 
 <!-- 🧭 Legend khu vực giải thích -->
 <div id="legend" style="margin: 20px auto; max-width: 100%; text-align: center;">
-  
-
     <!-- 🎨 Giải thích màu status -->
     <div class="legend-container">
         <div class="legend-item">
@@ -18,19 +16,15 @@
         </div>
         <div class="legend-item">
             <span class="legend-icon" style="background-color: #007bff;"></span>
-            <span class="legend-text">Preparing</span>
+            <span class="legend-text">Pending</span>
         </div>
         <div class="legend-item">
             <span class="legend-icon" style="background-color: #ffc107;"></span>
-            <span class="legend-text">Loading</span>
+            <span class="legend-text">Shipped</span>
         </div>
         <div class="legend-item">
             <span class="legend-icon" style="background-color: #28a745;"></span>
-            <span class="legend-text">Loaded</span>
-        </div>
-        <div class="legend-item">
-            <span class="legend-icon" style="background-color: #dc3545;"></span>
-            <span class="legend-text">Delayed</span>
+            <span class="legend-text">Completed</span>
         </div>
     </div>
 </div>
@@ -103,7 +97,9 @@
 
 <!-- 📜 Custom JS -->
 <script>
-    // Gửi dữ liệu model xuống file JS
-    const orders = @Html.Raw(ordersJson);
+    // Gửi dữ liệu model (orders và customers) xuống JS
+    const modelData = @Html.Raw(modelJson);
+    const orders = modelData.Orders;
+    const customers = modelData.Customers;
 </script>
 <script src="~/js/Calendar.js"></script>
