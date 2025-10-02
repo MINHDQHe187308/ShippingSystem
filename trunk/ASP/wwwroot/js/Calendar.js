@@ -10,6 +10,20 @@
         return;
     }
 
+    // --- Thêm CSS styles cho z-index và height
+    const style = document.createElement('style');
+    style.textContent = `
+        .fc-event.plan-event {
+            z-index: 1;
+        }
+        .fc-event.actual-event {
+            z-index: 2;
+            height: 1.2em !important;
+            line-height: 1.2em !important;
+        }
+    `;
+    document.head.appendChild(style);
+
     // --- Helper: lấy chuỗi HH:MM:SS từ Date
     function hhmmss(d) {
         const hh = String(d.getHours()).padStart(2, '0');
