@@ -10,16 +10,30 @@
         return;
     }
 
-    // --- Thêm CSS styles cho z-index và height
+    // --- Thêm CSS styles cho z-index, height, và centering (cập nhật để căn giữa và tăng kích thước)
     const style = document.createElement('style');
     style.textContent = `
+        .fc-event {
+            height: 30px !important;  /* Tăng kích thước event để dễ nhìn */
+            display: flex !important;
+            align-items: center !important;  /* Căn giữa theo chiều dọc trong slot */
+            justify-content: center !important;  /* Căn giữa text nếu cần */
+            margin: 0 !important;
+            line-height: 1.2 !important;
+        }
         .fc-event.plan-event {
             z-index: 1;
         }
         .fc-event.actual-event {
             z-index: 2;
-            height: 1.2em !important;
-            line-height: 1.2em !important;
+            height: 30px !important;  /* Đồng bộ height với .fc-event */
+            line-height: 1.2 !important;
+        }
+        .fc-event .fc-event-main {  /* Đảm bảo inner content cũng center */
+            display: flex;
+            align-items: center;
+            height: 100%;
+            font-size: 14px;  /* Tăng font-size để dễ đọc hơn */
         }
     `;
     document.head.appendChild(style);
@@ -63,10 +77,10 @@
         customerMap[c.CustomerCode] = c.CustomerName;
     });
 
-    // Tạo resources từ customers hiển thị CustomerName theo CustomerCode
+    // Tạo resources từ customers hiển thị CustomerCode theo CustomerCode
     const resources = customers.map(c => ({
         id: c.CustomerCode,
-        title: c.CustomerName
+        title: c.CustomerCode  // SỬA: Hiển thị CustomerCode thay vì CustomerName
     }));
 
     // --- Hàm lấy màu dựa trên status (thêm 'Actual')
@@ -88,7 +102,7 @@
         return darkBgs.includes(bgColor) ? '#fff' : '#000';
     }
 
-    // --- Tạo event data từ dữ liệu Order - FIX: Di chuyển status vào extendedProps
+    // --- Tạo event data từ dữ liệu Order - FIX: Di chuyển status vào extendedProps, THÊM TOTALPALLET VÀO TITLE
     const eventsData = orders.map((order, index) => {
         // Helper: Parse và validate time
         function parseAndValidate(timeStr) {
@@ -138,7 +152,7 @@
             resourceId: customerCode,
             start: eventStart,
             end: eventEnd,
-            title: customerCode,
+            title: order.TotalPallet ? order.TotalPallet.toString() : '0',  // SỬA: Hiển thị TotalPallet thay vì customerCode
             // Xóa status ở root level, di chuyển vào extendedProps
             hasBoth: hasBoth,
             extendedProps: {
@@ -147,7 +161,8 @@
                 actualStart: validActual ? actualStart.toISOString() : null,
                 actualEnd: validActual ? actualEnd.toISOString() : null,
                 validActual: validActual,
-                status: status  // ← SỬA: Di chuyển status vào extendedProps
+                status: status,  // ← SỬA: Di chuyển status vào extendedProps
+                totalPallet: order.TotalPallet || 0  // THÊM: Lưu TotalPallet vào extendedProps để dùng trong eventContent
             }
         };
     }).filter(e => e);  // Remove null events
@@ -194,10 +209,11 @@
         }),
 
         // --- Custom eventContent: FIX để vẽ actual theo màu status DB (vàng cho Shipped)
+        // Cập nhật: Đồng bộ height với CSS và đảm bảo centering, SỬA TEXT HIỂN THỊ TOTALPALLET
         eventContent: function (arg) {
             // FIX: Lấy status từ extendedProps
             const status = arg.event.extendedProps.status;  // ← SỬA CHÍNH: Lấy từ extendedProps
-            const { planStart, planEnd, actualStart, actualEnd, validActual } = arg.event.extendedProps;
+            const { planStart, planEnd, actualStart, actualEnd, validActual, totalPallet } = arg.event.extendedProps;
             const eventStart = arg.event.start;
             const eventEnd = arg.event.end;
             const eventDuration = eventEnd - eventStart;
@@ -220,11 +236,11 @@
                 planWidth = ((pEnd - pStart) / eventDuration) * 100;
 
                 const fmtTime = (d) => d.toTimeString().slice(0, 8);
-                tooltip = `Actual: ${fmtTime(aStart)} - ${fmtTime(aEnd)}\nPlan: ${fmtTime(pStart)} - ${fmtTime(pEnd)}\nStatus: ${status}`;
+                tooltip = `Actual: ${fmtTime(aStart)} - ${fmtTime(aEnd)}\nPlan: ${fmtTime(pStart)} - ${fmtTime(pEnd)}\nStatus: ${status}\nTotal Pallet: ${totalPallet}`;
             } else if (pStart && pEnd) {
-                tooltip = 'Plan only\nStatus: ' + status;
+                tooltip = 'Plan only\nStatus: ' + status + `\nTotal Pallet: ${totalPallet}`;
             } else {
-                tooltip = 'Actual only\nStatus: ' + status;
+                tooltip = 'Actual only\nStatus: ' + status + `\nTotal Pallet: ${totalPallet}`;
             }
 
             // Debug log cho rendering (xóa sau khi test OK)
@@ -236,12 +252,16 @@
                         const wrapper = document.createElement('div');
                         // FIX: Fallback bg nếu transparent để tránh xám hoàn toàn
                         wrapper.style.position = 'relative';
-                        wrapper.style.height = '1.2em';
+                        wrapper.style.height = '100%';  // Đồng bộ với height của .fc-event (30px)
+                        wrapper.style.width = '100%';
                         wrapper.style.background = arg.event.backgroundColor || getColorByStatus(status) || 'transparent';  // ← SỬA: Dùng status từ extendedProps
                         wrapper.style.borderRadius = '4px';
                         wrapper.style.overflow = 'visible';  // Cho phép extend visible
                         wrapper.title = tooltip;
                         wrapper.style.color = arg.event.textColor;
+                        wrapper.style.display = 'flex';  // Thêm flex để hỗ trợ centering nếu CSS chưa apply
+                        wrapper.style.alignItems = 'center';
+                        wrapper.style.justifyContent = 'center';
 
                         // Vẽ actual bar (nếu có validActual) - dùng màu theo status DB
                         if (validActual && aStart && aEnd) {
@@ -296,12 +316,15 @@
                             wrapper.appendChild(planBar);
                         }
 
-                        // Text (luôn hiển thị)
+                        // Text (luôn hiển thị) - tăng font-size để dễ nhìn, SỬA: HIỂN THỊ TOTALPALLET VỚI NHÃN, SỬA: MÀU CHỮ TRẮNG, SỬA: ĐẬM HƠN
                         const text = document.createElement('span');
-                        text.textContent = arg.event.title;
+                        text.textContent = `TotalPallet: ${totalPallet ? totalPallet.toString() : '0'}`;  // SỬA: Hiển thị TotalPallet với nhãn
                         text.style.position = 'relative';
                         text.style.zIndex = '2';
                         text.style.paddingLeft = '4px';
+                        text.style.fontSize = '12px';  // Giảm font-size một chút để vừa với text dài hơn
+                        text.style.color = 'white';  // SỬA: Đặt màu chữ trắng
+                        text.style.fontWeight = 'bold';  // SỬA: Đặt đậm như tiêu đề
                         wrapper.appendChild(text);
 
                         return wrapper;
@@ -319,11 +342,11 @@
     const customNow = document.createElement('div');
     Object.assign(customNow.style, {
         position: 'absolute',
-        width: '2px',
+        width: '4px',  // Tăng từ 2px lên 4px để dễ nhìn hơn
         backgroundColor: 'red',
         zIndex: 9999,
-        top: '0px',
-        height: '100px',
+        top: '0px',  // Đặt top ở 0 để bắt đầu từ đầu bảng
+        height: '100%',  // Chiếm hết chiều cao của bảng
         transition: 'left 0.5s linear'
     });
     calendarEl.appendChild(customNow);
@@ -337,7 +360,7 @@
         border: '1px solid #ccc',
         borderRadius: '4px',
         padding: '3px 8px',
-        fontSize: '12px',
+        fontSize: '16px',
         fontWeight: 'bold',
         transform: 'translate(-50%, -120%)',
         zIndex: 10000,
@@ -374,16 +397,11 @@
         const calRect = calendarEl.getBoundingClientRect();
         const left = (cellRect.left - calRect.left) + percent * cellRect.width;
 
-        const header = cell.closest('.fc-col-header, .fc-col-header-row, .fc-scrollgrid-sync-inner');
-        const headerBottom = header ? header.getBoundingClientRect().bottom : cellRect.bottom;
-        const top = headerBottom - calRect.top;
-        const height = calRect.height - top - 10;
-
+        // Vì height đã là 100% và top=0, không cần tính top và height nữa
+        // Chỉ cập nhật left cho customNow và clockLabel
         customNow.style.left = left + 'px';
-        customNow.style.top = top + 'px';
-        customNow.style.height = height + 'px';
         clockLabel.style.left = left + 'px';
-        clockLabel.style.top = top + 'px';
+        clockLabel.style.top = '0px';  // Đặt clockLabel ở top của bảng
     }
 
     function updateClockLabel() {
