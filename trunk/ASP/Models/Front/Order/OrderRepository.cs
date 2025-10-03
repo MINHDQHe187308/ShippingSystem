@@ -82,7 +82,7 @@ namespace ASP.Models.Front
                 _context.Orders.Update(orderToUpdate);
             }
             else
-            {
+            {  
                 // Thêm mới đơn hàng
                 var newOrder = new Order
                 {
@@ -104,19 +104,21 @@ namespace ASP.Models.Front
                 await _context.Orders.AddAsync(newOrder);
             }
         }
+         //Hàm lấy tất cả các order có plane time nằm trong khoảng thời gian của ngày hiện tại 
         public async Task<List<Order>> GetOrdersByDate(DateTime date)
         {
             return await _context.Orders
-                .Where(o => o.ShipDate.Date == date.Date) // Filter theo ngày
-                .Include(o => o.OrderDetails) // Include nếu cần details
+                .Where(o =>
+                    (o.PlanAsyTime >= date.Date && o.PlanAsyTime < date.Date.AddDays(1)) ||
+                    (o.PlanDocumentsTime >= date.Date && o.PlanDocumentsTime < date.Date.AddDays(1)) ||
+                    (o.PlanDeliveryTime >= date.Date && o.PlanDeliveryTime < date.Date.AddDays(1))
+                )
+                .Include(o => o.OrderDetails)
                 .ToListAsync();
         }
 
-        // Nếu muốn filter theo PlanAsyTime thay vì ShipDate, thay bằng:
-        // .Where(o => o.PlanAsyTime.Date == date.Date)
-    
 
-public async Task SaveChangesAsync()
+        public async Task SaveChangesAsync()
         {
             await _context.SaveChangesAsync(); 
         }
