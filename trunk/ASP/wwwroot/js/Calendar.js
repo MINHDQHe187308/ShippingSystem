@@ -10,7 +10,7 @@
         return;
     }
 
-    // --- Thêm CSS styles cho z-index, height, và centering (cập nhật để căn giữa và tăng kích thước)
+    // --- Thêm CSS styles cho z-index, height, centering và CUSTOM TOOLTIP
     const style = document.createElement('style');
     style.textContent = `
         .fc-event {
@@ -20,6 +20,7 @@
             justify-content: center !important;  /* Căn giữa text nếu cần */
             margin: 0 !important;
             line-height: 1.2 !important;
+            cursor: pointer;  /* Thêm cursor pointer để dễ nhận biết hover */
         }
         .fc-event.plan-event {
             z-index: 1;
@@ -35,8 +36,80 @@
             height: 100%;
             font-size: 14px;  /* Tăng font-size để dễ đọc hơn */
         }
+        /* Custom Tooltip Styles - ĐẸP MẮT VÀ DỄ NHÌN */
+        #custom-tooltip {
+            position: absolute;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 16px;  /* Tăng padding từ 12px lên 16px */
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            z-index: 10001;
+            pointer-events: none;
+            max-width: 300px;  /* Tăng max-width từ 250px lên 300px */
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 15px;  /* Tăng font-size tổng thể từ 14px lên 15px */
+            line-height: 1.5;  /* Tăng line-height từ 1.4 lên 1.5 cho dễ đọc hơn */
+            display: none;
+            transition: opacity 0.1s ease-out, transform 0.1s ease-out;  /* Transition mượt mà nhưng nhanh */
+        }
+        #custom-tooltip.show {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+        #custom-tooltip h4 {
+            margin: 0 0 12px 0;  /* Tăng margin-bottom từ 8px lên 12px */
+            color: #333;
+            font-size: 17px;  /* Tăng font-size từ 15px lên 17px */
+            font-weight: 600;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 6px;  /* Tăng padding-bottom từ 4px lên 6px */
+        }
+        #custom-tooltip dl {
+            margin: 0;
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 6px 10px;  /* Tăng gap từ 4px 8px lên 6px 10px */
+            align-items: center;
+        }
+        #custom-tooltip dt {
+            font-weight: 700;  /* Tăng font-weight từ 600 lên 700 để đậm hơn */
+            color: #000;  /* Đổi màu từ #555 sang #000 (đen) */
+            text-align: right;
+            min-width: 120px;  /* Tăng min-width từ 100px lên 120px để thẳng hàng tốt hơn */
+            font-size: 15px;  /* Thêm font-size để tăng kích thước cho dt */
+        }
+        #custom-tooltip dd {
+            margin: 0;
+            color: #333;
+            font-weight: 400;
+            font-size: 15px;  /* Tăng font-size từ 14px lên 15px cho dd */
+        }
+        #custom-tooltip .status {
+            padding: 4px 8px;  /* Tăng padding từ 2px 6px lên 4px 8px */
+            border-radius: 4px;
+            font-size: 12px;  /* Tăng font-size từ 11px lên 12px */
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        #custom-tooltip .status.planned { background: #000; color: #fff; }
+        #custom-tooltip .status.pending { background: #007bff; color: #fff; }
+        #custom-tooltip .status.shipped { background: #ffc107; color: #000; }
+        #custom-tooltip .status.completed { background: #28a745; color: #fff; }
     `;
     document.head.appendChild(style);
+
+    // --- Tạo global tooltip element
+    function createTooltip() {
+        let tooltip = document.getElementById('custom-tooltip');
+        if (!tooltip) {
+            tooltip = document.createElement('div');
+            tooltip.id = 'custom-tooltip';
+            document.body.appendChild(tooltip);
+        }
+        return tooltip;
+    }
 
     // --- Helper: lấy chuỗi HH:MM:SS từ Date
     function hhmmss(d) {
@@ -44,6 +117,12 @@
         const mm = String(d.getMinutes()).padStart(2, '0');
         const ss = String(d.getSeconds()).padStart(2, '0');
         return `${hh}:${mm}:${ss}`;
+    }
+
+    // --- Helper: Format time range
+    function formatTimeRange(start, end) {
+        if (!start || !end) return 'N/A';
+        return `${hhmmss(start)} - ${hhmmss(end)}`;
     }
 
     // --- Lấy khung giờ hiển thị
@@ -102,7 +181,7 @@
         return darkBgs.includes(bgColor) ? '#fff' : '#000';
     }
 
-    // --- Tạo event data từ dữ liệu Order - FIX: Di chuyển status vào extendedProps, THÊM TOTALPALLET VÀO TITLE
+    // --- Tạo event data từ dữ liệu Order - THÊM CÁC TRƯỜNG VÀO EXTENDEDPROPS
     const eventsData = orders.map((order, index) => {
         // Helper: Parse và validate time
         function parseAndValidate(timeStr) {
@@ -123,7 +202,7 @@
 
         let eventStart, eventEnd;
         // FIX: ParseInt để map đúng status (nếu order.Status là string "2" → number 2)
-        let status = statusMap[parseInt(order.Status, 10)] || 'Planned';  // ← SỬA CHÍNH Ở ĐÂY
+        let status = statusMap[parseInt(order.Status, 10)] || 'Planned';
 
         // Debug log (xóa sau khi test OK)
         console.log('Order ID:', order.id || index, 'Status raw:', order.Status, 'Status mapped:', status, 'Color:', getColorByStatus(status));
@@ -162,7 +241,12 @@
                 actualEnd: validActual ? actualEnd.toISOString() : null,
                 validActual: validActual,
                 status: status,  // ← SỬA: Di chuyển status vào extendedProps
-                totalPallet: order.TotalPallet || 0  // THÊM: Lưu TotalPallet vào extendedProps để dùng trong eventContent
+                totalPallet: order.TotalPallet || 0,  // THÊM: Lưu TotalPallet vào extendedProps để dùng trong eventContent
+                shipDate: order.ShipDate || 'N/A',
+                transCd: order.TransCd || 'N/A',
+                transMethod: order.TransMethod || 'N/A',
+                contSize: order.ContSize || 'N/A',
+                totalColumn: order.TotalColumn || 0
             }
         };
     }).filter(e => e);  // Remove null events
@@ -208,23 +292,21 @@
             };
         }),
 
-        // --- Custom eventContent: FIX để vẽ actual theo màu status DB (vàng cho Shipped)
-        // Cập nhật: Đồng bộ height với CSS và đảm bảo centering, SỬA TEXT HIỂN THỊ TOTALPALLET
+        // --- Custom eventContent: VẼ EVENT VÀ ATTACH HOVER EVENTS CHO TOOLTIP
         eventContent: function (arg) {
             // FIX: Lấy status từ extendedProps
-            const status = arg.event.extendedProps.status;  // ← SỬA CHÍNH: Lấy từ extendedProps
-            const { planStart, planEnd, actualStart, actualEnd, validActual, totalPallet } = arg.event.extendedProps;
+            const status = arg.event.extendedProps.status;
+            const extendedProps = arg.event.extendedProps;
             const eventStart = arg.event.start;
             const eventEnd = arg.event.end;
             const eventDuration = eventEnd - eventStart;
 
             // Parse từ ISO
-            const pStart = planStart ? new Date(planStart) : null;
-            const pEnd = planEnd ? new Date(planEnd) : null;
-            const aStart = actualStart ? new Date(actualStart) : null;
-            const aEnd = actualEnd ? new Date(actualEnd) : null;
+            const pStart = extendedProps.planStart ? new Date(extendedProps.planStart) : null;
+            const pEnd = extendedProps.planEnd ? new Date(extendedProps.planEnd) : null;
+            const aStart = extendedProps.actualStart ? new Date(extendedProps.actualStart) : null;
+            const aEnd = extendedProps.actualEnd ? new Date(extendedProps.actualEnd) : null;
 
-            let tooltip = '';
             let actualPercent = 0, actualWidth = 0;
             let planPercent = 0, planWidth = 0;
 
@@ -234,17 +316,16 @@
                 actualWidth = ((aEnd - aStart) / eventDuration) * 100;
                 planPercent = ((pStart - eventStart) / eventDuration) * 100;
                 planWidth = ((pEnd - pStart) / eventDuration) * 100;
-
-                const fmtTime = (d) => d.toTimeString().slice(0, 8);
-                tooltip = `Actual: ${fmtTime(aStart)} - ${fmtTime(aEnd)}\nPlan: ${fmtTime(pStart)} - ${fmtTime(pEnd)}\nStatus: ${status}\nTotal Pallet: ${totalPallet}`;
+            } else if (aStart && aEnd) {
+                actualPercent = 0;
+                actualWidth = 100;
             } else if (pStart && pEnd) {
-                tooltip = 'Plan only\nStatus: ' + status + `\nTotal Pallet: ${totalPallet}`;
-            } else {
-                tooltip = 'Actual only\nStatus: ' + status + `\nTotal Pallet: ${totalPallet}`;
+                planPercent = 0;
+                planWidth = 100;
             }
 
             // Debug log cho rendering (xóa sau khi test OK)
-            console.log('Rendering event:', arg.event.title, 'Status:', status, 'ValidActual:', validActual, 'Color for bar:', getColorByStatus(status));
+            console.log('Rendering event:', arg.event.title, 'Status:', status, 'ValidActual:', extendedProps.validActual, 'Color for bar:', getColorByStatus(status));
 
             return {
                 domNodes: [
@@ -254,38 +335,23 @@
                         wrapper.style.position = 'relative';
                         wrapper.style.height = '100%';  // Đồng bộ với height của .fc-event (30px)
                         wrapper.style.width = '100%';
-                        wrapper.style.background = arg.event.backgroundColor || getColorByStatus(status) || 'transparent';  // ← SỬA: Dùng status từ extendedProps
+                        wrapper.style.background = arg.event.backgroundColor || getColorByStatus(status) || 'transparent';
                         wrapper.style.borderRadius = '4px';
                         wrapper.style.overflow = 'visible';  // Cho phép extend visible
-                        wrapper.title = tooltip;
                         wrapper.style.color = arg.event.textColor;
                         wrapper.style.display = 'flex';  // Thêm flex để hỗ trợ centering nếu CSS chưa apply
                         wrapper.style.alignItems = 'center';
                         wrapper.style.justifyContent = 'center';
 
-                        // Vẽ actual bar (nếu có validActual) - dùng màu theo status DB
-                        if (validActual && aStart && aEnd) {
+                        // Vẽ actual bar (nếu có) - dùng màu theo status DB
+                        if (aStart && aEnd) {
                             const actualBar = document.createElement('div');
                             actualBar.style.position = 'absolute';
                             actualBar.style.left = Math.max(0, actualPercent) + '%';
                             actualBar.style.top = '0';
                             actualBar.style.height = '100%';
                             actualBar.style.width = actualWidth + '%';
-                            actualBar.style.background = getColorByStatus(status);  // ← SỬA: Dùng status từ extendedProps
-                            actualBar.style.borderRadius = '4px';
-                            wrapper.appendChild(actualBar);
-                        }
-                        // FIX: Thêm else-if cho actual có data nhưng invalid (vẽ bar dựa trên actual times)
-                        else if (aStart && aEnd) {  // ← SỬA THÊM ĐÂY
-                            actualPercent = ((aStart - eventStart) / eventDuration) * 100;
-                            actualWidth = ((aEnd - aStart) / eventDuration) * 100;
-                            const actualBar = document.createElement('div');
-                            actualBar.style.position = 'absolute';
-                            actualBar.style.left = Math.max(0, actualPercent) + '%';
-                            actualBar.style.top = '0';
-                            actualBar.style.height = '100%';
-                            actualBar.style.width = actualWidth + '%';
-                            actualBar.style.background = getColorByStatus(status);  // ← SỬA: Dùng status từ extendedProps
+                            actualBar.style.background = getColorByStatus(status);
                             actualBar.style.borderRadius = '4px';
                             wrapper.appendChild(actualBar);
                         }
@@ -297,13 +363,13 @@
                             planBarFull.style.top = '0';
                             planBarFull.style.height = '100%';
                             planBarFull.style.width = '100%';
-                            planBarFull.style.background = getColorByStatus(status);  // ← SỬA: Dùng status từ extendedProps
+                            planBarFull.style.background = getColorByStatus(status);
                             planBarFull.style.borderRadius = '4px';
                             wrapper.appendChild(planBarFull);
                         }
 
                         // Vẽ plan bar overlay (nếu có plan, và không phải chỉ plan)
-                        if (pStart && pEnd && !(aStart && aEnd && !validActual)) {
+                        if (pStart && pEnd && !(aStart && aEnd && !extendedProps.validActual)) {
                             const planBar = document.createElement('div');
                             planBar.style.position = 'absolute';
                             planBar.style.left = Math.max(0, planPercent) + '%';
@@ -316,16 +382,67 @@
                             wrapper.appendChild(planBar);
                         }
 
-                        // Text (luôn hiển thị) - tăng font-size để dễ nhìn, SỬA: HIỂN THỊ TOTALPALLET VỚI NHÃN, SỬA: MÀU CHỮ TRẮNG, SỬA: ĐẬM HƠN
+                        // Text (luôn hiển thị) - SỬA: HIỂN THỊ TOTALPALLET VỚI NHÃN, MÀU TRẮNG, ĐẬM
                         const text = document.createElement('span');
-                        text.textContent = `TotalPallet: ${totalPallet ? totalPallet.toString() : '0'}`;  // SỬA: Hiển thị TotalPallet với nhãn
+                        text.textContent = `TotalPallet: ${extendedProps.totalPallet ? extendedProps.totalPallet.toString() : '0'}`;
                         text.style.position = 'relative';
                         text.style.zIndex = '2';
                         text.style.paddingLeft = '4px';
-                        text.style.fontSize = '12px';  // Giảm font-size một chút để vừa với text dài hơn
-                        text.style.color = 'white';  // SỬA: Đặt màu chữ trắng
-                        text.style.fontWeight = 'bold';  // SỬA: Đặt đậm như tiêu đề
+                        text.style.fontSize = '15px';
+                        text.style.color = 'white';
+                        text.style.fontWeight = 'bold';
                         wrapper.appendChild(text);
+
+                        // --- ATTACH HOVER EVENTS CHO CUSTOM TOOLTIP - HIỂN THỊ NGAY LẬP TỨC
+                        const tooltip = createTooltip();
+
+                        wrapper.addEventListener('mouseenter', (e) => {
+                            // Cập nhật nội dung tooltip với tất cả thông tin
+                            const planTime = formatTimeRange(pStart, pEnd);
+                            const actualTime = formatTimeRange(aStart, aEnd);
+                            tooltip.innerHTML = `
+                                <h4>Order Information</h4>  <!-- SỬA: Sửa lỗi chính tả từ "Infomation" sang "Information" -->
+                                <dl>
+                                    <dt>ShipDate:</dt>
+                                    <dd>${extendedProps.shipDate}</dd>
+                                    <dt>Plan Time:</dt>
+                                    <dd>${planTime}</dd>
+                                    <dt>Actual Time:</dt>
+                                    <dd>${actualTime}</dd>
+                                    <dt>TransCD:</dt>
+                                    <dd>${extendedProps.transCd}</dd>
+                                    <dt>TransMethod:</dt>
+                                    <dd>${extendedProps.transMethod}</dd>
+                                    <dt>ContSize:</dt>
+                                    <dd>${extendedProps.contSize}</dd>
+                                    <dt>Total Column:</dt>
+                                    <dd>${extendedProps.totalColumn}</dd>
+                                    <dt>Total Pallet:</dt>
+                                    <dd>${extendedProps.totalPallet}</dd>
+                                    <dt>Status:</dt>
+                                    <dd><span class="status ${status.toLowerCase()}">${status}</span></dd>
+                                </dl>
+                            `;
+
+                            // Position tooltip dưới event
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            tooltip.style.left = (rect.left + window.scrollX) + 'px';
+                            tooltip.style.top = (rect.bottom + window.scrollY + 5) + 'px';
+
+                            // Hiển thị ngay lập tức với class show
+                            tooltip.classList.add('show');
+                        });
+
+                        wrapper.addEventListener('mouseleave', () => {
+                            // Ẩn tooltip
+                            tooltip.classList.remove('show');
+                        });
+
+                        // Optional: Follow mouse nếu muốn, nhưng giữ fixed dưới event cho đơn giản
+                        // wrapper.addEventListener('mousemove', (e) => {
+                        //     tooltip.style.left = (e.pageX + 10) + 'px';
+                        //     tooltip.style.top = (e.pageY - 10) + 'px';
+                        // });
 
                         return wrapper;
                     })()
