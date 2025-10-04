@@ -28,15 +28,21 @@ namespace ASP.Controllers.Front
             var customerCodesWithOrders = orders.Select(o => o.CustomerCode).Distinct().ToHashSet();
             var customers = allCustomers.Where(c => customerCodesWithOrders.Contains(c.CustomerCode)).ToList();
 
-            // Map orders sang anonymous object - THÊM ACTUAL TIMES VÀ GIỮ STATUS LÀ NUMBER
+            // Map orders sang anonymous object - THÊM ACTUAL TIMES VÀ GIỮ STATUS LÀ NUMBER, THÊM TOTALPALLET VÀ CÁC TRƯỜNG KHÁC
             var ordersForView = orders.Select(o => new
             {
                 Resource = o.CustomerCode,
-                PlanAsyTime = o.PlanAsyTime.ToString("yyyy-MM-ddTHH:mm:ss"), 
+                ShipDate = o.ShipDate.ToString("yyyy-MM-dd"),
+                PlanAsyTime = o.PlanAsyTime.ToString("yyyy-MM-ddTHH:mm:ss"),
                 PlanDeliveryTime = o.PlanDeliveryTime.ToString("yyyy-MM-ddTHH:mm:ss"),
-                AcAsyTime = o.AcAsyTime?.ToString("yyyy-MM-ddTHH:mm:ss"),    
-                AcDeliveryTime = o.AcDeliveryTime?.ToString("yyyy-MM-ddTHH:mm:ss"),  
-                Status = o.OrderStatus,  // Giữ là SHORT/NUMBER
+                AcAsyTime = o.AcAsyTime?.ToString("yyyy-MM-ddTHH:mm:ss"),
+                AcDeliveryTime = o.AcDeliveryTime?.ToString("yyyy-MM-ddTHH:mm:ss"),
+                Status = o.OrderStatus,
+                TotalPallet = o.TotalPallet,
+                TransCd = o.TransCd,
+                TransMethod = o.TransMethod,
+                ContSize = o.ContSize,
+                TotalColumn = o.TotalColumn
             }).ToArray();
 
             // Map customers sang anonymous object (giữ nguyên)

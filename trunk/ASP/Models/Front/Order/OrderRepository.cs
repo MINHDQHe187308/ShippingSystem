@@ -47,7 +47,7 @@ namespace ASP.Models.Front
                 trackedOrder.Entity.ContSize = (short)orderDto.PalletSize;
                 trackedOrder.Entity.TotalColumn = orderDto.Quantity;
                 trackedOrder.Entity.PartList = orderDto.PartNo;
-                trackedOrder.Entity.TotalPallet = orderDto.TotalPallet;    
+                trackedOrder.Entity.TotalPallet = orderDto.TotalPallet;
                 trackedOrder.Entity.OrderCreateDate = orderDto.CreateDate;
                 trackedOrder.Entity.AcAsyTime = null;
                 trackedOrder.Entity.AcDocumentsTime = null;
@@ -73,7 +73,7 @@ namespace ASP.Models.Front
                     ContSize = (short)orderDto.PalletSize,
                     TotalColumn = orderDto.Quantity,
                     PartList = orderDto.PartNo,
-                    TotalPallet = orderDto.TotalPallet,                
+                    TotalPallet = orderDto.TotalPallet,
                     OrderCreateDate = orderDto.CreateDate,
                     AcAsyTime = null,
                     AcDocumentsTime = null,
@@ -95,7 +95,7 @@ namespace ASP.Models.Front
                     ContSize = (short)orderDto.PalletSize,
                     TotalColumn = orderDto.Quantity,
                     PartList = orderDto.PartNo,
-                    TotalPallet = orderDto.TotalPallet,               
+                    TotalPallet = orderDto.TotalPallet,
                     OrderCreateDate = orderDto.CreateDate,
                     AcAsyTime = null,
                     AcDocumentsTime = null,
@@ -104,21 +104,23 @@ namespace ASP.Models.Front
                 await _context.Orders.AddAsync(newOrder);
             }
         }
+        //Hàm lấy tất cả các order có plane time nằm trong khoảng thời gian của ngày hiện tại 
         public async Task<List<Order>> GetOrdersByDate(DateTime date)
         {
             return await _context.Orders
-                .Where(o => o.ShipDate.Date == date.Date) // Filter theo ngày
-                .Include(o => o.OrderDetails) // Include nếu cần details
+                .Where(o =>
+                    (o.PlanAsyTime >= date.Date && o.PlanAsyTime < date.Date.AddDays(1)) ||
+                    (o.PlanDocumentsTime >= date.Date && o.PlanDocumentsTime < date.Date.AddDays(1)) ||
+                    (o.PlanDeliveryTime >= date.Date && o.PlanDeliveryTime < date.Date.AddDays(1))
+                )
+                .Include(o => o.OrderDetails)
                 .ToListAsync();
         }
 
-        // Nếu muốn filter theo PlanAsyTime thay vì ShipDate, thay bằng:
-        // .Where(o => o.PlanAsyTime.Date == date.Date)
-    
 
-public async Task SaveChangesAsync()
+        public async Task SaveChangesAsync()
         {
-            await _context.SaveChangesAsync(); 
+            await _context.SaveChangesAsync();
         }
     }
 }
