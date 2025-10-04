@@ -82,7 +82,7 @@ namespace ASP.Models.Front
                 _context.Orders.Update(orderToUpdate);
             }
             else
-            {
+            {  
                 // Thêm mới đơn hàng
                 var newOrder = new Order
                 {
@@ -104,7 +104,7 @@ namespace ASP.Models.Front
                 await _context.Orders.AddAsync(newOrder);
             }
         }
-        //Hàm lấy tất cả các order có plane time nằm trong khoảng thời gian của ngày hiện tại 
+         //Hàm lấy tất cả các order có plane time nằm trong khoảng thời gian của ngày hiện tại 
         public async Task<List<Order>> GetOrdersByDate(DateTime date)
         {
             return await _context.Orders
