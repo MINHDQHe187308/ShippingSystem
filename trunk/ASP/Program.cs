@@ -57,6 +57,7 @@ builder.Services.AddScoped<AuthRepositoryInterface, AuthRepository>();
 builder.Services.AddScoped<MenuRepositoryInterface, MenuRepository>();
 builder.Services.AddScoped<CustomerRepositoryInterface, CustomerRepository>();
 builder.Services.AddScoped<OrderRepositoryInterface, OrderRepository>();
+builder.Services.AddScoped<OrderDetailRepositoryInterface, OrderDetailRepository>();
 // frontend
 //policies
 builder.Services.AddSingleton<IAuthorizationHandler, UserPolicyAuthorizationHandler>();

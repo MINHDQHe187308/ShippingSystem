@@ -181,7 +181,7 @@
         return darkBgs.includes(bgColor) ? '#fff' : '#000';
     }
 
-    // --- Tạo event data từ dữ liệu Order - THÊM CÁC TRƯỜNG VÀO EXTENDEDPROPS
+    // --- Tạo event data từ dữ liệu Order - THÊM UId VÀO EXTENDEDPROPS
     const eventsData = orders.map((order, index) => {
         // Helper: Parse và validate time
         function parseAndValidate(timeStr) {
@@ -204,8 +204,8 @@
         // FIX: ParseInt để map đúng status (nếu order.Status là string "2" → number 2)
         let status = statusMap[parseInt(order.Status, 10)] || 'Planned';
 
-        // Debug log (xóa sau khi test OK)
-        console.log('Order ID:', order.id || index, 'Status raw:', order.Status, 'Status mapped:', status, 'Color:', getColorByStatus(status));
+        // Debug log (xóa sau khi test OK) - SỬA: Dùng order.UId thay vì order.id
+        console.log('Order UId:', order.UId || 'undefined', 'Status raw:', order.Status, 'Status mapped:', status, 'Color:', getColorByStatus(status));
 
         if (validActual) {
             eventStart = actualStart;
@@ -235,6 +235,7 @@
             // Xóa status ở root level, di chuyển vào extendedProps
             hasBoth: hasBoth,
             extendedProps: {
+                uid: order.UId,  // THÊM: Để sử dụng trong eventClick
                 planStart: validPlan ? planStart.toISOString() : null,  // Lưu ISO string để tránh re-parse
                 planEnd: validPlan ? planEnd.toISOString() : null,
                 actualStart: validActual ? actualStart.toISOString() : null,
@@ -291,6 +292,99 @@
                 classNames: classNames  // ← SỬA THÊM Ở ĐÂY
             };
         }),
+
+        // THÊM MỚI: Event listener cho click event - Mở modal với OrderDetails - THÊM DEBUG LOGS
+        eventClick: function (info) {
+            console.log('Event clicked! Info:', info);  // DEBUG: Log toàn bộ info
+            const uid = info.event.extendedProps.uid;
+            console.log('Extracted UID:', uid);  // DEBUG: Kiểm tra UID
+            if (!uid) {
+                console.log('UID is undefined or null');  // DEBUG
+                // FIX: Hiển thị lỗi trong modal thay vì alert
+                const bodyEl = document.getElementById('orderDetailsBody');
+                bodyEl.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Lỗi: Không tìm thấy ID đơn hàng.</td></tr>';
+                document.getElementById('orderDetailsTable').style.display = 'table';
+                document.getElementById('modalLoading').style.display = 'none';
+                const modal = new bootstrap.Modal(document.getElementById('orderDetailsModal'));
+                modal.show();
+                return;
+            }
+
+            // Hiển thị loading
+            const loadingEl = document.getElementById('modalLoading');
+            const tableEl = document.getElementById('orderDetailsTable');
+            const bodyEl = document.getElementById('orderDetailsBody');
+            loadingEl.style.display = 'block';
+            tableEl.style.display = 'none';
+            bodyEl.innerHTML = '';
+
+            const fetchUrl = `/DensoWareHouse/GetOrderDetails?orderId=${uid}`;
+            console.log('Fetching from URL:', fetchUrl);  // DEBUG: Log URL
+
+            // AJAX gọi Controller để lấy OrderDetails
+            fetch(fetchUrl)
+                .then(response => {
+                    console.log('Fetch response status:', response.status);  // DEBUG: Kiểm tra status
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Fetch data received:', data);  // DEBUG: Log data
+                    loadingEl.style.display = 'none';
+                    if (data.success && data.data && data.data.length > 0) {
+                        // Build table rows
+                        data.data.forEach(item => {
+                            const statusText = item.bookContStatus === 0 ? 'Chưa xuất' :
+                                item.bookContStatus === 1 ? 'Đang xuất' :
+                                    item.bookContStatus === 2 ? 'Đã xuất' : 'Không xác định';
+                            const row = `
+                                <tr>
+                                    <td>${item.partNo || 'N/A'}</td>
+                                    <td>${item.quantity || 0}</td>
+                                    <td>${item.totalPallet || 0}</td>
+                                    <td>${item.palletSize || 'N/A'}</td>
+                                    <td>${item.warehouse || 'N/A'}</td>
+                                    <td>${item.contNo || 'N/A'}</td>
+                                    <td><span class="badge bg-secondary">${statusText}</span></td>
+                                </tr>
+                            `;
+                            bodyEl.innerHTML += row;
+                        });
+                        tableEl.style.display = 'table';
+                    } else if (data.success) {
+                        // FIX: Xử lý cụ thể nếu success=true nhưng data rỗng
+                        console.log('Success but no data - possible DB issue');
+                        bodyEl.innerHTML = '<tr><td colspan="7" class="text-center">Không có đơn hàng chi tiết</td></tr>';
+                        tableEl.style.display = 'table';
+                    } else {
+                        // FIX: Hiển thị lỗi từ backend trong modal
+                        console.log('Backend error:', data.message);
+                        bodyEl.innerHTML = `<tr><td colspan="7" class="text-center text-danger">Lỗi: ${data.message || 'Không xác định'}</td></tr>`;
+                        tableEl.style.display = 'table';
+                    }
+                    // Mở modal
+                    console.log('Attempting to show modal');  // DEBUG
+                    const modalElement = document.getElementById('orderDetailsModal');
+                    console.log('Modal element:', modalElement);  // DEBUG
+                    if (modalElement) {
+                        const modal = new bootstrap.Modal(modalElement);
+                        modal.show();
+                        console.log('Modal shown');  // DEBUG
+                    } else {
+                        console.error('Modal element not found!');  // DEBUG
+                    }
+                })
+                .catch(error => {
+                    console.error('Fetch error:', error);  // DEBUG: Log error chi tiết
+                    loadingEl.style.display = 'none';
+                    bodyEl.innerHTML = `<tr><td colspan="7" class="text-center text-danger">Lỗi kết nối: ${error.message}</td></tr>`;
+                    tableEl.style.display = 'table';
+                    const modal = new bootstrap.Modal(document.getElementById('orderDetailsModal'));
+                    modal.show();
+                });
+        },
 
         // --- Custom eventContent: VẼ EVENT VÀ ATTACH HOVER EVENTS CHO TOOLTIP
         eventContent: function (arg) {
@@ -452,7 +546,7 @@
     });
     calendar.render();
 
-    // --- Vạch đỏ hiển thị thời gian hiện tại (giữ nguyên logic cũ)
+    // --- Vạch đỏ hiển thị thời gian hiện tại (FIX: Giảm z-index và ẩn khi modal mở)
     const calComputed = window.getComputedStyle(calendarEl);
     if (calComputed.position === 'static') calendarEl.style.position = 'relative';
 
@@ -461,14 +555,14 @@
         position: 'absolute',
         width: '4px',  // Tăng từ 2px lên 4px để dễ nhìn hơn
         backgroundColor: 'red',
-        zIndex: 9999,
+        zIndex: 10,  // FIX: Giảm từ 9999 xuống 10 (dưới modal 1050)
         top: '0px',  // Đặt top ở 0 để bắt đầu từ đầu bảng
         height: '100%',  // Chiếm hết chiều cao của bảng
         transition: 'left 0.5s linear'
     });
     calendarEl.appendChild(customNow);
 
-    // --- Đồng hồ trên đầu vạch đỏ
+    // --- Đồng hồ trên đầu vạch đỏ (FIX: Giảm z-index)
     const clockLabel = document.createElement('div');
     Object.assign(clockLabel.style, {
         position: 'absolute',
@@ -480,7 +574,7 @@
         fontSize: '16px',
         fontWeight: 'bold',
         transform: 'translate(-50%, -120%)',
-        zIndex: 10000,
+        zIndex: 11,  // FIX: Giảm từ 10000 xuống 11 (vẫn trên vạch nhưng dưới modal)
         boxShadow: '0 1px 3px rgba(0,0,0,0.3)'
     });
     calendarEl.appendChild(clockLabel);
@@ -527,6 +621,20 @@
         const mm = String(now.getMinutes()).padStart(2, '0');
         clockLabel.textContent = `${hh}:${mm}`;
     }
+
+    // THÊM MỚI: Ẩn/hiện now indicator khi modal mở/đóng
+    function hideNowIndicator() {
+        customNow.style.display = 'none';
+        clockLabel.style.display = 'none';
+    }
+    function showNowIndicator() {
+        customNow.style.display = 'block';
+        clockLabel.style.display = 'block';
+    }
+
+    // Event listener cho modal show/hide
+    document.getElementById('orderDetailsModal').addEventListener('show.bs.modal', hideNowIndicator);
+    document.getElementById('orderDetailsModal').addEventListener('hidden.bs.modal', showNowIndicator);
 
     function updateVisibleRange() {
         const { startHour, endHour } = getTimeRange();

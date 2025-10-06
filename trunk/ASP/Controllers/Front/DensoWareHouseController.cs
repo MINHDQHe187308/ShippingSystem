@@ -1,5 +1,11 @@
 ﻿using ASP.Models.Front;
+using ASP.Models.Front;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace ASP.Controllers.Front
 {
@@ -7,11 +13,16 @@ namespace ASP.Controllers.Front
     {
         private readonly OrderRepositoryInterface _orderRepository;
         private readonly CustomerRepositoryInterface _customerRepository;
+        private readonly OrderDetailRepositoryInterface _orderDetailRepository;
 
-        public DensoWareHouseController(OrderRepositoryInterface orderRepository, CustomerRepositoryInterface customerRepository)
+        public DensoWareHouseController(
+            OrderRepositoryInterface orderRepository,
+            CustomerRepositoryInterface customerRepository,
+            OrderDetailRepositoryInterface orderDetailRepository)
         {
             _orderRepository = orderRepository;
             _customerRepository = customerRepository;
+            _orderDetailRepository = orderDetailRepository;
         }
 
         public async Task<IActionResult> Calendar()
@@ -21,6 +32,11 @@ namespace ASP.Controllers.Front
             // Lấy orders từ DB, filter theo ShipDate = hôm nay
             var orders = await _orderRepository.GetOrdersByDate(today);
 
+            Console.WriteLine($"Loaded {orders.Count} orders for {today}. First UId: {orders.FirstOrDefault()?.UId}");
+            if (orders.Any())
+            {
+                Console.WriteLine($"First Order Details: UId={orders.First().UId}, Status={orders.First().OrderStatus}, PlanAsy={orders.First().PlanAsyTime}");
+            }
             // Lấy tất cả customers từ DB
             var allCustomers = await _customerRepository.GetAllCustomers();
 
@@ -28,23 +44,24 @@ namespace ASP.Controllers.Front
             var customerCodesWithOrders = orders.Select(o => o.CustomerCode).Distinct().ToHashSet();
             var customers = allCustomers.Where(c => customerCodesWithOrders.Contains(c.CustomerCode)).ToList();
 
-            // Map orders sang anonymous object - THÊM ACTUAL TIMES VÀ GIỮ STATUS LÀ NUMBER, THÊM TOTALPALLET VÀ CÁC TRƯỜNG KHÁC
+            // Map orders sang anonymous object - THÊM UId VÀ GIỮ STATUS LÀ NUMBER, THÊM TOTALPALLET VÀ CÁC TRƯỜNG KHÁC
             var ordersForView = orders.Select(o => new
             {
+                UId = o.UId,  // THÊM: Để sử dụng trong JS eventClick
                 Resource = o.CustomerCode,
                 ShipDate = o.ShipDate.ToString("yyyy-MM-dd"),
                 PlanAsyTime = o.PlanAsyTime.ToString("yyyy-MM-ddTHH:mm:ss"),
                 PlanDeliveryTime = o.PlanDeliveryTime.ToString("yyyy-MM-ddTHH:mm:ss"),
                 AcAsyTime = o.AcAsyTime?.ToString("yyyy-MM-ddTHH:mm:ss"),
                 AcDeliveryTime = o.AcDeliveryTime?.ToString("yyyy-MM-ddTHH:mm:ss"),
-                Status = o.OrderStatus, 
-                TotalPallet = o.TotalPallet,  
+                Status = o.OrderStatus,
+                TotalPallet = o.TotalPallet,
                 TransCd = o.TransCd,
                 TransMethod = o.TransMethod,
                 ContSize = o.ContSize,
                 TotalColumn = o.TotalColumn
             }).ToArray();
-
+            Console.WriteLine($"First mapped UId string: {ordersForView.FirstOrDefault()?.UId}");
             // Map customers sang anonymous object (giữ nguyên)
             var customersForView = customers.Select(c => new
             {
@@ -62,7 +79,40 @@ namespace ASP.Controllers.Front
             return View("~/Views/Front/DensoWareHouse/Calendar.cshtml", modelForView);
         }
 
-        // Helper method để map OrderStatus (short) sang string (dựa trên enum hoặc logic của bạn)
+        [HttpGet]
+        public async Task<JsonResult> GetOrderDetails(string orderId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(orderId) || !Guid.TryParse(orderId, out Guid parsedOrderId))
+                {
+                    return Json(new { success = false, message = "Invalid orderId format" });
+                }
+
+                var orderDetails = await _orderDetailRepository.GetOrderDetailsByOrderId(parsedOrderId);
+                var detailsForView = orderDetails.Select(od => new
+                {
+                    UId = od.UId,
+                    PartNo = od.PartNo,
+                    Quantity = od.Quantity,
+                    TotalPallet = od.TotalPallet,
+                    PalletSize = od.PalletSize,
+                    Warehouse = od.Warehouse,
+                    ContNo = od.ContNo,
+                    BookContStatus = od.BookContStatus,
+                    ShippingId = od.ShippingId,
+                    BookContDetailId = od.BookContDetailId
+                }).ToList();
+
+                return Json(new { success = true, data = detailsForView });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+
         private string MapOrderStatusToString(short orderStatus)
         {
             return orderStatus switch
