@@ -47,7 +47,7 @@ namespace ASP.Models.Front
                 trackedOrder.Entity.ContSize = (short)orderDto.PalletSize;
                 trackedOrder.Entity.TotalColumn = orderDto.Quantity;
                 trackedOrder.Entity.PartList = orderDto.PartNo;
-                trackedOrder.Entity.TotalPallet = orderDto.TotalPallet;    
+                trackedOrder.Entity.TotalPallet = orderDto.TotalPallet;
                 trackedOrder.Entity.OrderCreateDate = orderDto.CreateDate;
                 trackedOrder.Entity.AcAsyTime = null;
                 trackedOrder.Entity.AcDocumentsTime = null;
@@ -73,7 +73,7 @@ namespace ASP.Models.Front
                     ContSize = (short)orderDto.PalletSize,
                     TotalColumn = orderDto.Quantity,
                     PartList = orderDto.PartNo,
-                    TotalPallet = orderDto.TotalPallet,                
+                    TotalPallet = orderDto.TotalPallet,
                     OrderCreateDate = orderDto.CreateDate,
                     AcAsyTime = null,
                     AcDocumentsTime = null,
@@ -95,7 +95,7 @@ namespace ASP.Models.Front
                     ContSize = (short)orderDto.PalletSize,
                     TotalColumn = orderDto.Quantity,
                     PartList = orderDto.PartNo,
-                    TotalPallet = orderDto.TotalPallet,               
+                    TotalPallet = orderDto.TotalPallet,
                     OrderCreateDate = orderDto.CreateDate,
                     AcAsyTime = null,
                     AcDocumentsTime = null,
@@ -120,7 +120,7 @@ namespace ASP.Models.Front
 
         public async Task SaveChangesAsync()
         {
-            await _context.SaveChangesAsync(); 
+            await _context.SaveChangesAsync();
         }
     }
 }
