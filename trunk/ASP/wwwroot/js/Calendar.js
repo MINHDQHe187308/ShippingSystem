@@ -125,22 +125,53 @@
         return `${hhmmss(start)} - ${hhmmss(end)}`;
     }
 
-    // --- Lấy khung giờ hiển thị
-    function getTimeRange() {
+    // --- SỬA: getTimeRange() - Thêm param 'midnightMode' để xử lý mode đặc biệt lúc 00:00
+    function getTimeRange(midnightMode = false) {
         const now = new Date();
-        const start = new Date(now);
-        const end = new Date(now);
-        start.setHours(now.getHours() - 6, 0, 0, 0);
-        end.setHours(now.getHours() + 4, 0, 0, 0);
+        const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+        const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 24, 0, 0);
+
+        let start, end;
+
+        if (midnightMode) {
+            // Mode đặc biệt: Từ 00:00 đến giờ hiện tại +4h (cap 24:00)
+            start = new Date(todayMidnight);
+            end = new Date(now);
+            end.setHours(now.getHours() + 4, 0, 0, 0);
+            if (end >= todayEnd) {
+                end = todayEnd;
+            }
+        } else {
+            // Logic cũ: -6h đến +4h so với giờ hiện tại
+            start = new Date(now);
+            start.setHours(now.getHours() - 6, 0, 0, 0);
+            end = new Date(now);
+            end.setHours(now.getHours() + 4, 0, 0, 0);
+        }
+
+        let startHour = hhmmss(start);
+        let endHour = hhmmss(end);
+
+        // Cap start: nếu < 00:00 hôm nay, set "00:00:00"
+        if (start < todayMidnight) {
+            startHour = '00:00:00';
+        }
+
+        // Cap end: nếu >= 24:00 hôm nay, set "24:00:00"
+        if (end >= todayEnd) {
+            endHour = '24:00:00';
+        }
+
         return {
-            startHour: hhmmss(start),
-            endHour: hhmmss(end),
+            startHour,
+            endHour,
             currentShort: hhmmss(now).slice(0, 5),
             start, end
         };
     }
 
     let timeRange = getTimeRange();
+    let isMidnightMode = false;  // Flag để track mode
 
     // --- Mapping status từ số sang string
     const statusMap = {
@@ -558,7 +589,8 @@
         zIndex: 10,  // FIX: Giảm từ 9999 xuống 10 (dưới modal 1050)
         top: '0px',  // Đặt top ở 0 để bắt đầu từ đầu bảng
         height: '100%',  // Chiếm hết chiều cao của bảng
-        transition: 'left 0.5s linear'
+        transition: 'left 0.5s linear',
+        left: '0px'  // SỬA: Ban đầu set left=0 cho midnight mode
     });
     calendarEl.appendChild(customNow);
 
@@ -575,7 +607,8 @@
         fontWeight: 'bold',
         transform: 'translate(-50%, -120%)',
         zIndex: 11,  // FIX: Giảm từ 10000 xuống 11 (vẫn trên vạch nhưng dưới modal)
-        boxShadow: '0 1px 3px rgba(0,0,0,0.3)'
+        boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+        left: '0px'  // SỬA: Ban đầu set left=0 cho midnight mode
     });
     calendarEl.appendChild(clockLabel);
 
@@ -589,8 +622,10 @@
         return cells.filter(el => /^\d{1,2}[:.]\d{2}/.test(el.textContent.trim()));
     }
 
+    // SỬA: positionCustomNowIndicator() - Adjust cho midnight mode (ban đầu ở 0)
     function positionCustomNowIndicator() {
         const now = new Date();
+        const nowHour = now.getHours();
         const minutes = now.getMinutes();
         const seconds = now.getSeconds();
         const percent = (minutes * 60 + seconds) / 3600;
@@ -598,18 +633,31 @@
         const cells = getHeaderHourCells();
         if (cells.length === 0) return;
 
-        const firstHour = parseInt(cells[0].textContent.trim().split(':')[0]);
-        let index = now.getHours() - firstHour;
-        if (index < 0) index = 0;
-        if (index >= cells.length) index = cells.length - 1;
+        let left;
+        if (isMidnightMode && nowHour < 6) {
+            // Midnight mode: Position từ đầu (00:00), percent dựa trên giờ hiện tại
+            const firstHour = 0;  // Bắt đầu từ 00:00
+            let index = nowHour - firstHour;
+            if (index < 0) index = 0;
+            if (index >= cells.length) index = cells.length - 1;
 
-        const cell = cells[index];
-        const cellRect = cell.getBoundingClientRect();
-        const calRect = calendarEl.getBoundingClientRect();
-        const left = (cellRect.left - calRect.left) + percent * cellRect.width;
+            const cell = cells[index];
+            const cellRect = cell.getBoundingClientRect();
+            const calRect = calendarEl.getBoundingClientRect();
+            left = (cellRect.left - calRect.left) + percent * cellRect.width;
+        } else {
+            // Logic cũ: Position dựa trên giờ hiện tại so với first slot
+            const firstHour = parseInt(cells[0].textContent.trim().split(':')[0]);
+            let index = nowHour - firstHour;
+            if (index < 0) index = 0;
+            if (index >= cells.length) index = cells.length - 1;
 
-        // Vì height đã là 100% và top=0, không cần tính top và height nữa
-        // Chỉ cập nhật left cho customNow và clockLabel
+            const cell = cells[index];
+            const cellRect = cell.getBoundingClientRect();
+            const calRect = calendarEl.getBoundingClientRect();
+            left = (cellRect.left - calRect.left) + percent * cellRect.width;
+        }
+
         customNow.style.left = left + 'px';
         clockLabel.style.left = left + 'px';
         clockLabel.style.top = '0px';  // Đặt clockLabel ở top của bảng
@@ -636,10 +684,45 @@
     document.getElementById('orderDetailsModal').addEventListener('show.bs.modal', hideNowIndicator);
     document.getElementById('orderDetailsModal').addEventListener('hidden.bs.modal', showNowIndicator);
 
+    // SỬA: updateVisibleRange() - Thêm detect midnight và switch mode lúc 06:00
     function updateVisibleRange() {
-        const { startHour, endHour } = getTimeRange();
-        calendar.setOption('slotMinTime', startHour);
-        calendar.setOption('slotMaxTime', endHour);
+        const now = new Date();
+        const nowHour = now.getHours();
+
+        // Detect midnight (00:00) và chuyển ngày mới
+        if (nowHour === 0 && now.getMinutes() === 0) {  // Chính xác lúc 00:00:00
+            console.log('Midnight detected! Switching to new day and midnight mode.');
+            calendar.today();  // Nhảy sang ngày mới
+            isMidnightMode = true;  // Bật midnight mode
+            const midnightRange = getTimeRange(true);  // Mode đặc biệt
+            calendar.setOption('slotMinTime', midnightRange.startHour);
+            calendar.setOption('slotMaxTime', midnightRange.endHour);
+            calendar.setOption('scrollTime', midnightRange.currentShort);
+            // Reset position now về 0
+            customNow.style.left = '0px';
+            clockLabel.style.left = '0px';
+        } else if (isMidnightMode && nowHour >= 6) {
+            // Switch về logic cũ khi đủ 6 tiếng
+            console.log('6 hours passed in midnight mode! Switching back to normal logic.');
+            isMidnightMode = false;
+            const normalRange = getTimeRange(false);  // Logic cũ
+            calendar.setOption('slotMinTime', normalRange.startHour);
+            calendar.setOption('slotMaxTime', normalRange.endHour);
+            calendar.setOption('scrollTime', normalRange.currentShort);
+        } else if (!isMidnightMode) {
+            // Logic cũ bình thường
+            const normalRange = getTimeRange(false);
+            calendar.setOption('slotMinTime', normalRange.startHour);
+            calendar.setOption('slotMaxTime', normalRange.endHour);
+            calendar.setOption('scrollTime', normalRange.currentShort);
+        }
+        // Nếu vẫn midnight mode (giờ <6), update range với mode true
+        else if (isMidnightMode) {
+            const midnightRange = getTimeRange(true);
+            calendar.setOption('slotMinTime', midnightRange.startHour);
+            calendar.setOption('slotMaxTime', midnightRange.endHour);
+            calendar.setOption('scrollTime', midnightRange.currentShort);
+        }
     }
 
     setTimeout(() => {
@@ -655,6 +738,6 @@
 
     setInterval(() => {
         updateClockLabel();
-        updateVisibleRange();
+        updateVisibleRange();  // ← SỬA: Luôn update full range với detect midnight/switch
     }, 60 * 1000);
 });
