@@ -1,4 +1,5 @@
-﻿document.addEventListener('DOMContentLoaded', function () {
+﻿// ~/js/Calendar.js
+document.addEventListener('DOMContentLoaded', function () {
     if (typeof FullCalendar === 'undefined') {
         console.error('FullCalendar is not loaded. Please check script imports.');
         return;
@@ -363,22 +364,59 @@
                 })
                 .then(data => {
                     console.log('Fetch data received:', data);  // DEBUG: Log data
+                    console.log('JSON data sample:', data.data[0]);  // DEBUG: Log item đầu tiên để xem keys
                     loadingEl.style.display = 'none';
                     if (data.success && data.data && data.data.length > 0) {
-                        // Build table rows
+                        // Build table rows - HỖ TRỢ PROGRESS BARS VÀ ICONS
                         data.data.forEach(item => {
-                            const statusText = item.bookContStatus === 0 ? 'Chưa xuất' :
-                                item.bookContStatus === 1 ? 'Đang xuất' :
-                                    item.bookContStatus === 2 ? 'Đã xuất' : 'Không xác định';
+                            // Hỗ trợ cả Pascal và camel (lấy giá trị đầu tiên tồn tại)
+                            const statusText = item.status || item.status || 'Không xác định';
+                            const collectPercent = item.collectPercent || item.collectPercent || 0;
+                            const preparePercent = item.preparePercent || item.preparePercent || 0;
+                            const loadingPercent = item.loadingPercent || item.loadingPercent || 0;
+
                             const row = `
                                 <tr>
-                                    <td>${item.partNo || 'N/A'}</td>
-                                    <td>${item.quantity || 0}</td>
-                                    <td>${item.totalPallet || 0}</td>
-                                    <td>${item.palletSize || 'N/A'}</td>
-                                    <td>${item.warehouse || 'N/A'}</td>
-                                    <td>${item.contNo || 'N/A'}</td>
-                                    <td><span class="badge bg-secondary">${statusText}</span></td>
+                                    <td>${item.PartNo || item.partNo || 'N/A'}</td>
+                                    <td>${item.Quantity || item.quantity || 0}</td>
+                                    <td>${item.TotalPallet || item.totalPallet || 0}</td>
+                                    <td>${item.PalletSize || item.palletSize || 'N/A'}</td>
+                                    <td>${item.Warehouse || item.warehouse || 'N/A'}</td>
+                                    <td>${item.ContNo || item.contNo || 'N/A'}</td>
+                                    <td class="status-cell">
+                                        <span class="badge bg-secondary">${statusText}</span>
+                                        <div class="progress-info mt-2">
+                                            <!-- Collect Stage -->
+                                            <div class="d-flex align-items-center mb-2">
+                                                <i class="bi bi-basket-fill text-primary me-2"></i>
+                                                <span class="me-auto">Collect Pallets</span>
+                                                <small class="text-muted">${collectPercent}%</small>
+                                            </div>
+                                            <div class="progress" style="height: 8px;">
+                                                <div class="progress-bar bg-primary" style="width: ${collectPercent}%"></div>
+                                            </div>
+                                            
+                                            <!-- Prepare Stage -->
+                                            <div class="d-flex align-items-center mb-2 mt-2">
+                                                <i class="bi bi-tools text-warning me-2"></i>
+                                                <span class="me-auto">Prepare Pallets</span>
+                                                <small class="text-muted">${preparePercent}%</small>
+                                            </div>
+                                            <div class="progress" style="height: 8px;">
+                                                <div class="progress-bar bg-warning" style="width: ${preparePercent}%"></div>
+                                            </div>
+                                            
+                                            <!-- Loading Stage -->
+                                            <div class="d-flex align-items-center mb-2 mt-2">
+                                                <i class="bi bi-truck text-success me-2"></i>
+                                                <span class="me-auto">Loading Truck</span>
+                                                <small class="text-muted">${loadingPercent}%</small>
+                                            </div>
+                                            <div class="progress" style="height: 8px;">
+                                                <div class="progress-bar bg-success" style="width: ${loadingPercent}%"></div>
+                                            </div>
+                                        </div>
+                                    </td>
                                 </tr>
                             `;
                             bodyEl.innerHTML += row;

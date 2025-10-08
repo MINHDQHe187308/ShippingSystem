@@ -1,4 +1,5 @@
-﻿using ASP.Models.Front;
+﻿using ASP.DTO.DensoDTO;
+using ASP.Models.Front;
 using ASP.Models.Front;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -78,7 +79,6 @@ namespace ASP.Controllers.Front
 
             return View("~/Views/Front/DensoWareHouse/Calendar.cshtml", modelForView);
         }
-
         [HttpGet]
         public async Task<JsonResult> GetOrderDetails(string orderId)
         {
@@ -90,18 +90,34 @@ namespace ASP.Controllers.Front
                 }
 
                 var orderDetails = await _orderDetailRepository.GetOrderDetailsByOrderId(parsedOrderId);
-                var detailsForView = orderDetails.Select(od => new
+
+                // DEBUG LOG: Kiểm tra load dữ liệu
+                foreach (var od in orderDetails)
                 {
-                    UId = od.UId,
-                    PartNo = od.PartNo,
-                    Quantity = od.Quantity,
-                    TotalPallet = od.TotalPallet,
-                    PalletSize = od.PalletSize,
-                    Warehouse = od.Warehouse,
-                    ContNo = od.ContNo,
-                    BookContStatus = od.BookContStatus,
-                    ShippingId = od.ShippingId,
-                    BookContDetailId = od.BookContDetailId
+                    var slCount = od.ShoppingLists?.Count ?? 0;
+                    var tpcTotal = od.ShoppingLists?.Sum(sl => sl.ThreePointChecks?.Count ?? 0) ?? 0;
+                    Console.WriteLine($"OrderDetail {od.UId}: TotalPallet={od.TotalPallet}, SL Count={slCount}, Total TPC={tpcTotal}");
+                }
+
+                var detailsForView = orderDetails.Select(od => {
+                    var progress = od.GetProgress();
+                    Console.WriteLine($"Progress for {od.UId}: Collect={progress.CollectPercent}%, Prepare={progress.PreparePercent}%, Loading={progress.LoadingPercent}%, Status='{progress.Status}'");
+                    return new
+                    {
+                        UId = progress.UId,
+                        partNo = progress.PartNo,
+                        quantity = progress.Quantity,
+                        totalPallet = progress.TotalPallet,
+                        palletSize = od.PalletSize ,
+                        warehouse = progress.Warehouse,
+                        contNo = progress.ContNo,
+                        bookContStatus = progress.BookContStatus,
+                        collectPercent = progress.CollectPercent,
+                        preparePercent = progress.PreparePercent,
+                        loadingPercent = progress.LoadingPercent,
+                        currentStage = progress.CurrentStage,
+                        status = progress.Status
+                    };
                 }).ToList();
 
                 return Json(new { success = true, data = detailsForView });

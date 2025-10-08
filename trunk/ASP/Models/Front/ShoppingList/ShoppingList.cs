@@ -23,7 +23,7 @@ namespace ASP.Models.Front
       
         public short CollectionStatus { get; set; }
       
-        public DateTime CollectedDate { get; set; }
+        public DateTime? CollectedDate { get; set; }
       
         public ICollection<ThreePointCheck> ThreePointChecks { get; set; }
         = new List<ThreePointCheck>();

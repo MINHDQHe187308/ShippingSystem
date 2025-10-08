@@ -1,0 +1,88 @@
+﻿/* --- LEGEND --- */
+.legend-container {
+    display: inline-flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 25px; /* cách xa nhau hơn */
+    background: #f8f9fa;
+    padding: 18px 25px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 16px; /* chữ to hơn */
+    font-weight: 600; /* đậm hơn */
+    color: #333;
+    min-width: 150px; /* giúp các item không dính sát */
+    justify-content: flex-start;
+}
+
+.legend-icon {
+    width: 22px; /* to hơn */
+    height: 22px;
+    display: inline-block;
+    border-radius: 4px;
+    box-shadow: 0 0 3px rgba(0, 0, 0, 0.3);
+}
+
+/* --- EVENT BORDER STYLE --- */
+.fc-event.actual-event {
+    border-style: dashed !important;
+    border-width: 2px !important;
+}
+
+.fc-event.plan-event {
+    border-style: solid !important;
+    border-width: 2px !important;
+}
+
+/* --- TITLE --- */
+h1 {
+    font-size: 28px;
+    color: #343a40;
+    font-weight: 700;
+}
+
+/* --- Border Legend --- */
+#legend p strong {
+    font-size: 16px;
+}
+
+#legend p span {
+    font-size: 15px;
+}
+
+/* --- Modal Status Column Styling --- */
+.status-cell {
+    white-space: normal; /* Cho phép wrap để fit progress bars */
+    line-height: 1.4;
+    vertical-align: top;
+}
+
+    .status-cell .badge {
+        display: block;
+        margin-bottom: 10px; /* Tăng space dưới badge */
+    }
+
+.progress-info {
+    font-size: 0.9em;
+}
+
+    .progress-info .d-flex {
+        font-size: 0.85em;
+        font-weight: 500;
+    }
+
+.progress {
+    border-radius: 4px;
+    background-color: #e9ecef;
+    height: 8px;
+}
+
+.progress-bar {
+    transition: width 0.3s ease-in-out;
+}

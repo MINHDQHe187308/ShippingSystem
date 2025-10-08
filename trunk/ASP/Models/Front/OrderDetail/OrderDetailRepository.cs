@@ -12,10 +12,13 @@ namespace ASP.Models.Front
             _context = context;
         }
 
+        // Thêm vào OrderDetailRepository.cs
         public async Task<List<OrderDetail>> GetOrderDetailsByOrderId(Guid orderId)
         {
             return await _context.OrderDetails
                 .Where(od => od.OId == orderId)
+                .Include(od => od.ShoppingLists) 
+                    .ThenInclude(sl => sl.ThreePointChecks) 
                 .ToListAsync();
         }
     }
