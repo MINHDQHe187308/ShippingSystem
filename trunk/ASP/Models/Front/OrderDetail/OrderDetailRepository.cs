@@ -1,5 +1,9 @@
-﻿using ASP.Models.ASPModel;
+﻿using ASP.DTO.DensoDTO;  
+using ASP.Models.ASPModel;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace ASP.Models.Front
 {
@@ -12,14 +16,15 @@ namespace ASP.Models.Front
             _context = context;
         }
 
-        // Thêm vào OrderDetailRepository.cs
+        // GIỮ NGUYÊN: GetOrderDetailsByOrderId
         public async Task<List<OrderDetail>> GetOrderDetailsByOrderId(Guid orderId)
         {
             return await _context.OrderDetails
                 .Where(od => od.OId == orderId)
-                .Include(od => od.ShoppingLists) 
-                    .ThenInclude(sl => sl.ThreePointChecks) 
+                .Include(od => od.ShoppingLists)
+                    .ThenInclude(sl => sl.ThreePointChecks)
                 .ToListAsync();
         }
+
     }
 }

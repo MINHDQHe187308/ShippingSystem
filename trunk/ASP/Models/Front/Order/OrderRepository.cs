@@ -2,6 +2,8 @@
 using ASP.Models.ASPModel;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.SignalR;  // THÊM: Import SignalR
+using ASP.Hubs;  // THÊM: Import Hub
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,12 +14,17 @@ namespace ASP.Models.Front
     public class OrderRepository : OrderRepositoryInterface
     {
         private readonly ASPDbContext _context;
+        private readonly IHubContext<OrderHub> _hubContext;  // THÊM: SignalR HubContext
+        private readonly ILogger<OrderRepository> _logger;  // THÊM: Logger
 
-        public OrderRepository(ASPDbContext context)
+        public OrderRepository(ASPDbContext context, IHubContext<OrderHub> hubContext, ILogger<OrderRepository> logger)  // THÊM: Params cho inject
         {
             _context = context;
+            _hubContext = hubContext;
+            _logger = logger;
         }
 
+        // Code cũ: GetOrderByPCOrderIdAsync giữ nguyên
         public async Task<Order?> GetOrderByPCOrderIdAsync(string pcOrderId)
         {
             if (string.IsNullOrEmpty(pcOrderId))
@@ -27,7 +34,7 @@ namespace ASP.Models.Front
                 .FirstOrDefaultAsync(o => o.PCOrderId == pcOrderId);
         }
 
-
+        // Code cũ: UpsertOrderAsync giữ nguyên
         public async Task UpsertOrderAsync(OrderDTO orderDto)
         {
             if (orderDto == null || orderDto.OrderId == Guid.Empty)
@@ -82,7 +89,7 @@ namespace ASP.Models.Front
                 _context.Orders.Update(orderToUpdate);
             }
             else
-            {  
+            {
                 // Thêm mới đơn hàng
                 var newOrder = new Order
                 {
@@ -104,7 +111,8 @@ namespace ASP.Models.Front
                 await _context.Orders.AddAsync(newOrder);
             }
         }
-         //Hàm lấy tất cả các order có plane time nằm trong khoảng thời gian của ngày hiện tại 
+
+        // Code cũ: GetOrdersByDate giữ nguyên
         public async Task<List<Order>> GetOrdersByDate(DateTime date)
         {
             return await _context.Orders
@@ -117,10 +125,61 @@ namespace ASP.Models.Front
                 .ToListAsync();
         }
 
-
+        // Code cũ: SaveChangesAsync giữ nguyên
         public async Task SaveChangesAsync()
         {
             await _context.SaveChangesAsync();
+        }
+
+        // THÊM MỚI: Kiểm tra và cập nhật status order dựa trên điều kiện
+        public async Task<bool> UpdateOrderStatusIfNeeded(Guid orderId)
+        {
+            var order = await _context.Orders
+                .Include(o => o.OrderDetails)
+                .ThenInclude(od => od.ShoppingLists)
+                .FirstOrDefaultAsync(o => o.UId == orderId);
+
+            if (order == null)
+            {
+                _logger.LogWarning("Order {OrderId} not found for status update", orderId);
+                return false;
+            }
+
+            int oldStatus = order.OrderStatus;
+
+            // Tính collected pallets từ ShoppingLists
+            var allShoppingLists = order.OrderDetails.SelectMany(od => od.ShoppingLists ?? new List<ShoppingList>()).ToList();
+            var collectedPallets = allShoppingLists
+                .Where(sl => sl.CollectionStatus == 1 || sl.CollectedDate.HasValue)
+                .Select(sl => sl.PalletNo)
+                .Distinct()
+                .Count();
+
+            var totalOrderPallet = order.TotalPallet;
+            bool isCompleted = totalOrderPallet > 0 && collectedPallets >= totalOrderPallet;
+            bool isShipped = isCompleted && order.OrderDetails.Any(od => od.BookContStatus == 1);
+
+            // Cập nhật status
+            if (isShipped)
+                order.OrderStatus = 2;  // Shipped
+            else if (isCompleted)
+                order.OrderStatus = 3;  // Completed
+            else if (collectedPallets > 0 && collectedPallets < totalOrderPallet)
+                order.OrderStatus = 1;  // Pending
+            // Giữ 0 nếu chưa collect
+
+            bool statusChanged = order.OrderStatus != oldStatus;
+            if (statusChanged)
+            {
+                _context.Orders.Update(order);
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("Order {OrderId} status updated from {Old} to {New}", orderId, oldStatus, order.OrderStatus);
+
+                // Notify SignalR
+                await _hubContext.Clients.All.SendAsync("OrderStatusUpdated", order.UId.ToString(), order.OrderStatus);
+            }
+
+            return statusChanged;
         }
     }
 }

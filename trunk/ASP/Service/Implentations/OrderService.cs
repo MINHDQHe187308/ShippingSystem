@@ -1,11 +1,11 @@
 ﻿using ASP.DTO.DensoDTO;
 using ASP.Models.Front;
+using Microsoft.Extensions.Logging;
 
 namespace ASP.Service.Implentations
 {
     public class OrderService : OrderServiceInterface
     {
-
         private readonly ExternalApiServiceInterface _externalApiService;
         private readonly OrderRepositoryInterface _orderRepository;
         private readonly ILogger<OrderService> _logger;
@@ -17,6 +17,7 @@ namespace ASP.Service.Implentations
             _logger = logger;
         }
 
+        // GIỮ NGUYÊN: SyncOrdersAsync (thêm gọi update sau upsert)
         public async Task SyncOrdersAsync()
         {
             try
@@ -38,10 +39,13 @@ namespace ASP.Service.Implentations
                     }
 
                     await _orderRepository.UpsertOrderAsync(orderDto);
+
+                    // THÊM MỚI: Kiểm tra status sau upsert
+                    await ((OrderRepository)_orderRepository).UpdateOrderStatusIfNeeded(orderDto.OrderId);
                 }
 
                 await _orderRepository.SaveChangesAsync();
-                _logger.LogInformation("Synced {Count} orders to database", orders.Count());
+                _logger.LogInformation("Synced {Count} orders to database and checked statuses", orders.Count());
             }
             catch (Exception ex)
             {

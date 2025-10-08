@@ -12,7 +12,7 @@ namespace DensoWorkerService
     public class Worker : BackgroundService
     {
         private readonly ILogger<Worker> _logger;
-        private readonly IServiceScopeFactory _serviceScopeFactory; // S? d?ng IServiceScopeFactory
+        private readonly IServiceScopeFactory _serviceScopeFactory; // Su dung IServiceScopeFactory
         private readonly int _syncInterval;
 
         public Worker(ILogger<Worker> logger, IServiceScopeFactory serviceScopeFactory, IConfiguration configuration)
@@ -26,10 +26,10 @@ namespace DensoWorkerService
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                _logger.LogInformation("Worker ?ang ch?y lúc: {time}", DateTimeOffset.Now);
+                _logger.LogInformation("Worker dang chay luc: {time}", DateTimeOffset.Now);
                 try
                 {
-                    // T?o m?t ph?m vi ?? gi?i quy?t các d?ch v? scoped
+                   
                     using (var scope = _serviceScopeFactory.CreateScope())
                     {
                         // Gi?i quy?t OrderServiceInterface trong ph?m vi
@@ -39,7 +39,7 @@ namespace DensoWorkerService
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "L?i trong quá trình ??ng b? hóa ??n hàng");
+                    _logger.LogError(ex, "Loi trong qua trinh");
                 }
                 await Task.Delay(_syncInterval, stoppingToken);
             }
