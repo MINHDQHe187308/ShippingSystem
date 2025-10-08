@@ -94,3 +94,43 @@ legend {
     }
 }
 
+/* Override main cho trang Home để loại bỏ padding/margin */
+main.flex-fill.container-fluid {
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+/* Banner full height và sát cạnh */
+.warehouse-banner {
+    margin: 0 !important;
+    padding: 0 !important;
+    height: 100% !important; /* Fill toàn bộ main */
+}
+
+    .warehouse-banner .container-fluid,
+    .warehouse-banner .row,
+    .warehouse-banner .col-12 {
+        margin: 0 !important;
+        padding: 0 !important;
+        height: 100% !important;
+    }
+
+.warehouse-image {
+    width: 100% !important;
+    height: 100% !important;
+    display: block !important;
+    object-fit: cover; /* Giữ tỷ lệ ảnh, crop nếu cần để fill mà không méo */
+}
+
+/* Responsive: Điều chỉnh chiều cao dựa trên viewport nếu cần */
+@media (max-width: 768px) {
+    main.flex-fill.container-fluid {
+        min-height: calc(100vh - 120px); /* Giả sử height header + footer ~120px, điều chỉnh nếu cần */
+    }
+}
+
+@media (min-width: 1200px) {
+    main.flex-fill.container-fluid {
+        min-height: calc(100vh - 140px); /* Tăng cho desktop nếu header/footer lớn hơn */
+    }
+}
