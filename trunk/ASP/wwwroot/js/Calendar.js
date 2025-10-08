@@ -268,6 +268,7 @@ document.addEventListener('DOMContentLoaded', function () {
             hasBoth: hasBoth,
             extendedProps: {
                 uid: order.UId,  // THÊM: Để sử dụng trong eventClick
+                customerCode: customerCode,  // THÊM: Lưu CustomerCode vào extendedProps để dùng trong modal title
                 planStart: validPlan ? planStart.toISOString() : null,  // Lưu ISO string để tránh re-parse
                 planEnd: validPlan ? planEnd.toISOString() : null,
                 actualStart: validActual ? actualStart.toISOString() : null,
@@ -329,7 +330,8 @@ document.addEventListener('DOMContentLoaded', function () {
         eventClick: function (info) {
             console.log('Event clicked! Info:', info);  // DEBUG: Log toàn bộ info
             const uid = info.event.extendedProps.uid;
-            console.log('Extracted UID:', uid);  // DEBUG: Kiểm tra UID
+            const customerCode = info.event.extendedProps.customerCode || info.event.resourceId || 'Unknown';  // Lấy CustomerCode từ extendedProps hoặc resourceId
+            console.log('Extracted UID:', uid, 'CustomerCode:', customerCode);  // DEBUG: Kiểm tra UID và CustomerCode
             if (!uid) {
                 console.log('UID is undefined or null');  // DEBUG
                 // FIX: Hiển thị lỗi trong modal thay vì alert
@@ -341,6 +343,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 modal.show();
                 return;
             }
+
+            // THÊM: Cập nhật modal title với CustomerCode in đậm
+            const modalTitleEl = document.getElementById('orderDetailsModalLabel');
+            modalTitleEl.innerHTML = `OrderDetail Information - Customer: <strong>${customerCode}</strong>`;
 
             // Hiển thị loading
             const loadingEl = document.getElementById('modalLoading');
@@ -370,10 +376,10 @@ document.addEventListener('DOMContentLoaded', function () {
                         // Build table rows - HỖ TRỢ PROGRESS BARS VÀ ICONS
                         data.data.forEach(item => {
                             // Hỗ trợ cả Pascal và camel (lấy giá trị đầu tiên tồn tại)
-                            const statusText = item.status || item.status || 'Không xác định';
-                            const collectPercent = item.collectPercent || item.collectPercent || 0;
-                            const preparePercent = item.preparePercent || item.preparePercent || 0;
-                            const loadingPercent = item.loadingPercent || item.loadingPercent || 0;
+                            const statusText = item.Status || item.status || 'Không xác định';
+                            const collectPercent = item.CollectPercent || item.collectPercent || 0;
+                            const preparePercent = item.PreparePercent || item.preparePercent || 0;
+                            const loadingPercent = item.LoadingPercent || item.loadingPercent || 0;
 
                             const row = `
                                 <tr>
@@ -389,7 +395,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                             <!-- Collect Stage -->
                                             <div class="d-flex align-items-center mb-2">
                                                 <i class="bi bi-basket-fill text-primary me-2"></i>
-                                                <span class="me-auto">Collect Pallets</span>
+                                                <span class="me-auto">Collect</span>
                                                 <small class="text-muted">${collectPercent}%</small>
                                             </div>
                                             <div class="progress" style="height: 8px;">
@@ -399,7 +405,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                             <!-- Prepare Stage -->
                                             <div class="d-flex align-items-center mb-2 mt-2">
                                                 <i class="bi bi-tools text-warning me-2"></i>
-                                                <span class="me-auto">Prepare Pallets</span>
+                                                <span class="me-auto">Prepare</span>
                                                 <small class="text-muted">${preparePercent}%</small>
                                             </div>
                                             <div class="progress" style="height: 8px;">
@@ -409,7 +415,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                             <!-- Loading Stage -->
                                             <div class="d-flex align-items-center mb-2 mt-2">
                                                 <i class="bi bi-truck text-success me-2"></i>
-                                                <span class="me-auto">Loading Truck</span>
+                                                <span class="me-auto">Loading</span>
                                                 <small class="text-muted">${loadingPercent}%</small>
                                             </div>
                                             <div class="progress" style="height: 8px;">
