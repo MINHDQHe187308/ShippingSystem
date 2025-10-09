@@ -14,17 +14,17 @@ namespace ASP.Models.Front
     public class OrderRepository : OrderRepositoryInterface
     {
         private readonly ASPDbContext _context;
-        private readonly IHubContext<OrderHub> _hubContext;  // THÊM: SignalR HubContext
-        private readonly ILogger<OrderRepository> _logger;  // THÊM: Logger
+        private readonly IHubContext<OrderHub> _hubContext;  //  SignalR HubContext
+        private readonly ILogger<OrderRepository> _logger;  //  Logger
 
-        public OrderRepository(ASPDbContext context, IHubContext<OrderHub> hubContext, ILogger<OrderRepository> logger)  // THÊM: Params cho inject
+        public OrderRepository(ASPDbContext context, IHubContext<OrderHub> hubContext, ILogger<OrderRepository> logger)  // Params cho inject
         {
             _context = context;
             _hubContext = hubContext;
             _logger = logger;
         }
 
-        // Code cũ: GetOrderByPCOrderIdAsync giữ nguyên
+       
         public async Task<Order?> GetOrderByPCOrderIdAsync(string pcOrderId)
         {
             if (string.IsNullOrEmpty(pcOrderId))
@@ -34,7 +34,7 @@ namespace ASP.Models.Front
                 .FirstOrDefaultAsync(o => o.PCOrderId == pcOrderId);
         }
 
-        // Code cũ: UpsertOrderAsync giữ nguyên
+      
         public async Task UpsertOrderAsync(OrderDTO orderDto)
         {
             if (orderDto == null || orderDto.OrderId == Guid.Empty)
@@ -112,7 +112,7 @@ namespace ASP.Models.Front
             }
         }
 
-        // Code cũ: GetOrdersByDate giữ nguyên
+        
         public async Task<List<Order>> GetOrdersByDate(DateTime date)
         {
             return await _context.Orders
@@ -125,13 +125,13 @@ namespace ASP.Models.Front
                 .ToListAsync();
         }
 
-        // Code cũ: SaveChangesAsync giữ nguyên
+        
         public async Task SaveChangesAsync()
         {
             await _context.SaveChangesAsync();
         }
 
-        // THÊM MỚI: Kiểm tra và cập nhật status order dựa trên điều kiện
+      
         public async Task<bool> UpdateOrderStatusIfNeeded(Guid orderId)
         {
             var order = await _context.Orders
@@ -161,9 +161,9 @@ namespace ASP.Models.Front
 
             // Cập nhật status
             if (isShipped)
-                order.OrderStatus = 2;  // Shipped
+                order.OrderStatus = 3;  // Shipped
             else if (isCompleted)
-                order.OrderStatus = 3;  // Completed
+                order.OrderStatus = 2;  // Completed
             else if (collectedPallets > 0 && collectedPallets < totalOrderPallet)
                 order.OrderStatus = 1;  // Pending
             // Giữ 0 nếu chưa collect
