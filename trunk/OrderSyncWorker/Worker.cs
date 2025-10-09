@@ -18,7 +18,7 @@ namespace DensoWorkerService
         public Worker(ILogger<Worker> logger, IServiceScopeFactory serviceScopeFactory, IConfiguration configuration)
         {
             _logger = logger;
-            _serviceScopeFactory = serviceScopeFactory; // Tiêm IServiceScopeFactory
+            _serviceScopeFactory = serviceScopeFactory; // Tiem IServiceScopeFactory
             _syncInterval = configuration.GetValue<int>("WorkerSettings:SyncIntervalSeconds", 30) * 1000;
         }
 
@@ -32,7 +32,7 @@ namespace DensoWorkerService
                    
                     using (var scope = _serviceScopeFactory.CreateScope())
                     {
-                        // Gi?i quy?t OrderServiceInterface trong ph?m vi
+                        // Giai quyet OrderServiceInterface trong pham vi
                         var orderService = scope.ServiceProvider.GetRequiredService<OrderServiceInterface>();
                         await orderService.SyncOrdersAsync();
                     }

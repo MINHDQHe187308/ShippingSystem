@@ -32,7 +32,7 @@ builder.ConfigureServices((hostContext, services) =>
     // HttpClient và Scoped
     services.AddHttpClient<ExternalApiServiceInterface, ExternalApiService>();
     services.AddScoped<OrderServiceInterface, OrderService>();
-    services.AddScoped<OrderRepositoryInterface, OrderRepository>();  // ??m b?o Scoped cho inject HubContext
+    services.AddScoped<OrderRepositoryInterface, OrderRepository>(); 
     services.AddHostedService<Worker>();
 });
 
