@@ -105,7 +105,7 @@ namespace ASP.Models.Front
                 }
             }
 
-            // THÊM MỚI: Tính toán Plan times dựa trên LeadtimeMaster
+            // THÊM MỚI: Tính toán Plan times dựa trên LeadtimeMaster (theo thứ tự nối tiếp)
             var leadtimeMaster = await _context.LeadtimeMasters
                 .FirstOrDefaultAsync(l => l.CustomerCode == orderDto.CustomerCode && l.TransCd == orderDto.TransCode);
 
@@ -116,11 +116,17 @@ namespace ASP.Models.Front
                 double prepareTimeTotal = leadtimeMaster.PrepareTimePerPallet * orderDto.TotalPallet;
                 double loadingTimeTotal = leadtimeMaster.LoadingTimePerColumn * orderDto.Quantity;
 
+                // Tính nối tiếp quy trình : 
+                // 1. PlanDocumentsTime: Bắt đầu từ CreateDate + thời gian thu thập chứng từ (scan pallet)
                 orderToUpdate.PlanDocumentsTime = orderDto.CreateDate.AddMinutes(collectTimeTotal);
-                orderToUpdate.PlanAsyTime = orderDto.CreateDate.AddMinutes(prepareTimeTotal);
+
+                // 2. PlanAsyTime: Sau PlanDocumentsTime + thời gian chuẩn bị (lái xe phót lít tìm và lất pallet ra khu tập kết và quét ba điểm)
+                orderToUpdate.PlanAsyTime = orderToUpdate.PlanDocumentsTime.AddMinutes(prepareTimeTotal);
+
+                // 3. PlanDeliveryTime: Sau PlanAsyTime + thời gian loading lên container và xuất hàng
                 orderToUpdate.PlanDeliveryTime = orderToUpdate.PlanAsyTime.AddMinutes(loadingTimeTotal);
 
-                _logger.LogInformation("Calculated plan times for order {OrderId}: PlanDocumentsTime={PlanDocumentsTime}, PlanAsyTime={PlanAsyTime}, PlanDeliveryTime={PlanDeliveryTime}",
+                _logger.LogInformation("Calculated sequential plan times for order {OrderId}: PlanDocumentsTime={PlanDocumentsTime}, PlanAsyTime={PlanAsyTime}, PlanDeliveryTime={PlanDeliveryTime}",
                     orderDto.OrderId, orderToUpdate.PlanDocumentsTime, orderToUpdate.PlanAsyTime, orderToUpdate.PlanDeliveryTime);
             }
             else
