@@ -128,15 +128,48 @@ namespace ASP.Controllers.Front
             }
         }
 
+        [HttpGet]
+        public async Task<JsonResult> GetCalendarData()
+        {
+            var today = DateTime.Today;
+            var orders = await _orderRepository.GetOrdersByDate(today);
+            var allCustomers = await _customerRepository.GetAllCustomers();
+            var customerCodesWithOrders = orders.Select(o => o.CustomerCode).Distinct().ToHashSet();
+            var customers = allCustomers.Where(c => customerCodesWithOrders.Contains(c.CustomerCode)).ToList();
 
+            var ordersForView = orders.Select(o => new
+            {
+                UId = o.UId,
+                Resource = o.CustomerCode,
+                ShipDate = o.ShipDate.ToString("yyyy-MM-dd"),
+                PlanAsyTime = o.PlanAsyTime.ToString("yyyy-MM-ddTHH:mm:ss"),
+                PlanDeliveryTime = o.PlanDeliveryTime.ToString("yyyy-MM-ddTHH:mm:ss"),
+                AcAsyTime = o.AcAsyTime?.ToString("yyyy-MM-ddTHH:mm:ss"),
+                AcDeliveryTime = o.AcDeliveryTime?.ToString("yyyy-MM-ddTHH:mm:ss"),
+                Status = o.OrderStatus,  // Sử dụng status mới
+                TotalPallet = o.TotalPallet,
+                TransCd = o.TransCd,
+                TransMethod = o.TransMethod,
+                ContSize = o.ContSize,
+                TotalColumn = o.TotalColumn
+            }).ToArray();
+
+            var customersForView = customers.Select(c => new
+            {
+                CustomerCode = c.CustomerCode,
+                CustomerName = c.CustomerName
+            }).ToArray();
+
+            return Json(new { orders = ordersForView, customers = customersForView });
+        }
         private string MapOrderStatusToString(short orderStatus)
         {
             return orderStatus switch
             {
                 0 => "Planned",
                 1 => "Pending",
-                2 => "Shipped",
-                3 => "Completed",
+                2 => "Completed",         
+                3 => "Shipped",
                 _ => "Planned"
             };
         }
