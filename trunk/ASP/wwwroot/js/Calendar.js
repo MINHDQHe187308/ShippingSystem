@@ -178,8 +178,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const statusMap = {
         0: 'Planned',
         1: 'Pending',
-        2: 'Shipped',
-        3: 'Completed'
+        2: 'Completed',
+        3: 'Shipped'
     };
 
     // Tạo customer map để lấy tên
@@ -379,7 +379,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             const statusText = item.Status || item.status || 'Không xác định';
                             const collectPercent = item.CollectPercent || item.collectPercent || 0;
                             const preparePercent = item.PreparePercent || item.preparePercent || 0;
-                            const loadingPercent = item.LoadingPercent || item.loadingPercent || 0;
+
 
                             const row = `
                                 <tr>
@@ -404,23 +404,14 @@ document.addEventListener('DOMContentLoaded', function () {
                                             
                                             <!-- Prepare Stage -->
                                             <div class="d-flex align-items-center mb-2 mt-2">
-                                                <i class="bi bi-tools text-warning me-2"></i>
+                                                <i class="bi bi-tools text-success me-2"></i>
                                                 <span class="me-auto">Prepare</span>
                                                 <small class="text-muted">${preparePercent}%</small>
                                             </div>
                                             <div class="progress" style="height: 8px;">
-                                                <div class="progress-bar bg-warning" style="width: ${preparePercent}%"></div>
+                                                <div class="progress-bar bg-success" style="width: ${preparePercent}%"></div>
                                             </div>
-                                            
-                                            <!-- Loading Stage -->
-                                            <div class="d-flex align-items-center mb-2 mt-2">
-                                                <i class="bi bi-truck text-success me-2"></i>
-                                                <span class="me-auto">Loading</span>
-                                                <small class="text-muted">${loadingPercent}%</small>
-                                            </div>
-                                            <div class="progress" style="height: 8px;">
-                                                <div class="progress-bar bg-success" style="width: ${loadingPercent}%"></div>
-                                            </div>
+                                           
                                         </div>
                                     </td>
                                 </tr>
@@ -620,6 +611,140 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
     calendar.render();
+
+    // --- THÊM MỚI: SignalR cho realtime status update
+    let connection = null;
+
+    function initSignalR() {
+        // Kiểm tra SignalR có load chưa (dùng jQuery SignalR cũ, hoặc thay bằng @microsoft/signalr nếu dùng version mới)
+        if (typeof $.hubConnection === 'undefined') {
+            console.error('SignalR not loaded. Please include signalr.js.');
+            return;
+        }
+
+        connection = $.hubConnection();
+        connection.url = '/orderHub';  // Hub URL khớp với Program.cs
+
+        connection.start().done(function () {
+            console.log('SignalR connected for realtime updates.');
+        }).fail(function (error) {
+            console.error('SignalR connection failed: ' + error);
+        });
+
+        // Listen event OrderStatusUpdated từ backend
+        connection.client.orderStatusUpdated = function (orderUid, newStatus) {
+            console.log(`Realtime update: Order ${orderUid} status changed to ${newStatus}`);
+
+            // Refetch data từ server để update calendar
+            fetch('/DensoWareHouse/GetCalendarData')  // Action mới trả JSON {orders, customers}
+                .then(response => response.json())
+                .then(data => {
+                    // Update global vars (giả sử orders và customers là global từ đầu file)
+                    orders = data.orders;
+                    customers = data.customers;
+
+                    // Rebuild customerMap
+                    const customerMap = {};
+                    customers.forEach(c => {
+                        customerMap[c.CustomerCode] = c.CustomerName;
+                    });
+
+                    // Rebuild resources
+                    const resources = customers.map(c => ({
+                        id: c.CustomerCode,
+                        title: c.CustomerCode
+                    }));
+
+                    // Rebuild eventsData (copy logic từ code gốc của bạn)
+                    const newEventsData = orders.map((order, index) => {
+                        // Helper: Parse và validate time (copy từ code gốc)
+                        function parseAndValidate(timeStr) {
+                            if (!timeStr) return null;
+                            const d = new Date(timeStr);
+                            if (isNaN(d.getTime())) return null;
+                            return d;
+                        }
+
+                        const planStart = parseAndValidate(order.PlanAsyTime);
+                        const planEnd = parseAndValidate(order.PlanDeliveryTime);
+                        const actualStart = parseAndValidate(order.AcAsyTime);
+                        const actualEnd = parseAndValidate(order.AcDeliveryTime);
+
+                        const validPlan = planStart && planEnd && planStart < planEnd;
+                        const validActual = actualStart && actualEnd && actualStart < actualEnd;
+
+                        let eventStart, eventEnd;
+                        let status = statusMap[parseInt(order.Status, 10)] || 'Planned';  // Dùng statusMap mới
+
+                        if (validActual) {
+                            eventStart = actualStart;
+                            eventEnd = actualEnd;
+                        } else if (validPlan) {
+                            eventStart = planStart;
+                            eventEnd = planEnd;
+                        } else {
+                            return null;
+                        }
+
+                        let hasBoth = false;
+                        if (validActual && validPlan) {
+                            eventStart = new Date(Math.min(actualStart, planStart));
+                            eventEnd = new Date(Math.max(actualEnd, planEnd));
+                            hasBoth = true;
+                        }
+
+                        const customerCode = order.CustomerCode || order.Resource || 'Unknown';
+                        return {
+                            id: `order-${index}`,
+                            resourceId: customerCode,
+                            start: eventStart,
+                            end: eventEnd,
+                            title: order.TotalPallet ? order.TotalPallet.toString() : '0',
+                            hasBoth: hasBoth,
+                            extendedProps: {
+                                uid: order.UId,
+                                customerCode: customerCode,
+                                planStart: validPlan ? planStart.toISOString() : null,
+                                planEnd: validPlan ? planEnd.toISOString() : null,
+                                actualStart: validActual ? actualStart.toISOString() : null,
+                                actualEnd: validActual ? actualEnd.toISOString() : null,
+                                validActual: validActual,
+                                status: status,
+                                totalPallet: order.TotalPallet || 0,
+                                shipDate: order.ShipDate || 'N/A',
+                                transCd: order.TransCd || 'N/A',
+                                transMethod: order.TransMethod || 'N/A',
+                                contSize: order.ContSize || 'N/A',
+                                totalColumn: order.TotalColumn || 0
+                            }
+                        };
+                    }).filter(e => e);
+
+                    // Update calendar options và events
+                    calendar.setOption('resources', resources);
+                    calendar.removeAllEvents();
+                    const formattedEvents = newEventsData.map(e => {
+                        const bgColor = e.hasBoth ? 'transparent' : getColorByStatus(e.extendedProps.status);
+                        const borderColor = e.hasBoth ? 'transparent' : getColorByStatus(e.extendedProps.status);
+                        const classNames = e.extendedProps.validActual ? ['actual-event'] : [];
+                        return {
+                            ...e,
+                            backgroundColor: bgColor,
+                            borderColor: borderColor,
+                            textColor: getTextColorByStatus(e.extendedProps.status),
+                            fontWeight: 'normal',
+                            classNames: classNames
+                        };
+                    });
+                    calendar.addEventSource(formattedEvents);
+                    console.log('Calendar updated with new data.');
+                })
+                .catch(error => console.error('Error refetching calendar data:', error));
+        };
+    }
+
+    // Gọi init sau render
+    initSignalR();
 
     // --- Vạch đỏ hiển thị thời gian hiện tại (FIX: Giảm z-index và ẩn khi modal mở)
     const calComputed = window.getComputedStyle(calendarEl);
