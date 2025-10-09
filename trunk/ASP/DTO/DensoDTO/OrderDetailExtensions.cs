@@ -27,7 +27,7 @@ namespace ASP.DTO.DensoDTO
                     BookContStatus = orderDetail.BookContStatus,
                     CollectPercent = 0,
                     PreparePercent = 0,
-                    LoadingPercent = 0, // vẫn để field này để không lỗi map model
+                    LoadingPercent = 0,
                     CurrentStage = "NotStarted",
                     Status = GetBookContStatusText(orderDetail.BookContStatus)
                 };
@@ -49,7 +49,7 @@ namespace ASP.DTO.DensoDTO
                 .Count();
             var preparePercent = (double)preparedPallets / totalPallets * 100;
 
-            // Không tính phần trăm loading nữa
+         
             string currentStage = DetermineCurrentStage(collectPercent, preparePercent, orderDetail.BookContStatus);
             string statusText = GetBookContStatusText(orderDetail.BookContStatus);
 
@@ -64,7 +64,7 @@ namespace ASP.DTO.DensoDTO
                 BookContStatus = orderDetail.BookContStatus,
                 CollectPercent = Math.Round(collectPercent, 1),
                 PreparePercent = Math.Round(preparePercent, 1),
-                LoadingPercent = 0, // bỏ phần trăm loading
+                LoadingPercent = 0, 
                 CurrentStage = currentStage,
                 Status = statusText
             };
@@ -74,15 +74,15 @@ namespace ASP.DTO.DensoDTO
         {
             if (collect < 100) return "Collecting";
             if (prepare < 100) return "Preparing";
-            return bookContStatus == 1 ? "Completed" : "WaitingForLoading";
+            return bookContStatus == 1 ? "Completed" : "WaitingForBookCont";
         }
 
         private static string GetBookContStatusText(short status)
         {
             return status switch
             {
-                0 => "Chưa Loading lên cont",
-                1 => "Đã Loading lên cont",
+                0 => "Chưa Book Cont",
+                1 => "Đã Book Cont",
                 _ => "Không xác định"
             };
         }
