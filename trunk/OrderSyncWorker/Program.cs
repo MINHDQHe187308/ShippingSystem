@@ -1,4 +1,4 @@
-using ASP.Models;  
+using ASP.Models;
 using ASP.Models.ASPModel;
 using ASP.Models.Front;
 using ASP.Service;
@@ -8,8 +8,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using DensoWorkerService;
 using Serilog;
-using Microsoft.AspNetCore.SignalR;  
-using ASP.Hubs;  
+using Microsoft.AspNetCore.SignalR;
+using ASP.Hubs;
+using Microsoft.Extensions.Hosting;  
 
 var builder = Host.CreateDefaultBuilder(args);
 
@@ -25,15 +26,22 @@ builder.ConfigureServices((hostContext, services) =>
     services.AddDbContext<ASPDbContext>(options =>
         options.UseSqlServer(hostContext.Configuration.GetConnectionString("DefaultConnection")));
 
-    //  SignalR cho HubContext (dùng server-side)
+    // SignalR cho HubContext
     services.AddSignalR();
     services.AddScoped<IHubContext<OrderHub>>();
 
     // HttpClient và Scoped
     services.AddHttpClient<ExternalApiServiceInterface, ExternalApiService>();
     services.AddScoped<OrderServiceInterface, OrderService>();
-    services.AddScoped<OrderRepositoryInterface, OrderRepository>(); 
+    services.AddScoped<OrderRepositoryInterface, OrderRepository>();
+    services.AddMemoryCache();
     services.AddHostedService<Worker>();
+
+    // Set ShutdownTimeout
+    services.Configure<HostOptions>(options =>
+    {
+        options.ShutdownTimeout = TimeSpan.FromSeconds(120);  
+    });
 });
 
 await builder.Build().RunAsync();
