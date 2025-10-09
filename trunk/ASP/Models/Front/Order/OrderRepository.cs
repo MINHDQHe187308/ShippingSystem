@@ -24,7 +24,7 @@ namespace ASP.Models.Front
             _logger = logger;
         }
 
-       
+
         public async Task<Order?> GetOrderByPCOrderIdAsync(string pcOrderId)
         {
             if (string.IsNullOrEmpty(pcOrderId))
@@ -34,7 +34,7 @@ namespace ASP.Models.Front
                 .FirstOrDefaultAsync(o => o.PCOrderId == pcOrderId);
         }
 
-      
+
         public async Task UpsertOrderAsync(OrderDTO orderDto)
         {
             if (orderDto == null || orderDto.OrderId == Guid.Empty)
@@ -44,75 +44,99 @@ namespace ASP.Models.Front
             var trackedOrder = _context.ChangeTracker.Entries<Order>()
                 .FirstOrDefault(e => e.Entity.UId == orderDto.OrderId);
 
+            Order orderToUpdate;
+            bool isNewOrder = false;
+
             if (trackedOrder != null)
             {
                 // Cập nhật thực thể đã được theo dõi
-                trackedOrder.Entity.ShipDate = orderDto.ShippingDate;
-                trackedOrder.Entity.CustomerCode = orderDto.CustomerCode;
-                trackedOrder.Entity.TransCd = orderDto.TransCode;
-                trackedOrder.Entity.TransMethod = 0;
-                trackedOrder.Entity.ContSize = (short)orderDto.PalletSize;
-                trackedOrder.Entity.TotalColumn = orderDto.Quantity;
-                trackedOrder.Entity.PartList = orderDto.PartNo;
-                trackedOrder.Entity.TotalPallet = orderDto.TotalPallet;
-                trackedOrder.Entity.OrderCreateDate = orderDto.CreateDate;
-                trackedOrder.Entity.AcAsyTime = null;
-                trackedOrder.Entity.AcDocumentsTime = null;
-                trackedOrder.Entity.AcDeliveryTime = null;
-                return;
-            }
-
-            // Truy vấn cơ sở dữ liệu với AsNoTracking
-            var existing = await _context.Orders
-                .AsNoTracking()
-                .FirstOrDefaultAsync(o => o.UId == orderDto.OrderId);
-
-            if (existing != null)
-            {
-                // Gắn và cập nhật thực thể hiện có
-                var orderToUpdate = new Order
-                {
-                    UId = orderDto.OrderId,
-                    ShipDate = orderDto.ShippingDate,
-                    CustomerCode = orderDto.CustomerCode,
-                    TransCd = orderDto.TransCode,
-                    TransMethod = 0,
-                    ContSize = (short)orderDto.PalletSize,
-                    TotalColumn = orderDto.Quantity,
-                    PartList = orderDto.PartNo,
-                    TotalPallet = orderDto.TotalPallet,
-                    OrderCreateDate = orderDto.CreateDate,
-                    AcAsyTime = null,
-                    AcDocumentsTime = null,
-                    AcDeliveryTime = null
-                };
-                _context.Orders.Update(orderToUpdate);
+                orderToUpdate = trackedOrder.Entity;
             }
             else
             {
-                // Thêm mới đơn hàng
-                var newOrder = new Order
+                // Truy vấn cơ sở dữ liệu với AsNoTracking
+                var existing = await _context.Orders
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(o => o.UId == orderDto.OrderId);
+
+                if (existing != null)
                 {
-                    UId = orderDto.OrderId,
-                    PCOrderId = orderDto.OrderId.ToString(),
-                    ShipDate = orderDto.ShippingDate,
-                    CustomerCode = orderDto.CustomerCode,
-                    TransCd = orderDto.TransCode,
-                    TransMethod = 0,
-                    ContSize = (short)orderDto.PalletSize,
-                    TotalColumn = orderDto.Quantity,
-                    PartList = orderDto.PartNo,
-                    TotalPallet = orderDto.TotalPallet,
-                    OrderCreateDate = orderDto.CreateDate,
-                    AcAsyTime = null,
-                    AcDocumentsTime = null,
-                    AcDeliveryTime = null
-                };
-                await _context.Orders.AddAsync(newOrder);
+                    // Gắn và cập nhật thực thể hiện có
+                    orderToUpdate = new Order
+                    {
+                        UId = orderDto.OrderId,
+                        ShipDate = orderDto.ShippingDate,
+                        CustomerCode = orderDto.CustomerCode,
+                        TransCd = orderDto.TransCode,
+                        TransMethod = 0,
+                        ContSize = (short)orderDto.PalletSize,
+                        TotalColumn = orderDto.Quantity,
+                        PartList = orderDto.PartNo,
+                        TotalPallet = orderDto.TotalPallet,
+                        OrderCreateDate = orderDto.CreateDate,
+                        AcAsyTime = null,
+                        AcDocumentsTime = null,
+                        AcDeliveryTime = null
+                    };
+                    _context.Orders.Update(orderToUpdate);
+                }
+                else
+                {
+                    // Thêm mới đơn hàng
+                    orderToUpdate = new Order
+                    {
+                        UId = orderDto.OrderId,
+                        PCOrderId = orderDto.OrderId.ToString(),
+                        ShipDate = orderDto.ShippingDate,
+                        CustomerCode = orderDto.CustomerCode,
+                        TransCd = orderDto.TransCode,
+                        TransMethod = 0,
+                        ContSize = (short)orderDto.PalletSize,
+                        TotalColumn = orderDto.Quantity,
+                        PartList = orderDto.PartNo,
+                        TotalPallet = orderDto.TotalPallet,
+                        OrderCreateDate = orderDto.CreateDate,
+                        AcAsyTime = null,
+                        AcDocumentsTime = null,
+                        AcDeliveryTime = null
+                    };
+                    await _context.Orders.AddAsync(orderToUpdate);
+                    isNewOrder = true;
+                }
+            }
+
+            // THÊM MỚI: Tính toán Plan times dựa trên LeadtimeMaster
+            var leadtimeMaster = await _context.LeadtimeMasters
+                .FirstOrDefaultAsync(l => l.CustomerCode == orderDto.CustomerCode && l.TransCd == orderDto.TransCode);
+
+            if (leadtimeMaster != null)
+            {
+                // Giả sử thời gian trong LeadtimeMaster là đơn vị phút (có thể điều chỉnh nếu là giờ hoặc giây)
+                double collectTimeTotal = leadtimeMaster.CollectTimePerPallet * orderDto.TotalPallet;
+                double prepareTimeTotal = leadtimeMaster.PrepareTimePerPallet * orderDto.TotalPallet;
+                double loadingTimeTotal = leadtimeMaster.LoadingTimePerColumn * orderDto.Quantity;
+
+                orderToUpdate.PlanDocumentsTime = orderDto.CreateDate.AddMinutes(collectTimeTotal);
+                orderToUpdate.PlanAsyTime = orderDto.CreateDate.AddMinutes(prepareTimeTotal);
+                orderToUpdate.PlanDeliveryTime = orderToUpdate.PlanAsyTime.AddMinutes(loadingTimeTotal);
+
+                _logger.LogInformation("Calculated plan times for order {OrderId}: PlanDocumentsTime={PlanDocumentsTime}, PlanAsyTime={PlanAsyTime}, PlanDeliveryTime={PlanDeliveryTime}",
+                    orderDto.OrderId, orderToUpdate.PlanDocumentsTime, orderToUpdate.PlanAsyTime, orderToUpdate.PlanDeliveryTime);
+            }
+            else
+            {
+                _logger.LogWarning("No LeadtimeMaster found for CustomerCode={CustomerCode} and TransCd={TransCd}, skipping plan time calculation for order {OrderId}",
+                    orderDto.CustomerCode, orderDto.TransCode, orderDto.OrderId);
+            }
+
+            // Nếu là order mới, cần set thêm các fields cơ bản nếu chưa có
+            if (isNewOrder)
+            {
+                orderToUpdate.OrderStatus = 0; // Default status
             }
         }
 
-        
+
         public async Task<List<Order>> GetOrdersByDate(DateTime date)
         {
             return await _context.Orders
@@ -125,13 +149,13 @@ namespace ASP.Models.Front
                 .ToListAsync();
         }
 
-        
+
         public async Task SaveChangesAsync()
         {
             await _context.SaveChangesAsync();
         }
 
-      
+
         public async Task<bool> UpdateOrderStatusIfNeeded(Guid orderId)
         {
             var order = await _context.Orders
