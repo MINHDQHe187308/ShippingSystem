@@ -167,7 +167,7 @@ namespace ASP.Models.Front
             var order = await _context.Orders
                 .Include(o => o.OrderDetails)
                 .ThenInclude(od => od.ShoppingLists)
-                .ThenInclude(sl => sl.ThreePointChecks)  //Include ThreePointChecks để tính AcAsyTime
+                .ThenInclude(sl => sl.ThreePointChecks)  // Include để tính AcAsyTime
                 .FirstOrDefaultAsync(o => o.UId == orderId);
 
             if (order == null)
@@ -181,7 +181,7 @@ namespace ASP.Models.Front
             // Tính collected pallets từ ShoppingLists (giữ nguyên)
             var allShoppingLists = order.OrderDetails.SelectMany(od => od.ShoppingLists ?? new List<ShoppingList>()).ToList();
             var collectedPallets = allShoppingLists
-                .Where(sl => sl.CollectionStatus == 1 || sl.CollectedDate.HasValue)
+                .Where(sl => sl.CollectionStatus == 1 || sl.CollectedDate.HasValue) 
                 .Select(sl => sl.PalletNo)
                 .Distinct()
                 .Count();
@@ -190,7 +190,6 @@ namespace ASP.Models.Front
             bool isCompleted = totalOrderPallet > 0 && collectedPallets >= totalOrderPallet;
             bool isShipped = isCompleted && order.OrderDetails.Any(od => od.BookContStatus == 1);
 
-            // Cập nhật status (giữ nguyên)
             if (isShipped)
                 order.OrderStatus = 3;  // Shipped
             else if (isCompleted)
@@ -199,40 +198,51 @@ namespace ASP.Models.Front
                 order.OrderStatus = 1;  // Pending
                                         // Giữ 0 nếu chưa collect
 
-            // Tính Actual Times dựa trên dữ liệu thực tế (nối tiếp theo quy trình)
+            // THÊM MỚI: Tính Actual Times dựa trên dữ liệu thực tế (nối tiếp theo quy trình, với null-safe)
             bool actualTimesChanged = false;
 
             // 1. AcDocumentsTime: Max CollectedDate từ tất cả ShoppingLists (hoàn thành scan pallet)
-            var maxCollectedDate = allShoppingLists
-                .Where(sl => sl.CollectedDate.HasValue)
-                .Max(sl => sl.CollectedDate.Value);
-            if (maxCollectedDate.HasValue && (!order.AcDocumentsTime.HasValue || order.AcDocumentsTime.Value != maxCollectedDate.Value))
+           
+            var collectedDates = allShoppingLists
+                .Where(sl => sl.CollectedDate.HasValue)  
+                .Select(sl => sl.CollectedDate.Value)    
+                .ToList(); 
+            if (collectedDates.Any())
             {
-                order.AcDocumentsTime = maxCollectedDate.Value;
-                actualTimesChanged = true;
-                _logger.LogInformation("Updated AcDocumentsTime for order {OrderId} to {AcDocumentsTime}", orderId, order.AcDocumentsTime);
+                var maxCollectedDate = collectedDates.Max();  // Max trên List<DateTime> non-nullable
+                if (!order.AcDocumentsTime.HasValue || order.AcDocumentsTime.Value != maxCollectedDate)
+                {
+                    order.AcDocumentsTime = maxCollectedDate;  
+                    actualTimesChanged = true;
+                    _logger.LogInformation("Updated AcDocumentsTime for order {OrderId} to {AcDocumentsTime}", orderId, order.AcDocumentsTime);
+                }
             }
 
             // 2. AcAsyTime: Max IssuedDate từ tất cả ThreePointChecks (sau quét ba điểm), chỉ nếu AcDocumentsTime đã có
-            if (order.AcDocumentsTime.HasValue)
+            if (order.AcDocumentsTime.HasValue) 
             {
                 var allThreePointChecks = allShoppingLists.SelectMany(sl => sl.ThreePointChecks ?? new List<ThreePointCheck>()).ToList();
-                var maxIssuedDate = allThreePointChecks
-                    .Where(tpc => tpc.IssuedDate > order.AcDocumentsTime.Value)  // Đảm bảo sau thời gian scan
-                    .Max(tpc => tpc.IssuedDate);
+                var validIssuedDates = allThreePointChecks
+                    .Where(tpc => tpc.IssuedDate > order.AcDocumentsTime.Value) 
+                    .Select(tpc => tpc.IssuedDate)  
+                    .ToList();
 
-                if (allThreePointChecks.Any() && (!order.AcAsyTime.HasValue || order.AcAsyTime.Value != maxIssuedDate))
+                if (validIssuedDates.Any())
                 {
-                    order.AcAsyTime = maxIssuedDate;
-                    actualTimesChanged = true;
-                    _logger.LogInformation("Updated AcAsyTime for order {OrderId} to {AcAsyTime}", orderId, order.AcAsyTime);
+                    var maxIssuedDate = validIssuedDates.Max();  // Max trên List<DateTime>
+                    if (!order.AcAsyTime.HasValue || order.AcAsyTime.Value != maxIssuedDate)
+                    {
+                        order.AcAsyTime = maxIssuedDate;
+                        actualTimesChanged = true;
+                        _logger.LogInformation("Updated AcAsyTime for order {OrderId} to {AcAsyTime}", orderId, order.AcAsyTime);
+                    }
                 }
             }
 
             // 3. AcDeliveryTime: Ngày hiện tại khi shipped (BookContStatus == 1), chỉ nếu AcAsyTime đã có
             if (order.AcAsyTime.HasValue && isShipped)
             {
-                var now = DateTime.Now;  // Hoặc dùng DateTime.UtcNow nếu cần UTC
+                var now = DateTime.Now;  // DateTime non-nullable, gán vào DateTime? fine
                 if (!order.AcDeliveryTime.HasValue || order.AcDeliveryTime.Value != now)
                 {
                     order.AcDeliveryTime = now;
@@ -241,7 +251,7 @@ namespace ASP.Models.Front
                 }
             }
 
-            // Cập nhật status nếu thay đổi (giữ nguyên)
+            // Cập nhật nếu thay đổi (giữ nguyên)
             bool statusChanged = order.OrderStatus != oldStatus;
             if (statusChanged || actualTimesChanged)
             {
@@ -250,7 +260,7 @@ namespace ASP.Models.Front
                 _logger.LogInformation("Order {OrderId} updated: Status from {Old} to {New}, ActualTimes changed: {Changed}",
                     orderId, oldStatus, order.OrderStatus, actualTimesChanged);
 
-                // Notify SignalR (giữ nguyên)
+                // Notify SignalR
                 await _hubContext.Clients.All.SendAsync("OrderStatusUpdated", order.UId.ToString(), order.OrderStatus);
             }
 
