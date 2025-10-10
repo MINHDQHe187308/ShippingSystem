@@ -60,6 +60,7 @@ builder.Services.AddScoped<CustomerRepositoryInterface, CustomerRepository>();
 builder.Services.AddScoped<OrderRepositoryInterface, OrderRepository>();
 builder.Services.AddScoped<OrderDetailRepositoryInterface, OrderDetailRepository>();
 builder.Services.AddScoped<ShippingScheduleRepositoryInterface, ShippingScheduleRepository>();
+builder.Services.AddScoped<LeadtimeMasterRepositoryInterface, LeadtimeRepository>();
 // frontend
 //policies
 builder.Services.AddSingleton<IAuthorizationHandler, UserPolicyAuthorizationHandler>();
