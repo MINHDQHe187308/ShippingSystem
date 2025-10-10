@@ -46,21 +46,36 @@ namespace ASP.Controllers.Front
             var customers = allCustomers.Where(c => customerCodesWithOrders.Contains(c.CustomerCode)).ToList();
 
             // Map orders sang anonymous object - THÊM UId VÀ GIỮ STATUS LÀ NUMBER, THÊM TOTALPALLET VÀ CÁC TRƯỜNG KHÁC
-            var ordersForView = orders.Select(o => new
-            {
-                UId = o.UId,  // THÊM: Để sử dụng trong JS eventClick
-                Resource = o.CustomerCode,
-                ShipDate = o.ShipDate.ToString("yyyy-MM-dd"),
-                StartTime = o.StartTime.ToString("yyyy-MM-ddTHH:mm:ss"),  
-                EndTime = o.EndTime.ToString("yyyy-MM-ddTHH:mm:ss"), 
-                AcStartTime = o.AcStartTime?.ToString("yyyy-MM-ddTHH:mm:ss"), 
-                AcEndTime = o.AcEndTime?.ToString("yyyy-MM-ddTHH:mm:ss"),  
-                Status = o.OrderStatus,
-                TotalPallet = o.TotalPallet,
-                TransCd = o.TransCd,
-                TransMethod = o.TransMethod,
-                ContSize = o.ContSize,
-                TotalColumn = o.TotalColumn
+            var ordersForView = orders.Select(o => {
+                // Collect: Đếm orderdetail mà TẤT CẢ shoppinglist có Status=1 (Collected)
+                int collectCount = o.OrderDetails?.Count(od => od.ShoppingLists != null && od.ShoppingLists.All(sl => sl.PLStatus == 1)) ?? 0;
+
+                // ThreePointScan: Đếm orderdetail mà TẤT CẢ shoppinglist có Status=2 (Prepared)
+                int prepareCount = o.OrderDetails?.Count(od => od.ShoppingLists != null && od.ShoppingLists.All(sl => sl.PLStatus == 2)) ?? 0;
+
+                // LoadCont: Đếm orderdetail mà TẤT CẢ shoppinglist có Status=3 (Loaded)
+                int loadCount = o.OrderDetails?.Count(od => od.ShoppingLists != null && od.ShoppingLists.All(sl => sl.PLStatus == 3)) ?? 0;
+
+                return new
+                {
+                    UId = o.UId,
+                    Resource = o.CustomerCode,
+                    ShipDate = o.ShipDate.ToString("yyyy-MM-dd"),
+                    StartTime = o.StartTime.ToString("yyyy-MM-ddTHH:mm:ss"),
+                    EndTime = o.EndTime.ToString("yyyy-MM-ddTHH:mm:ss"),
+                    AcStartTime = o.AcStartTime?.ToString("yyyy-MM-ddTHH:mm:ss"),
+                    AcEndTime = o.AcEndTime?.ToString("yyyy-MM-ddTHH:mm:ss"),
+                    Status = o.OrderStatus,
+                    TotalPallet = o.TotalPallet,
+                    // THÊM: Các trường mới cho progress (dạng string "X / Y")
+                    CollectPallet = $"{collectCount} / {o.TotalPallet}",
+                    ThreePointScan = $"{prepareCount} / {o.TotalPallet}",
+                    LoadCont = $"{loadCount} / {o.TotalPallet}",
+                    TransCd = o.TransCd,
+                    TransMethod = o.TransMethod,
+                    ContSize = o.ContSize,
+                    TotalColumn = o.TotalColumn
+                };
             }).ToArray();
             Console.WriteLine($"First mapped UId string: {ordersForView.FirstOrDefault()?.UId}");
             // Map customers sang anonymous object (giữ nguyên)
@@ -137,21 +152,36 @@ namespace ASP.Controllers.Front
             var customerCodesWithOrders = orders.Select(o => o.CustomerCode).Distinct().ToHashSet();
             var customers = allCustomers.Where(c => customerCodesWithOrders.Contains(c.CustomerCode)).ToList();
 
-            var ordersForView = orders.Select(o => new
-            {
-                UId = o.UId,
-                Resource = o.CustomerCode,
-                ShipDate = o.ShipDate.ToString("yyyy-MM-dd"),
-                StartTime = o.StartTime.ToString("yyyy-MM-ddTHH:mm:ss"), 
-                EndTime = o.EndTime.ToString("yyyy-MM-ddTHH:mm:ss"),
-                AcStartTime = o.AcStartTime?.ToString("yyyy-MM-ddTHH:mm:ss"),
-                AcEndTime = o.AcEndTime?.ToString("yyyy-MM-ddTHH:mm:ss"),  
-                Status = o.OrderStatus,  
-                TotalPallet = o.TotalPallet,
-                TransCd = o.TransCd,
-                TransMethod = o.TransMethod,
-                ContSize = o.ContSize,
-                TotalColumn = o.TotalColumn
+            var ordersForView = orders.Select(o => {
+                // Collect: Đếm orderdetail mà TẤT CẢ shoppinglist có Status=1 (Collected)
+                int collectCount = o.OrderDetails?.Count(od => od.ShoppingLists != null && od.ShoppingLists.All(sl => sl.PLStatus == 1)) ?? 0;
+
+                // ThreePointScan: Đếm orderdetail mà TẤT CẢ shoppinglist có Status=2 (Prepared)
+                int prepareCount = o.OrderDetails?.Count(od => od.ShoppingLists != null && od.ShoppingLists.All(sl => sl.PLStatus == 2)) ?? 0;
+
+                // LoadCont: Đếm orderdetail mà TẤT CẢ shoppinglist có Status=3 (Loaded)
+                int loadCount = o.OrderDetails?.Count(od => od.ShoppingLists != null && od.ShoppingLists.All(sl => sl.PLStatus == 3)) ?? 0;
+
+                return new
+                {
+                    UId = o.UId,
+                    Resource = o.CustomerCode,
+                    ShipDate = o.ShipDate.ToString("yyyy-MM-dd"),
+                    StartTime = o.StartTime.ToString("yyyy-MM-ddTHH:mm:ss"),
+                    EndTime = o.EndTime.ToString("yyyy-MM-ddTHH:mm:ss"),
+                    AcStartTime = o.AcStartTime?.ToString("yyyy-MM-ddTHH:mm:ss"),
+                    AcEndTime = o.AcEndTime?.ToString("yyyy-MM-ddTHH:mm:ss"),
+                    Status = o.OrderStatus,
+                    TotalPallet = o.TotalPallet,
+                    // THÊM: Các trường mới cho progress (dạng string "X / Y")
+                    CollectPallet = $"{collectCount} / {o.TotalPallet}",
+                    ThreePointScan = $"{prepareCount} / {o.TotalPallet}",
+                    LoadCont = $"{loadCount} / {o.TotalPallet}",
+                    TransCd = o.TransCd,
+                    TransMethod = o.TransMethod,
+                    ContSize = o.ContSize,
+                    TotalColumn = o.TotalColumn
+                };
             }).ToArray();
 
             var customersForView = customers.Select(c => new
