@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const style = document.createElement('style');
     style.textContent = `
         .fc-event {
-            height: 70px !important;  /* Tăng kích thước event từ 30px lên 70px để dễ nhìn và chứa nhiều info hơn */
+            height: 80px !important;  /* Tăng từ 70px lên 80px để chứa thêm thông tin progress */
             display: flex !important;
             align-items: center !important;  /* Căn giữa theo chiều dọc trong slot */
             justify-content: center !important;  /* Căn giữa text nếu cần */
@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         .fc-event.actual-event {
             z-index: 2;
-            height: 70px !important;  /* Đồng bộ height với .fc-event, tăng từ 30px */
+            height: 80px !important;  /* Đồng bộ height với .fc-event */
             line-height: 1.2 !important;
         }
         .fc-event .fc-event-main {  /* Đảm bảo inner content cũng center */
@@ -39,11 +39,11 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         /* Tăng chiều cao resource rows để chứa event lớn hơn */
         .fc-resource-timeline .fc-resource-cell {
-            height: 80px !important;  /* Tăng height của resource cell từ mặc định ~30px lên 80px */
+            height: 90px !important;  /* Tăng height của resource cell từ 80px lên 90px */
             padding: 4px !important;  /* Thêm padding để không sát mép */
         }
         .fc-resource-timeline .fc-timeline-slot-table .fc-resource-cell {
-            height: 80px !important;  /* Đảm bảo apply cho slot table cells */
+            height: 90px !important;  /* Đảm bảo apply cho slot table cells */
         }
         /* Custom Tooltip Styles - ĐẸP MẮT VÀ DỄ NHÌN */
         #custom-tooltip {
@@ -221,7 +221,7 @@ document.addEventListener('DOMContentLoaded', function () {
         return darkBgs.includes(bgColor) ? '#fff' : '#000';
     }
 
-    // --- Tạo event data từ dữ liệu Order - THÊM UId VÀO EXTENDEDPROPS
+    // --- Tạo event data từ dữ liệu Order - THÊM UId VÀO EXTENDEDPROPS VÀ THÊM CÁC TRƯỜNG PROGRESS
     const eventsData = orders.map((order, index) => {
         // Helper: Parse và validate time
         function parseAndValidate(timeStr) {
@@ -271,7 +271,7 @@ document.addEventListener('DOMContentLoaded', function () {
             resourceId: customerCode,
             start: eventStart,
             end: eventEnd,
-            title: order.TotalPallet ? order.TotalPallet.toString() : '0',  // SỬA: Hiển thị TotalPallet thay vì customerCode
+            title: '',  // Đặt rỗng vì dùng custom eventContent
             // Xóa status ở root level, di chuyển vào extendedProps
             hasBoth: hasBoth,
             extendedProps: {
@@ -284,6 +284,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 validActual: validActual,
                 status: status,  // ← SỬA: Di chuyển status vào extendedProps
                 totalPallet: order.TotalPallet || 0,  // THÊM: Lưu TotalPallet vào extendedProps để dùng trong eventContent
+                collectPallet: order.CollectPallet || '0 / 0',  // THÊM: Progress Collect
+                threePointScan: order.ThreePointScan || '0 / 0',  // THÊM: Progress ThreePointScan
+                loadCont: order.LoadCont || '0 / 0',  // THÊM: Progress LoadCont
                 shipDate: order.ShipDate || 'N/A',
                 transCd: order.TransCd || 'N/A',
                 transMethod: order.TransMethod || 'N/A',
@@ -468,7 +471,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
         },
 
-        // --- Custom eventContent: VẼ EVENT VÀ ATTACH HOVER EVENTS CHO TOOLTIP
+        // --- Custom eventContent: VẼ EVENT VÀ ATTACH HOVER EVENTS CHO TOOLTIP - THÊM HIỂN THỊ CUSTOMERCODE VÀ PROGRESS TRONG HÀNG NGANG VỚI BG KHÁC NHAU
         eventContent: function (arg) {
             // FIX: Lấy status từ extendedProps
             const status = arg.event.extendedProps.status;
@@ -509,15 +512,17 @@ document.addEventListener('DOMContentLoaded', function () {
                         const wrapper = document.createElement('div');
                         // FIX: Fallback bg nếu transparent để tránh xám hoàn toàn
                         wrapper.style.position = 'relative';
-                        wrapper.style.height = '100%';  // Đồng bộ với height của .fc-event (70px)
+                        wrapper.style.height = '100%';  // Đồng bộ với height của .fc-event (80px)
                         wrapper.style.width = '100%';
                         wrapper.style.background = arg.event.backgroundColor || getColorByStatus(status) || 'transparent';
                         wrapper.style.borderRadius = '4px';
                         wrapper.style.overflow = 'visible';  // Cho phép extend visible
                         wrapper.style.color = arg.event.textColor;
-                        wrapper.style.display = 'flex';  // Thêm flex để hỗ trợ centering nếu CSS chưa apply
+                        wrapper.style.display = 'flex';  // Flex row để thẳng hàng
+                        wrapper.style.flexDirection = 'row';
                         wrapper.style.alignItems = 'center';
-                        wrapper.style.justifyContent = 'center';
+                        wrapper.style.justifyContent = 'space-around';  // Phân bố đều các phần
+                        wrapper.style.padding = '2px';  // Thêm padding nhẹ để không sát mép
 
                         // Vẽ actual bar (nếu có) - dùng màu theo status DB
                         if (aStart && aEnd) {
@@ -558,16 +563,66 @@ document.addEventListener('DOMContentLoaded', function () {
                             wrapper.appendChild(planBar);
                         }
 
-                        // Text (luôn hiển thị) - SỬA: HIỂN THỊ TOTALPALLET VỚI NHÃN, MÀU TRẮNG, ĐẬM, VÀ TĂNG FONT-SIZE CHO PHÙ HỢP VỚI EVENT LỚN HƠN
-                        const text = document.createElement('span');
-                        text.textContent = `TotalPallet: ${extendedProps.totalPallet ? extendedProps.totalPallet.toString() : '0'}`;
-                        text.style.position = 'relative';
-                        text.style.zIndex = '2';
-                        text.style.paddingLeft = '4px';
-                        text.style.fontSize = '18px';  /* Tăng font-size từ 15px lên 18px để phù hợp với event lớn hơn */
-                        text.style.color = 'white';
-                        text.style.fontWeight = 'bold';
-                        wrapper.appendChild(text);
+                        // THÊM MỚI: Hiển thị CustomerCode và 3 progress thẳng hàng nhau với background khác nhau
+                        // Phần 1: CustomerCode (background xám nhạt, chữ đen, đậm)
+                        const customerDiv = document.createElement('div');
+                        customerDiv.textContent = extendedProps.customerCode || 'N/A';
+                        customerDiv.style.position = 'relative';
+                        customerDiv.style.zIndex = '2';
+                        customerDiv.style.backgroundColor = '#f8f9fa';  // Xám nhạt dễ nhìn
+                        customerDiv.style.color = '#000';
+                        customerDiv.style.padding = '4px 8px';
+                        customerDiv.style.borderRadius = '4px';
+                        customerDiv.style.fontSize = '12px';
+                        customerDiv.style.fontWeight = 'bold';
+                        customerDiv.style.textAlign = 'center';
+                        customerDiv.style.minWidth = '60px';  // Đảm bảo không bị ép
+                        wrapper.appendChild(customerDiv);
+
+                        // Phần 2: CollectPallet (background xanh dương, chữ trắng, đậm)
+                        const collectDiv = document.createElement('div');
+                        collectDiv.textContent = `Collect: ${extendedProps.collectPallet}`;
+                        collectDiv.style.position = 'relative';
+                        collectDiv.style.zIndex = '2';
+                        collectDiv.style.backgroundColor = '#007bff';  // Xanh dương trực quan cho Collect
+                        collectDiv.style.color = '#fff';
+                        collectDiv.style.padding = '4px 8px';
+                        collectDiv.style.borderRadius = '4px';
+                        collectDiv.style.fontSize = '11px';
+                        collectDiv.style.fontWeight = 'bold';
+                        collectDiv.style.textAlign = 'center';
+                        collectDiv.style.minWidth = '70px';
+                        wrapper.appendChild(collectDiv);
+
+                        // Phần 3: ThreePointScan (background xanh lá, chữ trắng, đậm)
+                        const threeDiv = document.createElement('div');
+                        threeDiv.textContent = `3PS: ${extendedProps.threePointScan}`;
+                        threeDiv.style.position = 'relative';
+                        threeDiv.style.zIndex = '2';
+                        threeDiv.style.backgroundColor = '#28a745';  // Xanh lá trực quan cho Prepared
+                        threeDiv.style.color = '#fff';
+                        threeDiv.style.padding = '4px 8px';
+                        threeDiv.style.borderRadius = '4px';
+                        threeDiv.style.fontSize = '11px';
+                        threeDiv.style.fontWeight = 'bold';
+                        threeDiv.style.textAlign = 'center';
+                        threeDiv.style.minWidth = '70px';
+                        wrapper.appendChild(threeDiv);
+
+                        // Phần 4: LoadCont (background cam, chữ đen, đậm)
+                        const loadDiv = document.createElement('div');
+                        loadDiv.textContent = `Load: ${extendedProps.loadCont}`;
+                        loadDiv.style.position = 'relative';
+                        loadDiv.style.zIndex = '2';
+                        loadDiv.style.backgroundColor = '#ffc107';  // Cam trực quan cho Loaded
+                        loadDiv.style.color = '#000';
+                        loadDiv.style.padding = '4px 8px';
+                        loadDiv.style.borderRadius = '4px';
+                        loadDiv.style.fontSize = '11px';
+                        loadDiv.style.fontWeight = 'bold';
+                        loadDiv.style.textAlign = 'center';
+                        loadDiv.style.minWidth = '70px';
+                        wrapper.appendChild(loadDiv);
 
                         // --- ATTACH HOVER EVENTS CHO CUSTOM TOOLTIP - HIỂN THỊ NGAY LẬP TỨC
                         const tooltip = createTooltip();
@@ -715,7 +770,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             resourceId: customerCode,
                             start: eventStart,
                             end: eventEnd,
-                            title: order.TotalPallet ? order.TotalPallet.toString() : '0',
+                            title: '',
                             hasBoth: hasBoth,
                             extendedProps: {
                                 uid: order.UId,
@@ -727,6 +782,9 @@ document.addEventListener('DOMContentLoaded', function () {
                                 validActual: validActual,
                                 status: status,
                                 totalPallet: order.TotalPallet || 0,
+                                collectPallet: order.CollectPallet || '0 / 0',
+                                threePointScan: order.ThreePointScan || '0 / 0',
+                                loadCont: order.LoadCont || '0 / 0',
                                 shipDate: order.ShipDate || 'N/A',
                                 transCd: order.TransCd || 'N/A',
                                 transMethod: order.TransMethod || 'N/A',
