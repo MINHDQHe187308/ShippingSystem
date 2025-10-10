@@ -35,6 +35,7 @@ builder.ConfigureServices((hostContext, services) =>
     services.AddScoped<OrderServiceInterface, OrderService>();
     services.AddScoped<OrderRepositoryInterface, OrderRepository>();
     services.AddScoped<ShippingScheduleRepositoryInterface, ShippingScheduleRepository>();
+    services.AddScoped<LeadtimeMasterRepositoryInterface, LeadtimeRepository>();
     services.AddMemoryCache();
     services.AddHostedService<Worker>();
 

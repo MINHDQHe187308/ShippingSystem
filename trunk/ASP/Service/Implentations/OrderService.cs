@@ -13,24 +13,56 @@ namespace ASP.Service.Implentations
         private readonly ILogger<OrderService> _logger;
         private readonly IMemoryCache _memoryCache;  //  Cache để lưu lastSync info
         private readonly IHostApplicationLifetime _lifetime;  // Để stop app
-
+        private readonly ShippingScheduleRepositoryInterface _shippingRepo;
+        private readonly LeadtimeMasterRepositoryInterface _leadtimeRepo;
         public OrderService(ExternalApiServiceInterface externalApiService,
                             OrderRepositoryInterface orderRepository,
                             ILogger<OrderService> logger,
                             IMemoryCache memoryCache,  // Inject cache
-                            IHostApplicationLifetime lifetime)  // Inject lifetime
+                            IHostApplicationLifetime lifetime,
+                            ShippingScheduleRepositoryInterface shippingRepo,
+                            LeadtimeMasterRepositoryInterface leadtimeRepo)  // Inject lifetime
         {
             _externalApiService = externalApiService;
             _orderRepository = orderRepository;
             _logger = logger;
             _memoryCache = memoryCache;
             _lifetime = lifetime;
+            _shippingRepo = shippingRepo;
+            _leadtimeRepo = leadtimeRepo;
         }
-
         public async Task SyncOrdersAsync()
         {
             try
             {
+                var leadtimes = await _externalApiService.GetLeadtimesFromApiAsync();
+                if (leadtimes != null && leadtimes.Any())
+                {
+                    foreach (var leadtimeDto in leadtimes)
+                    {
+                        await _leadtimeRepo.UpsertLeadtimeAsync(leadtimeDto);
+                    }
+                    await _leadtimeRepo.SaveChangesAsync();
+                    _logger.LogInformation("Synced {Count} leadtimes to database", leadtimes.Count());
+                }
+                else
+                {
+                    _logger.LogWarning("No leadtimes retrieved from API");
+                }
+                var schedules = await _externalApiService.GetShippingSchedulesFromApiAsync();
+                if (schedules != null && schedules.Any())
+                {
+                    foreach (var scheduleDto in schedules)
+                    {
+                        await _shippingRepo.UpsertShippingScheduleAsync(scheduleDto);
+                    }
+                    await _shippingRepo.SaveChangesAsync();
+                    _logger.LogInformation("Synced {Count} shipping schedules to database", schedules.Count());
+                }
+                else
+                {
+                    _logger.LogWarning("No shipping schedules retrieved from API");
+                }
                 var orders = await _externalApiService.GetOrdersFromApiAsync();
                 if (orders == null || !orders.Any())
                 {
@@ -80,7 +112,7 @@ namespace ASP.Service.Implentations
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error syncing orders – potential data loss, retry next interval");
+                _logger.LogError(ex, "Error syncing orders or schedules");
                 // Không stop nếu lỗi, để retry
             }
         }

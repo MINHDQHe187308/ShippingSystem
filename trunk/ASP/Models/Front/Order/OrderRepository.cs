@@ -186,6 +186,7 @@ namespace ASP.Models.Front
                     (o.EndTime >= date.Date && o.EndTime < date.Date.AddDays(1))
                 )
                 .Include(o => o.OrderDetails)
+                .ThenInclude(od => od.ShoppingLists) 
                 .ToListAsync();
         }
 
