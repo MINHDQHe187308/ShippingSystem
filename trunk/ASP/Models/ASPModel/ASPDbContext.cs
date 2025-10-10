@@ -55,10 +55,29 @@ namespace ASP.Models.ASPModel
                 entity.AddProperty("CreatedDate", typeof(DateTime));
                 entity.AddProperty("UpdatedDate", typeof(DateTime));
             }
-
             modelBuilder.Entity<Role>()
                 .Property(b => b.DefaultRole)
                 .HasDefaultValue(false);
+
+            modelBuilder.Entity<ShoppingList>()
+                .HasOne(s => s.ThreePointCheck)
+                .WithOne(t => t.ShoppingList)
+                .HasForeignKey<ThreePointCheck>(t => t.SPId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .IsRequired(false);
+            modelBuilder.Entity<ThreePointCheck>()
+                .HasIndex(t => t.SPId)
+                .IsUnique();
+            modelBuilder.Entity<ShippingSchedule>()
+             .HasKey(e => new { e.CustomerCode, e.TransCd, e.Weekday });
+
+            modelBuilder.Entity<ShippingSchedule>()
+                .Property(e => e.CutOffTime)
+                .HasConversion(
+                v => v.ToTimeSpan(),
+                v => TimeOnly.FromTimeSpan(v)
+        )
+        .HasColumnType("time");
         }
 
         public DbSet<Log> Logs { get; set; }
@@ -79,6 +98,8 @@ namespace ASP.Models.ASPModel
 
         public DbSet<ShoppingList> ShoppingLists { get; set; }
 
-        public DbSet<ThreePointCheck> ThreePointChecks { get; set; } 
-        }
+        public DbSet<ThreePointCheck> ThreePointChecks { get; set; }
+
+        public DbSet<ShippingSchedule> ShippingSchedules { get; set; }
+    }
 }

@@ -22,7 +22,7 @@ namespace ASP.Models.Front
             return await _context.OrderDetails
                 .Where(od => od.OId == orderId)
                 .Include(od => od.ShoppingLists)
-                    .ThenInclude(sl => sl.ThreePointChecks)
+                    .ThenInclude(sl => sl.ThreePointCheck)
                 .ToListAsync();
         }
 

@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const style = document.createElement('style');
     style.textContent = `
         .fc-event {
-            height: 30px !important;  /* Tăng kích thước event để dễ nhìn */
+            height: 70px !important;  /* Tăng kích thước event từ 30px lên 70px để dễ nhìn và chứa nhiều info hơn */
             display: flex !important;
             align-items: center !important;  /* Căn giữa theo chiều dọc trong slot */
             justify-content: center !important;  /* Căn giữa text nếu cần */
@@ -28,14 +28,22 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         .fc-event.actual-event {
             z-index: 2;
-            height: 30px !important;  /* Đồng bộ height với .fc-event */
+            height: 70px !important;  /* Đồng bộ height với .fc-event, tăng từ 30px */
             line-height: 1.2 !important;
         }
         .fc-event .fc-event-main {  /* Đảm bảo inner content cũng center */
             display: flex;
             align-items: center;
             height: 100%;
-            font-size: 14px;  /* Tăng font-size để dễ đọc hơn */
+            font-size: 16px;  /* Tăng font-size từ 14px lên 16px để dễ đọc hơn */
+        }
+        /* Tăng chiều cao resource rows để chứa event lớn hơn */
+        .fc-resource-timeline .fc-resource-cell {
+            height: 80px !important;  /* Tăng height của resource cell từ mặc định ~30px lên 80px */
+            padding: 4px !important;  /* Thêm padding để không sát mép */
+        }
+        .fc-resource-timeline .fc-timeline-slot-table .fc-resource-cell {
+            height: 80px !important;  /* Đảm bảo apply cho slot table cells */
         }
         /* Custom Tooltip Styles - ĐẸP MẮT VÀ DỄ NHÌN */
         #custom-tooltip {
@@ -223,10 +231,10 @@ document.addEventListener('DOMContentLoaded', function () {
             return d;
         }
 
-        const planStart = parseAndValidate(order.PlanAsyTime);
-        const planEnd = parseAndValidate(order.PlanDeliveryTime);
-        const actualStart = parseAndValidate(order.AcAsyTime);
-        const actualEnd = parseAndValidate(order.AcDeliveryTime);
+        const planStart = parseAndValidate(order.StartTime);
+        const planEnd = parseAndValidate(order.EndTime);
+        const actualStart = parseAndValidate(order.AcStartTime);
+        const actualEnd = parseAndValidate(order.AcEndTime);
 
         // Valid nếu start < end
         const validPlan = planStart && planEnd && planStart < planEnd;
@@ -379,7 +387,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             const statusText = item.Status || item.status || 'Không xác định';
                             const collectPercent = item.CollectPercent || item.collectPercent || 0;
                             const preparePercent = item.PreparePercent || item.preparePercent || 0;
-
+                            const loadingPercent = item.LoadingPercent || item.loadingPercent || 0;
 
                             const row = `
                                 <tr>
@@ -411,7 +419,15 @@ document.addEventListener('DOMContentLoaded', function () {
                                             <div class="progress" style="height: 8px;">
                                                 <div class="progress-bar bg-success" style="width: ${preparePercent}%"></div>
                                             </div>
-                                           
+                                            <!--Loading Stage -->
+                                            <div class="d-flex align-items-center mb-2 mt-2">
+                                                <i class="bi bi-truck text-warning me-2"></i>
+                                                <span class="me-auto">Loading</span>
+                                                <small class="text-muted">${loadingPercent}%</small>
+                                            </div>
+                                            <div class="progress" style="height: 8px;">
+                                                <div class="progress-bar bg-warning" style="width: ${loadingPercent}%"></div>
+                                            </div>
                                         </div>
                                     </td>
                                 </tr>
@@ -493,7 +509,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         const wrapper = document.createElement('div');
                         // FIX: Fallback bg nếu transparent để tránh xám hoàn toàn
                         wrapper.style.position = 'relative';
-                        wrapper.style.height = '100%';  // Đồng bộ với height của .fc-event (30px)
+                        wrapper.style.height = '100%';  // Đồng bộ với height của .fc-event (70px)
                         wrapper.style.width = '100%';
                         wrapper.style.background = arg.event.backgroundColor || getColorByStatus(status) || 'transparent';
                         wrapper.style.borderRadius = '4px';
@@ -542,13 +558,13 @@ document.addEventListener('DOMContentLoaded', function () {
                             wrapper.appendChild(planBar);
                         }
 
-                        // Text (luôn hiển thị) - SỬA: HIỂN THỊ TOTALPALLET VỚI NHÃN, MÀU TRẮNG, ĐẬM
+                        // Text (luôn hiển thị) - SỬA: HIỂN THỊ TOTALPALLET VỚI NHÃN, MÀU TRẮNG, ĐẬM, VÀ TĂNG FONT-SIZE CHO PHÙ HỢP VỚI EVENT LỚN HƠN
                         const text = document.createElement('span');
                         text.textContent = `TotalPallet: ${extendedProps.totalPallet ? extendedProps.totalPallet.toString() : '0'}`;
                         text.style.position = 'relative';
                         text.style.zIndex = '2';
                         text.style.paddingLeft = '4px';
-                        text.style.fontSize = '15px';
+                        text.style.fontSize = '18px';  /* Tăng font-size từ 15px lên 18px để phù hợp với event lớn hơn */
                         text.style.color = 'white';
                         text.style.fontWeight = 'bold';
                         wrapper.appendChild(text);
@@ -665,10 +681,10 @@ document.addEventListener('DOMContentLoaded', function () {
                             return d;
                         }
 
-                        const planStart = parseAndValidate(order.PlanAsyTime);
-                        const planEnd = parseAndValidate(order.PlanDeliveryTime);
-                        const actualStart = parseAndValidate(order.AcAsyTime);
-                        const actualEnd = parseAndValidate(order.AcDeliveryTime);
+                        const planStart = parseAndValidate(order.StartTime);
+                        const planEnd = parseAndValidate(order.EndTime);
+                        const actualStart = parseAndValidate(order.AcStartTime);
+                        const actualEnd = parseAndValidate(order.AcEndTime);
 
                         const validPlan = planStart && planEnd && planStart < planEnd;
                         const validActual = actualStart && actualEnd && actualStart < actualEnd;

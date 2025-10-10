@@ -1,5 +1,5 @@
 ﻿using ASP.DTO.DensoDTO;
-using ASP.Models.Front;
+using ASP.Models.ASPModel;
 using ASP.Models.Front;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -36,7 +36,7 @@ namespace ASP.Controllers.Front
             Console.WriteLine($"Loaded {orders.Count} orders for {today}. First UId: {orders.FirstOrDefault()?.UId}");
             if (orders.Any())
             {
-                Console.WriteLine($"First Order Details: UId={orders.First().UId}, Status={orders.First().OrderStatus}, PlanAsy={orders.First().PlanAsyTime}");
+                Console.WriteLine($"First Order Details: UId={orders.First().UId}, Status={orders.First().OrderStatus}, StartTime={orders.First().StartTime}");
             }
             // Lấy tất cả customers từ DB
             var allCustomers = await _customerRepository.GetAllCustomers();
@@ -51,10 +51,10 @@ namespace ASP.Controllers.Front
                 UId = o.UId,  // THÊM: Để sử dụng trong JS eventClick
                 Resource = o.CustomerCode,
                 ShipDate = o.ShipDate.ToString("yyyy-MM-dd"),
-                PlanAsyTime = o.PlanAsyTime.ToString("yyyy-MM-ddTHH:mm:ss"),
-                PlanDeliveryTime = o.PlanDeliveryTime.ToString("yyyy-MM-ddTHH:mm:ss"),
-                AcAsyTime = o.AcAsyTime?.ToString("yyyy-MM-ddTHH:mm:ss"),
-                AcDeliveryTime = o.AcDeliveryTime?.ToString("yyyy-MM-ddTHH:mm:ss"),
+                StartTime = o.StartTime.ToString("yyyy-MM-ddTHH:mm:ss"),  
+                EndTime = o.EndTime.ToString("yyyy-MM-ddTHH:mm:ss"), 
+                AcStartTime = o.AcStartTime?.ToString("yyyy-MM-ddTHH:mm:ss"), 
+                AcEndTime = o.AcEndTime?.ToString("yyyy-MM-ddTHH:mm:ss"),  
                 Status = o.OrderStatus,
                 TotalPallet = o.TotalPallet,
                 TransCd = o.TransCd,
@@ -95,7 +95,7 @@ namespace ASP.Controllers.Front
                 foreach (var od in orderDetails)
                 {
                     var slCount = od.ShoppingLists?.Count ?? 0;
-                    var tpcTotal = od.ShoppingLists?.Sum(sl => sl.ThreePointChecks?.Count ?? 0) ?? 0;
+                    var tpcTotal = od.ShoppingLists?.Sum(sl => sl.ThreePointCheck != null ? 1 : 0) ?? 0;  // SỬA: 1-1 relationship, đếm 1 nếu có ThreePointCheck
                     Console.WriteLine($"OrderDetail {od.UId}: TotalPallet={od.TotalPallet}, SL Count={slCount}, Total TPC={tpcTotal}");
                 }
 
@@ -108,7 +108,7 @@ namespace ASP.Controllers.Front
                         partNo = progress.PartNo,
                         quantity = progress.Quantity,
                         totalPallet = progress.TotalPallet,
-                        palletSize = od.PalletSize ,
+                        palletSize = od.PalletSize,
                         warehouse = progress.Warehouse,
                         contNo = progress.ContNo,
                         bookContStatus = progress.BookContStatus,
@@ -142,11 +142,11 @@ namespace ASP.Controllers.Front
                 UId = o.UId,
                 Resource = o.CustomerCode,
                 ShipDate = o.ShipDate.ToString("yyyy-MM-dd"),
-                PlanAsyTime = o.PlanAsyTime.ToString("yyyy-MM-ddTHH:mm:ss"),
-                PlanDeliveryTime = o.PlanDeliveryTime.ToString("yyyy-MM-ddTHH:mm:ss"),
-                AcAsyTime = o.AcAsyTime?.ToString("yyyy-MM-ddTHH:mm:ss"),
-                AcDeliveryTime = o.AcDeliveryTime?.ToString("yyyy-MM-ddTHH:mm:ss"),
-                Status = o.OrderStatus,  // Sử dụng status mới
+                StartTime = o.StartTime.ToString("yyyy-MM-ddTHH:mm:ss"), 
+                EndTime = o.EndTime.ToString("yyyy-MM-ddTHH:mm:ss"),
+                AcStartTime = o.AcStartTime?.ToString("yyyy-MM-ddTHH:mm:ss"),
+                AcEndTime = o.AcEndTime?.ToString("yyyy-MM-ddTHH:mm:ss"),  
+                Status = o.OrderStatus,  
                 TotalPallet = o.TotalPallet,
                 TransCd = o.TransCd,
                 TransMethod = o.TransMethod,
@@ -168,7 +168,7 @@ namespace ASP.Controllers.Front
             {
                 0 => "Planned",
                 1 => "Pending",
-                2 => "Completed",         
+                2 => "Completed",
                 3 => "Shipped",
                 _ => "Planned"
             };

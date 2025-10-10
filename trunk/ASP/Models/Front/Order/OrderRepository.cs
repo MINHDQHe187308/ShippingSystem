@@ -74,9 +74,10 @@ namespace ASP.Models.Front
                         PartList = orderDto.PartNo,
                         TotalPallet = orderDto.TotalPallet,
                         OrderCreateDate = orderDto.CreateDate,
-                        AcAsyTime = null,
-                        AcDocumentsTime = null,
-                        AcDeliveryTime = null
+                        StartTime = orderDto.CreateDate,  // Default StartTime từ CreateDate
+                        EndTime = orderDto.CreateDate.AddHours(8),  // Default EndTime (có thể tính sau)
+                        AcStartTime = null,
+                        AcEndTime = null,
                     };
                     _context.Orders.Update(orderToUpdate);
                 }
@@ -96,43 +97,77 @@ namespace ASP.Models.Front
                         PartList = orderDto.PartNo,
                         TotalPallet = orderDto.TotalPallet,
                         OrderCreateDate = orderDto.CreateDate,
-                        AcAsyTime = null,
-                        AcDocumentsTime = null,
-                        AcDeliveryTime = null
+                        StartTime = orderDto.CreateDate,  // Default StartTime từ CreateDate
+                        EndTime = orderDto.CreateDate.AddHours(8),  // Default EndTime (có thể tính sau)
+                        AcStartTime = null,
+                        AcEndTime = null,
                     };
                     await _context.Orders.AddAsync(orderToUpdate);
                     isNewOrder = true;
                 }
             }
 
-            // THÊM MỚI: Tính toán Plan times dựa trên LeadtimeMaster (theo thứ tự nối tiếp)
-            var leadtimeMaster = await _context.LeadtimeMasters
-                .FirstOrDefaultAsync(l => l.CustomerCode == orderDto.CustomerCode && l.TransCd == orderDto.TransCode);
+            // Tính StartTime/EndTime dựa trên ShippingSchedule (trừ ngược từ CutOffTime)
+            var shippingSchedule = await _context.ShippingSchedules
+                .FirstOrDefaultAsync(s => s.CustomerCode == orderDto.CustomerCode &&
+                                         s.TransCd == orderDto.TransCode &&
+                                         s.Weekday == orderDto.ShippingDate.DayOfWeek);
 
-            if (leadtimeMaster != null)
+            if (shippingSchedule != null)
             {
-                // Giả sử thời gian trong LeadtimeMaster là đơn vị phút (có thể điều chỉnh nếu là giờ hoặc giây)
-                double collectTimeTotal = leadtimeMaster.CollectTimePerPallet * orderDto.TotalPallet;
-                double prepareTimeTotal = leadtimeMaster.PrepareTimePerPallet * orderDto.TotalPallet;
-                double loadingTimeTotal = leadtimeMaster.LoadingTimePerColumn * orderDto.Quantity;
+                var leadtimeMaster = await _context.LeadtimeMasters
+                    .FirstOrDefaultAsync(l => l.CustomerCode == orderDto.CustomerCode && l.TransCd == orderDto.TransCode);
 
-                // Tính nối tiếp quy trình : 
-                // 1. PlanDocumentsTime: Bắt đầu từ CreateDate + thời gian thu thập chứng từ (scan pallet)
-                orderToUpdate.PlanDocumentsTime = orderDto.CreateDate.AddMinutes(collectTimeTotal);
+                if (leadtimeMaster != null)
+                {
+                    // Tính tổng thời gian quy trình (phút)
+                    double totalProcessTime = (leadtimeMaster.CollectTimePerPallet * orderDto.TotalPallet) +
+                                              (leadtimeMaster.PrepareTimePerPallet * orderDto.TotalPallet) +
+                                              (leadtimeMaster.LoadingTimePerColumn * orderDto.Quantity);
 
-                // 2. PlanAsyTime: Sau PlanDocumentsTime + thời gian chuẩn bị (lái xe phót lít tìm và lất pallet ra khu tập kết và quét ba điểm)
-                orderToUpdate.PlanAsyTime = orderToUpdate.PlanDocumentsTime.AddMinutes(prepareTimeTotal);
+                    // Tạo DateTime cho CutOffTime dựa trên ShipDate
+                    var cutOffDateTime = orderDto.ShippingDate.Date.Add(shippingSchedule.CutOffTime.ToTimeSpan());
 
-                // 3. PlanDeliveryTime: Sau PlanAsyTime + thời gian loading lên container và xuất hàng
-                orderToUpdate.PlanDeliveryTime = orderToUpdate.PlanAsyTime.AddMinutes(loadingTimeTotal);
+                    // Trừ ngược: EndTime = CutOffTime (thời gian xuất hàng)
+                    orderToUpdate.EndTime = cutOffDateTime;
 
-                _logger.LogInformation("Calculated sequential plan times for order {OrderId}: PlanDocumentsTime={PlanDocumentsTime}, PlanAsyTime={PlanAsyTime}, PlanDeliveryTime={PlanDeliveryTime}",
-                    orderDto.OrderId, orderToUpdate.PlanDocumentsTime, orderToUpdate.PlanAsyTime, orderToUpdate.PlanDeliveryTime);
+                    // StartTime = EndTime - totalProcessTime (bắt đầu quy trình)
+                    orderToUpdate.StartTime = cutOffDateTime.AddMinutes(-totalProcessTime);
+
+                    _logger.LogInformation("Calculated plan times from CutOffTime for order {OrderId}: StartTime={StartTime}, EndTime={EndTime} (CutOff: {CutOff}, TotalProcess: {TotalMin} min)",
+                        orderDto.OrderId, orderToUpdate.StartTime, orderToUpdate.EndTime, cutOffDateTime, totalProcessTime);
+                }
+                else
+                {
+                    // Fallback nếu không có LeadtimeMaster
+                    var cutOffDateTime = orderDto.ShippingDate.Date.Add(shippingSchedule.CutOffTime.ToTimeSpan());
+                    orderToUpdate.EndTime = cutOffDateTime;
+                    orderToUpdate.StartTime = cutOffDateTime.AddHours(-8);  // Default 8 giờ trước
+                    _logger.LogWarning("No LeadtimeMaster, used default 8h before CutOff for order {OrderId}", orderDto.OrderId);
+                }
             }
             else
             {
-                _logger.LogWarning("No LeadtimeMaster found for CustomerCode={CustomerCode} and TransCd={TransCd}, skipping plan time calculation for order {OrderId}",
-                    orderDto.CustomerCode, orderDto.TransCode, orderDto.OrderId);
+                // Fallback cũ nếu không có ShippingSchedule (tính cộng từ CreateDate)
+                _logger.LogWarning("No ShippingSchedule found for {CustomerCode}-{TransCd}-{Weekday}, falling back to CreateDate calculation",
+                    orderDto.CustomerCode, orderDto.TransCode, orderDto.ShippingDate.DayOfWeek);
+
+                var leadtimeMaster = await _context.LeadtimeMasters
+                    .FirstOrDefaultAsync(l => l.CustomerCode == orderDto.CustomerCode && l.TransCd == orderDto.TransCode);
+
+                if (leadtimeMaster != null)
+                {
+                    double collectTimeTotal = leadtimeMaster.CollectTimePerPallet * orderDto.TotalPallet;
+                    double prepareTimeTotal = leadtimeMaster.PrepareTimePerPallet * orderDto.TotalPallet;
+                    double loadingTimeTotal = leadtimeMaster.LoadingTimePerColumn * orderDto.Quantity;
+                    orderToUpdate.StartTime = orderDto.CreateDate.AddMinutes(collectTimeTotal);
+                    orderToUpdate.EndTime = orderToUpdate.StartTime.AddMinutes(prepareTimeTotal + loadingTimeTotal);
+                }
+                else
+                {
+                    orderToUpdate.StartTime = orderDto.CreateDate;
+                    orderToUpdate.EndTime = orderDto.CreateDate.AddHours(8);  // Default
+                }
             }
 
             // Nếu là order mới, cần set thêm các fields cơ bản nếu chưa có
@@ -147,9 +182,8 @@ namespace ASP.Models.Front
         {
             return await _context.Orders
                 .Where(o =>
-                    (o.PlanAsyTime >= date.Date && o.PlanAsyTime < date.Date.AddDays(1)) ||
-                    (o.PlanDocumentsTime >= date.Date && o.PlanDocumentsTime < date.Date.AddDays(1)) ||
-                    (o.PlanDeliveryTime >= date.Date && o.PlanDeliveryTime < date.Date.AddDays(1))
+                    (o.StartTime >= date.Date && o.StartTime < date.Date.AddDays(1)) ||
+                    (o.EndTime >= date.Date && o.EndTime < date.Date.AddDays(1))
                 )
                 .Include(o => o.OrderDetails)
                 .ToListAsync();
@@ -167,7 +201,7 @@ namespace ASP.Models.Front
             var order = await _context.Orders
                 .Include(o => o.OrderDetails)
                 .ThenInclude(od => od.ShoppingLists)
-                .ThenInclude(sl => sl.ThreePointChecks)  // Include để tính AcAsyTime
+                .ThenInclude(sl => sl.ThreePointCheck)  // SỬA: 1-1 relationship, dùng ThreePointCheck thay vì ThreePointChecks
                 .FirstOrDefaultAsync(o => o.UId == orderId);
 
             if (order == null)
@@ -178,10 +212,10 @@ namespace ASP.Models.Front
 
             int oldStatus = order.OrderStatus;
 
-            // Tính collected pallets từ ShoppingLists (giữ nguyên)
+            // Tính collected pallets từ ShoppingLists (giữ nguyên, sửa CollectionStatus thành PLStatus)
             var allShoppingLists = order.OrderDetails.SelectMany(od => od.ShoppingLists ?? new List<ShoppingList>()).ToList();
             var collectedPallets = allShoppingLists
-                .Where(sl => sl.CollectionStatus == 1 || sl.CollectedDate.HasValue) 
+                .Where(sl => sl.PLStatus == 1 || sl.CollectedDate.HasValue)  // SỬA: PLStatus thay vì CollectionStatus
                 .Select(sl => sl.PalletNo)
                 .Distinct()
                 .Count();
@@ -201,54 +235,51 @@ namespace ASP.Models.Front
             // THÊM MỚI: Tính Actual Times dựa trên dữ liệu thực tế (nối tiếp theo quy trình, với null-safe)
             bool actualTimesChanged = false;
 
-            // 1. AcDocumentsTime: Max CollectedDate từ tất cả ShoppingLists (hoàn thành scan pallet)
-           
+            // 1. AcStartTime: Max CollectedDate từ tất cả ShoppingLists (hoàn thành scan pallet)
+
             var collectedDates = allShoppingLists
-                .Where(sl => sl.CollectedDate.HasValue)  
-                .Select(sl => sl.CollectedDate.Value)    
-                .ToList(); 
+                .Where(sl => sl.CollectedDate.HasValue)
+                .Select(sl => sl.CollectedDate.Value)
+                .ToList();
             if (collectedDates.Any())
             {
                 var maxCollectedDate = collectedDates.Max();  // Max trên List<DateTime> non-nullable
-                if (!order.AcDocumentsTime.HasValue || order.AcDocumentsTime.Value != maxCollectedDate)
+                if (!order.AcStartTime.HasValue || order.AcStartTime.Value != maxCollectedDate)
                 {
-                    order.AcDocumentsTime = maxCollectedDate;  
+                    order.AcStartTime = maxCollectedDate;
                     actualTimesChanged = true;
-                    _logger.LogInformation("Updated AcDocumentsTime for order {OrderId} to {AcDocumentsTime}", orderId, order.AcDocumentsTime);
+                    _logger.LogInformation("Updated AcStartTime for order {OrderId} to {AcStartTime}", orderId, order.AcStartTime);
                 }
             }
 
-            // 2. AcAsyTime: Max IssuedDate từ tất cả ThreePointChecks (sau quét ba điểm), chỉ nếu AcDocumentsTime đã có
-            if (order.AcDocumentsTime.HasValue) 
+            // 2. AcEndTime: Max IssuedDate từ tất cả ThreePointCheck (sau quét ba điểm), chỉ nếu AcStartTime đã có
+            if (order.AcStartTime.HasValue)
             {
-                var allThreePointChecks = allShoppingLists.SelectMany(sl => sl.ThreePointChecks ?? new List<ThreePointCheck>()).ToList();
+                var allThreePointChecks = allShoppingLists.SelectMany(sl => sl.ThreePointCheck != null ? new List<ThreePointCheck> { sl.ThreePointCheck } : new List<ThreePointCheck>()).ToList();  // SỬA: Single ThreePointCheck, dùng SelectMany cho collection giả
                 var validIssuedDates = allThreePointChecks
-                    .Where(tpc => tpc.IssuedDate > order.AcDocumentsTime.Value) 
-                    .Select(tpc => tpc.IssuedDate)  
+                    .Where(tpc => tpc.IssuedDate > order.AcStartTime.Value)
+                    .Select(tpc => tpc.IssuedDate)
                     .ToList();
 
                 if (validIssuedDates.Any())
                 {
                     var maxIssuedDate = validIssuedDates.Max();  // Max trên List<DateTime>
-                    if (!order.AcAsyTime.HasValue || order.AcAsyTime.Value != maxIssuedDate)
+                    if (!order.AcEndTime.HasValue || order.AcEndTime.Value != maxIssuedDate)
                     {
-                        order.AcAsyTime = maxIssuedDate;
+                        order.AcEndTime = maxIssuedDate;
                         actualTimesChanged = true;
-                        _logger.LogInformation("Updated AcAsyTime for order {OrderId} to {AcAsyTime}", orderId, order.AcAsyTime);
+                        _logger.LogInformation("Updated AcEndTime for order {OrderId} to {AcEndTime}", orderId, order.AcEndTime);
                     }
                 }
             }
 
-            // 3. AcDeliveryTime: Ngày hiện tại khi shipped (BookContStatus == 1), chỉ nếu AcAsyTime đã có
-            if (order.AcAsyTime.HasValue && isShipped)
+            // 3. AcEndTime (nâng cao): Ngày hiện tại khi shipped (BookContStatus == 1), chỉ nếu AcEndTime chưa có và isShipped
+            if (order.AcEndTime.HasValue == false && isShipped)
             {
                 var now = DateTime.Now;  // DateTime non-nullable, gán vào DateTime? fine
-                if (!order.AcDeliveryTime.HasValue || order.AcDeliveryTime.Value != now)
-                {
-                    order.AcDeliveryTime = now;
-                    actualTimesChanged = true;
-                    _logger.LogInformation("Updated AcDeliveryTime for order {OrderId} to {AcDeliveryTime}", orderId, order.AcDeliveryTime);
-                }
+                order.AcEndTime = now;
+                actualTimesChanged = true;
+                _logger.LogInformation("Updated AcEndTime for order {OrderId} to {AcEndTime}", orderId, order.AcEndTime);
             }
 
             // Cập nhật nếu thay đổi (giữ nguyên)
