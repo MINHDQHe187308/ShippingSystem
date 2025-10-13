@@ -37,11 +37,15 @@
             max-width: 17rem !important;
             min-width: 15rem !important;
         }
-        .container-fluid .content-wrapper { 
-            margin-left: 0!important; 
-            background-color: white!important;
+
+        .container-fluid .content-wrapper {
+            margin-left: 0 !important;
+            background-color: white !important;
         }
     </style>
+
+    @* Thêm dòng này để render section Styles từ các view con *@
+    @RenderSection("Styles", required: false)
 </head>
 <body>
     <div class="page-wrapper d-flex flex-column min-vh-100">

@@ -61,6 +61,7 @@ builder.Services.AddScoped<OrderRepositoryInterface, OrderRepository>();
 builder.Services.AddScoped<OrderDetailRepositoryInterface, OrderDetailRepository>();
 builder.Services.AddScoped<ShippingScheduleRepositoryInterface, ShippingScheduleRepository>();
 builder.Services.AddScoped<LeadtimeMasterRepositoryInterface, LeadtimeRepository>();
+builder.Services.AddScoped<DelayHistoryRepositoryInterface, DelayHistoryRepository>();
 // frontend
 //policies
 builder.Services.AddSingleton<IAuthorizationHandler, UserPolicyAuthorizationHandler>();

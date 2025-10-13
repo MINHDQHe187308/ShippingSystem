@@ -6,143 +6,170 @@
     bool isAdmin = User.IsInRole("Admin");
 }
 
-<h2 class="text-center fw-bold"><i class="bi bi-people-fill"></i> @ViewData["Title"]</h2>
-
-@if (TempData["ErrorMessage"] != null)
-{
-    <div class="alert alert-danger">
-        @TempData["ErrorMessage"]
+<div class="container-fluid px-4 py-3">
+    <!-- Header Section -->
+    <div class="text-center mb-5 pt-3">
+        <h1 class="fw-bold text-primary mb-2">
+            <i class="bi bi-people-fill me-2"></i>@ViewData["Title"]
+        </h1>
+      
     </div>
-}
 
-<!-- Nút thêm supplier -->
-<button type="button" class="btn btn-primary mt-3" data-bs-toggle="modal" data-bs-target="#addSupplierModal">
-    Add new Supplier
-</button>
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
 
-@if (Model == null || Model.Count == 0)
-{
-    <div class="alert alert-info">
-        No customers found.
+    <!-- Add Button Card -->
+    <div class="d-flex justify-content-end mb-4">
+        <button type="button" class="btn btn-primary btn-lg px-4 rounded-pill shadow-sm" data-bs-toggle="modal" data-bs-target="#addSupplierModal">
+            <i class="bi bi-plus-circle me-2"></i>Add New Customer
+        </button>
     </div>
-}
-else
-{
-    <table class="table table-bordered table-striped">
-        <thead class="thead-dark">
-            <tr>
-                <th>Customer Code</th>
-                <th>Customer Name</th>
-                <th>Description</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var customer in Model)
-            {
-                <tr>
-                    <td>@customer.CustomerCode</td>
-                    <td>@customer.CustomerName</td>
-                    <td>@customer.Descriptions</td>
-                    <td>
-                        <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#updateSupplierModal"
-                                onclick="populateUpdateForm('@customer.CustomerCode', '@customer.CustomerName', '@customer.Descriptions')">
-                            Update
-                        </button>
-                        @if (isAdmin)
+
+    @if (Model == null || Model.Count == 0)
+    {
+        <div class="text-center py-5">
+            <i class="bi bi-people display-1 text-muted mb-3"></i>
+            <h4 class="text-muted">No customers found.</h4>
+            <p class="text-muted">Get started by adding your first customer.</p>
+        </div>
+    }
+    else
+    {
+        <!-- Customers Table Card -->
+        <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+            <div class="card-header bg-primary text-white p-4">
+                <h5 class="fw-bold mb-0 d-flex align-items-center">
+                    <i class="bi bi-table me-2"></i>Customer List 
+                </h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="table-dark">
+                        <tr>
+                            <th class="border-0 fw-semibold"><i class="bi bi-hash me-1"></i>Customer Code</th>
+                            <th class="border-0 fw-semibold"><i class="bi bi-person me-1"></i>Customer Name</th>
+                            <th class="border-0 fw-semibold"><i class="bi bi-card-text me-1"></i>Description</th>
+                            <th class="border-0 fw-semibold text-center"><i class="bi bi-gear me-1"></i>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="table-group-divider">
+                        @foreach (var customer in Model)
                         {
-                            <button type="button" class="btn btn-danger btn-sm" onclick="deleteSupplier('@customer.CustomerCode')">
-                                Delete
-                            </button>
+                            <tr class="align-middle">
+                                <td class="fw-medium text-primary">@customer.CustomerCode</td>
+                                <td class="fw-semibold">@customer.CustomerName</td>
+                                <td class="text-muted">@customer.Descriptions</td>
+                                <td class="text-center">
+                                    <div class="btn-group" role="group">
+                                        <button type="button" class="btn btn-warning btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#updateSupplierModal"
+                                                onclick="populateUpdateForm('@customer.CustomerCode', '@customer.CustomerName', '@customer.Descriptions')">
+                                            <i class="bi bi-pencil me-1"></i>Update
+                                        </button>
+                                        @if (isAdmin)
+                                        {
+                                            <button type="button" class="btn btn-danger btn-sm rounded-pill px-3 ms-1" onclick="deleteSupplier('@customer.CustomerCode')">
+                                                <i class="bi bi-trash me-1"></i>Delete
+                                            </button>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
                         }
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+
+    <!-- Add Customer Modal -->
+    <div class="modal fade" id="addSupplierModal" tabindex="-1" aria-labelledby="addSupplierModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header bg-primary text-white border-0 rounded-top-4">
+                    <h5 class="modal-title fw-bold mb-0 d-flex align-items-center" id="addSupplierModalLabel">
+                        <i class="bi bi-plus-circle me-2"></i>Add New Customer
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form id="addSupplierForm">
+                        <div class="mb-3">
+                            <label for="customerCode" class="form-label fw-semibold">Customer Code <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="customerCode" name="CustomerCode" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="customerName" class="form-label fw-semibold">Customer Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="customerName" name="CustomerName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label fw-semibold">Description</label>
+                            <textarea class="form-control" id="description" name="Descriptions" rows="3"></textarea>
+                        </div>
+                    </form>
+                    <div id="addSupplierMessage" class="mt-2"></div>
+                </div>
+                <div class="modal-footer bg-light border-0 rounded-bottom-4 justify-content-center">
+                    <button type="button" class="btn btn-secondary px-4 rounded-pill" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-primary px-4 rounded-pill" id="btnAddSupplier">
+                        <i class="bi bi-check-circle me-1"></i>Add Customer
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Update Customer Modal -->
+    <div class="modal fade" id="updateSupplierModal" tabindex="-1" aria-labelledby="updateSupplierModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header bg-warning text-dark border-0 rounded-top-4">
+                    <h5 class="modal-title fw-bold mb-0 d-flex align-items-center" id="updateSupplierModalLabel">
+                        <i class="bi bi-pencil-square me-2"></i>Update Customer
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form id="updateSupplierForm">
+                        <div class="mb-3">
+                            <label for="updateCustomerCode" class="form-label fw-semibold">Customer Code</label>
+                            <input type="text" class="form-control" id="updateCustomerCode" name="CustomerCode" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label for="updateCustomerName" class="form-label fw-semibold">Customer Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="updateCustomerName" name="CustomerName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="updateDescription" class="form-label fw-semibold">Description</label>
+                            <textarea class="form-control" id="updateDescription" name="Descriptions" rows="3"></textarea>
+                        </div>
+                    </form>
+                    <div id="updateSupplierMessage" class="mt-2"></div>
+                </div>
+                <div class="modal-footer bg-light border-0 rounded-bottom-4 justify-content-center">
+                    <button type="button" class="btn btn-secondary px-4 rounded-pill" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-warning px-4 rounded-pill" id="btnUpdateSupplier">
+                        <i class="bi bi-check-circle me-1"></i>Update Customer
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/Customer.css" />
 }
-
-<!-- Modal thêm supplier -->
-<div class="modal fade" id="addSupplierModal" tabindex="-1" aria-labelledby="addSupplierModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="addSupplierModalLabel">Add Supplier</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form id="addSupplierForm">
-                    <div class="mb-3">
-                        <label for="customerCode" class="form-label">Customer Code</label>
-                        <input type="text" class="form-control" id="customerCode" name="CustomerCode" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="customerName" class="form-label">Customer Name</label>
-                        <input type="text" class="form-control" id="customerName" name="CustomerName" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="description" class="form-label">Description</label>
-                        <textarea class="form-control" id="description" name="Descriptions"></textarea>
-                    </div>
-                </form>
-                <div id="addSupplierMessage"></div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" id="btnAddSupplier">Add Supplier</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal cập nhật supplier -->
-<div class="modal fade" id="updateSupplierModal" tabindex="-1" aria-labelledby="updateSupplierModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="updateSupplierModalLabel">Update Supplier</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form id="updateSupplierForm">
-                    <div class="mb-3">
-                        <label for="updateCustomerCode" class="form-label">Customer Code</label>
-                        <input type="text" class="form-control" id="updateCustomerCode" name="CustomerCode" readonly>
-                    </div>
-                    <div class="mb-3">
-                        <label for="updateCustomerName" class="form-label">Customer Name</label>
-                        <input type="text" class="form-control" id="updateCustomerName" name="CustomerName" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="updateDescription" class="form-label">Description</label>
-                        <textarea class="form-control" id="updateDescription" name="Descriptions"></textarea>
-                    </div>
-                </form>
-                <div id="updateSupplierMessage"></div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" id="btnUpdateSupplier">Update Supplier</button>
-            </div>
-        </div>
-    </div>
-</div>
 
 @section Scripts {
-    <style>
-        #addSupplierMessage.success, #updateSupplierMessage.success {
-            color: green;
-        }
-
-        #addSupplierMessage.error, #updateSupplierMessage.error {
-            color: red;
-        }
-
-        .btn-primary.mt-3 {
-            display: inline-block !important;
-        }
-        /* Đảm bảo nút Add Supplier hiển thị */
-    </style>
     <script>
         var addSupplierUrl = '@Url.Action("AddSupplier", "Customer")';
         var updateSupplierUrl = '@Url.Action("UpdateSupplier", "Customer")';
