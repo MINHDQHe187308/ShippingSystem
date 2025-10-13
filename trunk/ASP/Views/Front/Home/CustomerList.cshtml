@@ -1,12 +1,12 @@
 ﻿@model List<ASP.Models.Front.Customer>
 
 @{
-    ViewData["Title"] = "Suplier List";
+    ViewData["Title"] = "Customer List";
     Layout = "../Shared/Layout/Front/_Layout";
     bool isAdmin = User.IsInRole("Admin");
 }
 
-<h2>@ViewData["Title"]</h2>
+<h2 class="text-center fw-bold"><i class="bi bi-people-fill"></i> @ViewData["Title"]</h2>
 
 @if (TempData["ErrorMessage"] != null)
 {
