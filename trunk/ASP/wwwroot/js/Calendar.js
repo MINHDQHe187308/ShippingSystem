@@ -554,8 +554,8 @@ document.addEventListener('DOMContentLoaded', function () {
                             const planBar = document.createElement('div');
                             planBar.style.position = 'absolute';
                             planBar.style.left = Math.max(0, planPercent) + '%';
-                            planBar.style.top = '25%';  // Offset để overlap visible
-                            planBar.style.height = '50%';
+                            planBar.style.top = '15%';  // SỬA: Giảm top từ 25% xuống 15% để tăng visibility khi height lớn hơn
+                            planBar.style.height = '70%';  // SỬA: Tăng height từ 50% lên 70% để tăng kích thước event plan
                             planBar.style.width = planWidth + '%';
                             planBar.style.background = getColorByStatus('Planned');  // Đen cho plan overlay
                             planBar.style.borderRadius = '2px';
@@ -570,7 +570,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         customerDiv.style.position = 'relative';
                         customerDiv.style.zIndex = '2';
                         customerDiv.style.backgroundColor = '#f8f9fa';  // Xám nhạt dễ nhìn
-                        customerDiv.style.color = '#000';
+                        customerDiv.style.color = '#000000';
                         customerDiv.style.padding = '4px 8px';
                         customerDiv.style.borderRadius = '4px';
                         customerDiv.style.fontSize = '12px';
@@ -581,11 +581,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
                         // Phần 2: CollectPallet (background xanh dương, chữ trắng, đậm)
                         const collectDiv = document.createElement('div');
-                        collectDiv.textContent = `Collect: ${extendedProps.collectPallet}`;
+                        collectDiv.textContent = `CollectedPL: ${extendedProps.collectPallet}`;
                         collectDiv.style.position = 'relative';
                         collectDiv.style.zIndex = '2';
-                        collectDiv.style.backgroundColor = '#007bff';  // Xanh dương trực quan cho Collect
-                        collectDiv.style.color = '#fff';
+                        collectDiv.style.backgroundColor = '#FFF2CC';  // Xanh dương trực quan cho Collect
+                        collectDiv.style.color = '#000000';
                         collectDiv.style.padding = '4px 8px';
                         collectDiv.style.borderRadius = '4px';
                         collectDiv.style.fontSize = '11px';
@@ -596,11 +596,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
                         // Phần 3: ThreePointScan (background xanh lá, chữ trắng, đậm)
                         const threeDiv = document.createElement('div');
-                        threeDiv.textContent = `3PS: ${extendedProps.threePointScan}`;
+                        threeDiv.textContent = `3PointChecked: ${extendedProps.threePointScan}`;
                         threeDiv.style.position = 'relative';
                         threeDiv.style.zIndex = '2';
-                        threeDiv.style.backgroundColor = '#28a745';  // Xanh lá trực quan cho Prepared
-                        threeDiv.style.color = '#fff';
+                        threeDiv.style.backgroundColor = '#FFCE9F';  // Xanh lá trực quan cho Prepared
+                        threeDiv.style.color = '#000000';
                         threeDiv.style.padding = '4px 8px';
                         threeDiv.style.borderRadius = '4px';
                         threeDiv.style.fontSize = '11px';
@@ -611,11 +611,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
                         // Phần 4: LoadCont (background cam, chữ đen, đậm)
                         const loadDiv = document.createElement('div');
-                        loadDiv.textContent = `Load: ${extendedProps.loadCont}`;
+                        loadDiv.textContent = `LoadCont: ${extendedProps.loadCont}`;
                         loadDiv.style.position = 'relative';
                         loadDiv.style.zIndex = '2';
-                        loadDiv.style.backgroundColor = '#ffc107';  // Cam trực quan cho Loaded
-                        loadDiv.style.color = '#000';
+                        loadDiv.style.backgroundColor = '#F19C99';  // Cam trực quan cho Loaded
+                        loadDiv.style.color = '#000000';
                         loadDiv.style.padding = '4px 8px';
                         loadDiv.style.borderRadius = '4px';
                         loadDiv.style.fontSize = '11px';
