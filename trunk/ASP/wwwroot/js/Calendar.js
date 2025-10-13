@@ -524,7 +524,35 @@ document.addEventListener('DOMContentLoaded', function () {
                         wrapper.style.justifyContent = 'space-around';  // Phân bố đều các phần
                         wrapper.style.padding = '2px';  // Thêm padding nhẹ để không sát mép
 
-                        // Vẽ actual bar (nếu có) - dùng màu theo status DB
+                        // Vẽ plan bar - giữ nguyên kích thước ban đầu
+                        if (pStart && pEnd) {
+                            if (aStart && aEnd) {
+                                // Nếu có both: vẽ plan overlay (top 15%, height 70%)
+                                const planBar = document.createElement('div');
+                                planBar.style.position = 'absolute';
+                                planBar.style.left = Math.max(0, planPercent) + '%';
+                                planBar.style.top = '15%';  // Giữ nguyên như ban đầu
+                                planBar.style.height = '70%';  // Giữ nguyên như ban đầu
+                                planBar.style.width = planWidth + '%';
+                                planBar.style.background = getColorByStatus('Planned');  // Đen cho plan overlay
+                                planBar.style.borderRadius = '2px';
+                                planBar.title = `Full Plan: ${planPercent.toFixed(0)}% - ${(planPercent + planWidth).toFixed(0)}%`;
+                                wrapper.appendChild(planBar);
+                            } else {
+                                // Nếu chỉ plan: vẽ full plan bar
+                                const planBarFull = document.createElement('div');
+                                planBarFull.style.position = 'absolute';
+                                planBarFull.style.left = '0%';
+                                planBarFull.style.top = '0';
+                                planBarFull.style.height = '100%';
+                                planBarFull.style.width = '100%';
+                                planBarFull.style.background = getColorByStatus(status);
+                                planBarFull.style.borderRadius = '4px';
+                                wrapper.appendChild(planBarFull);
+                            }
+                        }
+
+                        // Vẽ actual bar (nếu có) - đè lên plan với mờ và opacity, giữ full height
                         if (aStart && aEnd) {
                             const actualBar = document.createElement('div');
                             actualBar.style.position = 'absolute';
@@ -534,33 +562,10 @@ document.addEventListener('DOMContentLoaded', function () {
                             actualBar.style.width = actualWidth + '%';
                             actualBar.style.background = getColorByStatus(status);
                             actualBar.style.borderRadius = '4px';
+                            actualBar.style.filter = 'blur(1px)';  // Actual mờ
+                            actualBar.style.opacity = '0.7';  // Actual trong suốt để thấy plan bên dưới
+                            actualBar.title = `Actual: ${actualPercent.toFixed(0)}% - ${(actualPercent + actualWidth).toFixed(0)}%`;
                             wrapper.appendChild(actualBar);
-                        }
-                        else if (pStart && pEnd) {
-                            // Nếu chỉ plan, vẽ full plan bar với màu status
-                            const planBarFull = document.createElement('div');
-                            planBarFull.style.position = 'absolute';
-                            planBarFull.style.left = '0%';
-                            planBarFull.style.top = '0';
-                            planBarFull.style.height = '100%';
-                            planBarFull.style.width = '100%';
-                            planBarFull.style.background = getColorByStatus(status);
-                            planBarFull.style.borderRadius = '4px';
-                            wrapper.appendChild(planBarFull);
-                        }
-
-                        // Vẽ plan bar overlay (nếu có plan, và không phải chỉ plan)
-                        if (pStart && pEnd && !(aStart && aEnd && !extendedProps.validActual)) {
-                            const planBar = document.createElement('div');
-                            planBar.style.position = 'absolute';
-                            planBar.style.left = Math.max(0, planPercent) + '%';
-                            planBar.style.top = '15%';  // SỬA: Giảm top từ 25% xuống 15% để tăng visibility khi height lớn hơn
-                            planBar.style.height = '70%';  // SỬA: Tăng height từ 50% lên 70% để tăng kích thước event plan
-                            planBar.style.width = planWidth + '%';
-                            planBar.style.background = getColorByStatus('Planned');  // Đen cho plan overlay
-                            planBar.style.borderRadius = '2px';
-                            planBar.title = `Full Plan: ${planPercent.toFixed(0)}% - ${(planPercent + planWidth).toFixed(0)}%`;
-                            wrapper.appendChild(planBar);
                         }
 
                         // THÊM MỚI: Hiển thị CustomerCode và 3 progress thẳng hàng nhau với background khác nhau
