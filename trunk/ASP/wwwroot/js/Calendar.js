@@ -586,7 +586,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                         // Phần 2: CollectPallet (background xanh dương, chữ trắng, đậm)
                         const collectDiv = document.createElement('div');
-                        collectDiv.textContent = `CollectedPL: ${extendedProps.collectPallet}`;
+                        collectDiv.textContent = `COLLECTEDPL: ${extendedProps.collectPallet}`;
                         collectDiv.style.position = 'relative';
                         collectDiv.style.zIndex = '2';
                         collectDiv.style.backgroundColor = '#FFF2CC';  // Xanh dương trực quan cho Collect
@@ -601,7 +601,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                         // Phần 3: ThreePointScan (background xanh lá, chữ trắng, đậm)
                         const threeDiv = document.createElement('div');
-                        threeDiv.textContent = `3PointChecked: ${extendedProps.threePointScan}`;
+                        threeDiv.textContent = `3POINTCHECKED: ${extendedProps.threePointScan}`;
                         threeDiv.style.position = 'relative';
                         threeDiv.style.zIndex = '2';
                         threeDiv.style.backgroundColor = '#FFCE9F';  // Xanh lá trực quan cho Prepared
@@ -616,7 +616,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                         // Phần 4: LoadCont (background cam, chữ đen, đậm)
                         const loadDiv = document.createElement('div');
-                        loadDiv.textContent = `LoadCont: ${extendedProps.loadCont}`;
+                        loadDiv.textContent = `LOADCONT: ${extendedProps.loadCont}`;
                         loadDiv.style.position = 'relative';
                         loadDiv.style.zIndex = '2';
                         loadDiv.style.backgroundColor = '#F19C99';  // Cam trực quan cho Loaded

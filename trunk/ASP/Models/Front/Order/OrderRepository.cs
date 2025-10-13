@@ -186,7 +186,20 @@ namespace ASP.Models.Front
                     (o.EndTime >= date.Date && o.EndTime < date.Date.AddDays(1))
                 )
                 .Include(o => o.OrderDetails)
-                .ThenInclude(od => od.ShoppingLists) 
+                .ThenInclude(od => od.ShoppingLists)
+                .ToListAsync();
+        }
+
+        public async Task<List<Order>> GetOrdersForWeek(DateTime weekStart)
+        {
+            var weekEnd = weekStart.AddDays(7);
+            return await _context.Orders
+                .Where(o =>
+                    o.StartTime < weekEnd && o.EndTime > weekStart
+                )
+                .Include(o => o.OrderDetails)
+                .ThenInclude(od => od.ShoppingLists)
+                .OrderBy(o => o.StartTime)
                 .ToListAsync();
         }
 
