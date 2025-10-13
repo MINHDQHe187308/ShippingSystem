@@ -79,7 +79,7 @@
                             <th>Total Pallet</th>
                             <th>Total Column</th>
                             <th>Status</th>
-                            <th>Plan Time Range</th>
+                            <th>Plan Delivery</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -105,21 +105,15 @@
                                         var badgeClass = order.OrderStatus switch
                                         {
                                             0 => "bg-secondary",
-                                            1 => "bg-warning",
+                                            1 => "bg-info",
                                             2 => "bg-success",
-                                            3 => "bg-info",
+                                            3 => "bg-warning",
                                             _ => "bg-danger"
                                         };
                                     }
                                     <span class="badge @badgeClass">@status</span>
                                 </td>
-                                <td>
-                                    Plan: @order.StartTime.ToString("HH:mm") - @order.EndTime.ToString("HH:mm")<br />
-                                    @if (order.AcStartTime.HasValue && order.AcEndTime.HasValue)
-                                    {
-                                        <small class="text-muted">Actual: @order.AcStartTime.Value.ToString("HH:mm") - @order.AcEndTime.Value.ToString("HH:mm")</small>
-                                    }
-                                </td>
+                                <td>@order.EndTime.ToString("HH:mm")</td>
                                 <td>
                                     <a href="#" class="btn btn-sm btn-primary" onclick="loadOrderDetails('@order.UId')">Details</a>
                                     @* Later: Add JS for modal or redirect *@
@@ -138,15 +132,15 @@
         // Optional: DataTables for sorting/searching
         $(document).ready(function () {
             @{
-                        foreach (var group in grouped)
-                        {
-                                    <text>
-                                    $('#ordersTable_@group.Key.ToString("yyyyMMdd")').DataTable({
-                                        "pageLength": 25,
-                                        "order": [[1, "asc"]] // Sort by ShipDate
-                                    });
-                                    </text>
-                        }
+                            foreach (var group in grouped)
+                            {
+                                            <text>
+                                            $('#ordersTable_@group.Key.ToString("yyyyMMdd")').DataTable({
+                                                "pageLength": 25,
+                                                "order": [[1, "asc"]] // Sort by ShipDate
+                                            });
+                                            </text>
+                            }
             }
         });
 
