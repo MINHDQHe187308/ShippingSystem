@@ -126,14 +126,16 @@
                                                 1 => "Pending",
                                                 2 => "Completed",
                                                 3 => "Shipped",
+                                                4 => "Delay",
                                                 _ => "Unknown"
                                             };
                                             var badgeClass = order.OrderStatus switch
                                             {
-                                                0 => "bg-dark text-white",  
-                                                1 => "bg-primary text-white",  
-                                                2 => "bg-success text-white",  
-                                                3 => "bg-warning text-dark",  
+                                                0 => "bg-dark text-white",
+                                                1 => "bg-primary text-white",
+                                                2 => "bg-success text-white",
+                                                3 => "bg-warning text-dark",
+                                                4 => "bg-danger text-white",
                                                 _ => "bg-danger text-white"  
                                             };
                                         }
