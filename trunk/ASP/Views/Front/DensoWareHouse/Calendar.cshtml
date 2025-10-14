@@ -66,7 +66,98 @@
     </div>
 </div>
 
-<!-- 🧩 FullCalendar CSS & JS -->
+<!--Modal cho Delay Input -->
+<div class="modal fade" id="delayModal" tabindex="-1" aria-labelledby="delayModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-clock-history me-2 fs-4"></i>
+                    <h5 class="modal-title mb-0" id="delayModalLabel">Delay Information</h5>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="delayForm">
+                    <div class="row">
+                        <!-- Delay Type -->
+                        <div class="col-md-6 mb-3">
+                            <label for="delayType" class="form-label fw-semibold text-dark">Delay Type <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">
+                                    <i class="bi bi-tags text-primary"></i>
+                                </span>
+                                <input type="number" class="form-control" id="delayType" name="DelayType" min="0" max="32767" placeholder="Enter delay type (0-32767)" required>
+                            </div>
+
+                        </div>
+
+                        <!-- Delay Time -->
+                        <div class="col-md-6 mb-3">
+                            <label for="delayTime" class="form-label fw-semibold text-dark">Delay Time (hours) <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">
+                                    <i class="bi bi-stopwatch text-warning"></i>
+                                </span>
+                                <input type="number" class="form-control" id="delayTime" name="DelayTime" step="0.1" min="0" placeholder="0.0" required>
+                            </div>
+
+                        </div>
+
+                        <!-- Start Time -->
+                        <div class="col-12 mb-3">
+                            <label for="startTime" class="form-label fw-semibold text-dark">Start Time <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">
+                                    <i class="bi bi-play-circle text-success"></i>
+                                </span>
+                                <input type="datetime-local" class="form-control" id="startTime" name="StartTime" required>
+                            </div>
+
+                        </div>
+
+                        <!-- Change Time -->
+                        <div class="col-12 mb-3">
+                            <label for="changeTime" class="form-label fw-semibold text-dark">Change Time <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">
+                                    <i class="bi bi-pencil-square text-info"></i>
+                                </span>
+                                <input type="datetime-local" class="form-control" id="changeTime" name="ChangeTime" required>
+                            </div>
+
+                        </div>
+
+                        <!-- Reason -->
+                        <div class="col-12 mb-3">
+                            <label for="reason" class="form-label fw-semibold text-dark">Reason <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">
+                                    <i class="bi bi-chat-text text-secondary"></i>
+                                </span>
+                                <textarea class="form-control" id="reason" name="Reason" maxlength="255" rows="4" placeholder="Enter the reason for the delay..." required></textarea>
+                            </div>
+
+                            <div class="form-text text-end">
+                                <small class="text-muted" id="reasonCounter">0 / 255</small>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer bg-light border-top">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>Cancel
+                </button>
+                <button type="button" class="btn btn-primary" id="saveDelay">
+                    <i class="bi bi-check-circle me-1"></i>Save Delay
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- FullCalendar CSS & JS -->
 <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar-scheduler@6.1.15/index.global.min.js"></script>
 <!-- Bootstrap Icons cho icons trong progress -->

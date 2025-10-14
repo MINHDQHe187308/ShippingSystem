@@ -11,7 +11,64 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
     }
 
-    // --- Thêm CSS styles cho z-index, height, centering và CUSTOM TOOLTIP
+    // --- THÊM: Web Audio API cho tiếng kêu beep (không cần file external, tránh 404)
+    let audioContext = null;
+    function initAudioContext() {
+        if (!audioContext) {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        return audioContext;
+    }
+
+    function playBeep(volume = 0.5, frequency = 800, duration = 200) {
+        const context = initAudioContext();
+        const oscillator = context.createOscillator();
+        const gainNode = context.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(context.destination);
+
+        oscillator.frequency.value = frequency; // Tần số cho tiếng beep cao
+        oscillator.type = 'sine'; // Hình sóng sine cho âm thanh sạch
+
+        gainNode.gain.setValueAtTime(0, context.currentTime);
+        gainNode.gain.linearRampToValueAtTime(volume, context.currentTime + 0.01);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, context.currentTime + duration / 1000);
+
+        oscillator.start(context.currentTime);
+        oscillator.stop(context.currentTime + duration / 1000);
+    }
+
+    // --- Biến global cho delay mode
+    let delayMode = false;
+
+    // --- Thêm nút Delay Mode
+    const delayBtn = document.createElement('button');
+    delayBtn.id = 'delayModeBtn';
+    delayBtn.className = 'btn btn-warning';
+    delayBtn.textContent = 'Delay Mode: Off';
+    delayBtn.style.margin = '10px';
+    document.getElementById('legend').parentNode.insertBefore(delayBtn, document.getElementById('legend').nextSibling);
+
+    // Event listener cho nút
+    delayBtn.addEventListener('click', function () {
+        delayMode = !delayMode;
+        this.textContent = `Delay Mode: ${delayMode ? 'On' : 'Off'}`;
+        this.className = delayMode ? 'btn btn-danger' : 'btn btn-warning';
+        playBeep(0.5); // Tiếng kêu khi toggle
+
+        if (delayMode) {
+            // Thay đổi cursor toàn bộ body thành not-allowed (hình tròn đỏ với dấu gạch)
+            document.body.style.cursor = 'not-allowed';
+            // Thêm class cho calendar để apply hover effect mạnh hơn
+            calendarEl.classList.add('delay-mode');
+        } else {
+            document.body.style.cursor = 'default';
+            calendarEl.classList.remove('delay-mode');
+        }
+    });
+
+    // --- Thêm CSS styles cho z-index, height, centering và CUSTOM TOOLTIP + HOVER EFFECT CHỈ CHO DELAY MODE
     const style = document.createElement('style');
     style.textContent = `
         .fc-event {
@@ -22,6 +79,7 @@ document.addEventListener('DOMContentLoaded', function () {
             margin: 0 !important;
             line-height: 1.2 !important;
             cursor: pointer;  /* Thêm cursor pointer để dễ nhận biết hover */
+            transition: transform 0.2s ease, box-shadow 0.2s ease;  /* Giữ transition để mượt mà khi có effect */
         }
         .fc-event.plan-event {
             z-index: 1;
@@ -44,6 +102,13 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         .fc-resource-timeline .fc-timeline-slot-table .fc-resource-cell {
             height: 90px !important;  /* Đảm bảo apply cho slot table cells */
+        }
+        /* XÓA: Hover effect cơ bản - CHỈ GIỮ CHO DELAY MODE */
+        /* THÊM: Hover effect mạnh hơn khi delay mode on */
+        .delay-mode .fc-event:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(255, 0, 0, 0.3);  /* Đỏ nhạt để match theme */
+            border: 2px solid #ff0000;  /* Viền đỏ */
         }
         /* Custom Tooltip Styles - ĐẸP MẮT VÀ DỄ NHÌN */
         #custom-tooltip {
@@ -337,9 +402,27 @@ document.addEventListener('DOMContentLoaded', function () {
             };
         }),
 
-        // THÊM MỚI: Event listener cho click event - Mở modal với OrderDetails - THÊM DEBUG LOGS
+        // THÊM MỚI: Event listener cho click event - Mở modal với OrderDetails - THÊM DEBUG LOGS + XỬ LÝ DELAY MODE
         eventClick: function (info) {
             console.log('Event clicked! Info:', info);  // DEBUG: Log toàn bộ info
+
+            // THÊM: Nếu delayMode on, phát sound và mở delay modal thay vì order details
+            if (delayMode) {
+                playBeep(0.5);  // Tiếng kêu khi click event
+                const delayModalElement = document.getElementById('delayModal');
+                if (delayModalElement) {
+                    // Prefill form với data từ event nếu có (tạm thời: StartTime = actualStart)
+                    const extendedProps = info.event.extendedProps;
+                    const actualStart = extendedProps.actualStart ? new Date(extendedProps.actualStart) : new Date();
+                    document.querySelector('input[name="StartTime"]').value = actualStart.toISOString().slice(0, 16);
+                    document.querySelector('input[name="ChangeTime"]').value = new Date().toISOString().slice(0, 16);
+                    const delayModal = new bootstrap.Modal(delayModalElement);
+                    delayModal.show();
+                }
+                return;  // Không chạy code order details
+            }
+
+            // Code gốc cho order details nếu delayMode off
             const uid = info.event.extendedProps.uid;
             const customerCode = info.event.extendedProps.customerCode || info.event.resourceId || 'Unknown';  // Lấy CustomerCode từ extendedProps hoặc resourceId
             console.log('Extracted UID:', uid, 'CustomerCode:', customerCode);  // DEBUG: Kiểm tra UID và CustomerCode
@@ -471,7 +554,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
         },
 
-        // --- Custom eventContent: VẼ EVENT VÀ ATTACH HOVER EVENTS CHO TOOLTIP - THÊM HIỂN THỊ CUSTOMERCODE VÀ PROGRESS TRONG HÀNG NGANG VỚI BG KHÁC NHAU
+        // --- Custom eventContent: VẼ EVENT VÀ ATTACH HOVER EVENTS CHO TOOLTIP - THÊM HIỂN THỊ CUSTOMERCODE VÀ PROGRESS TRONG HÀNG NGANG VỚI BG KHÁC NHAU + HOVER EFFECT KHI DELAY MODE
         eventContent: function (arg) {
             // FIX: Lấy status từ extendedProps
             const status = arg.event.extendedProps.status;
@@ -629,13 +712,16 @@ document.addEventListener('DOMContentLoaded', function () {
                         loadDiv.style.minWidth = '70px';
                         wrapper.appendChild(loadDiv);
 
-                        // --- ATTACH HOVER EVENTS CHO CUSTOM TOOLTIP - HIỂN THỊ NGAY LẬP TỨC
-                        const tooltip = createTooltip();
-
+                        // THÊM: Hover listener cho effect (đã có CSS, nhưng thêm sound subtle nếu delayMode)
                         wrapper.addEventListener('mouseenter', (e) => {
+                            if (delayMode) {
+                                // Optional: Play sound nhẹ khi hover (giảm volume tạm thời)
+                                playBeep(0.2, 600, 100); // Beep nhẹ hơn cho hover
+                            }
                             // Cập nhật nội dung tooltip với tất cả thông tin
                             const planTime = formatTimeRange(pStart, pEnd);
                             const actualTime = formatTimeRange(aStart, aEnd);
+                            const tooltip = createTooltip();
                             tooltip.innerHTML = `
                                 <h4>Order Information</h4>  <!-- SỬA: Sửa lỗi chính tả từ "Infomation" sang "Information" -->
                                 <dl>
@@ -671,6 +757,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                         wrapper.addEventListener('mouseleave', () => {
                             // Ẩn tooltip
+                            const tooltip = document.getElementById('custom-tooltip');
                             tooltip.classList.remove('show');
                         });
 
@@ -877,7 +964,6 @@ document.addEventListener('DOMContentLoaded', function () {
         const minutes = now.getMinutes();
         const seconds = now.getSeconds();
         const percent = (minutes * 60 + seconds) / 3600;
-
         const cells = getHeaderHourCells();
         if (cells.length === 0) return;
 
@@ -988,4 +1074,42 @@ document.addEventListener('DOMContentLoaded', function () {
         updateClockLabel();
         updateVisibleRange();  // ← SỬA: Luôn update full range với detect midnight/switch
     }, 60 * 1000);
+
+    // THÊM MỚI: Xử lý save button cho delay modal (tạm thời console.log data)
+    document.addEventListener('click', function (e) {
+        if (e.target.id === 'saveDelay') {
+            const form = document.getElementById('delayForm');
+            const formData = new FormData(form);
+            const data = {
+                DelayType: parseInt(formData.get('DelayType')) || 0,
+                Reason: formData.get('Reason') || '',
+                StartTime: new Date(formData.get('StartTime')),
+                ChangeTime: new Date(formData.get('ChangeTime')),
+                DelayTime: parseFloat(formData.get('DelayTime')) || 0
+            };
+            console.log('Delay data to save:', data);  // Tạm thời log, sau connect backend
+            // Ví dụ: fetch('/api/saveDelay', { method: 'POST', body: JSON.stringify(data) });
+            const delayModal = bootstrap.Modal.getInstance(document.getElementById('delayModal'));
+            if (delayModal) delayModal.hide();
+            playBeep(0.3); // Beep khi save
+            alert('Data saved! (Backend pending)');  // Feedback tạm
+        }
+    });
+
+    // THÊM VÀO CUỐI FILE JS: Xử lý counter cho Reason textarea
+    const reasonTextarea = document.getElementById('reason');
+    const counter = document.getElementById('reasonCounter');
+    if (reasonTextarea && counter) {
+        reasonTextarea.addEventListener('input', function () {
+            const length = this.value.length;
+            counter.textContent = `${length} / 255`;
+            if (length > 200) {
+                counter.classList.remove('text-muted');
+                counter.classList.add('text-danger');
+            } else {
+                counter.classList.remove('text-danger');
+                counter.classList.add('text-muted');
+            }
+        });
+    }
 });
