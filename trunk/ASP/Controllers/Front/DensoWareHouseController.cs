@@ -47,14 +47,14 @@ namespace ASP.Controllers.Front
 
             // Map orders sang anonymous object - THÊM UId VÀ GIỮ STATUS LÀ NUMBER, THÊM TOTALPALLET VÀ CÁC TRƯỜNG KHÁC
             var ordersForView = orders.Select(o => {
-                // Collect: Đếm orderdetail mà TẤT CẢ shoppinglist có Status=1 (Collected)
-                int collectCount = o.OrderDetails?.Count(od => od.ShoppingLists != null && od.ShoppingLists.All(sl => sl.PLStatus == 1)) ?? 0;
+                // Collect: Tổng số pallet đã collect (đếm SL có PLStatus==1, không cần All)
+                int collectCount = o.OrderDetails?.Sum(od => od.ShoppingLists?.Count(sl => sl.PLStatus == 1) ?? 0) ?? 0;
 
-                // ThreePointScan: Đếm orderdetail mà TẤT CẢ shoppinglist có Status=2 (Prepared)
-                int prepareCount = o.OrderDetails?.Count(od => od.ShoppingLists != null && od.ShoppingLists.All(sl => sl.PLStatus == 2)) ?? 0;
+                // ThreePointScan: Tổng số pallet đã prepare (SL==2)
+                int prepareCount = o.OrderDetails?.Sum(od => od.ShoppingLists?.Count(sl => sl.PLStatus == 2) ?? 0) ?? 0;
 
-                // LoadCont: Đếm orderdetail mà TẤT CẢ shoppinglist có Status=3 (Loaded)
-                int loadCount = o.OrderDetails?.Count(od => od.ShoppingLists != null && od.ShoppingLists.All(sl => sl.PLStatus == 3)) ?? 0;
+                // LoadCont: Tổng số pallet đã load (SL==3)
+                int loadCount = o.OrderDetails?.Sum(od => od.ShoppingLists?.Count(sl => sl.PLStatus == 3) ?? 0) ?? 0;
 
                 return new
                 {
@@ -153,15 +153,14 @@ namespace ASP.Controllers.Front
             var customers = allCustomers.Where(c => customerCodesWithOrders.Contains(c.CustomerCode)).ToList();
 
             var ordersForView = orders.Select(o => {
-                // Collect: Đếm orderdetail mà TẤT CẢ shoppinglist có Status=1 (Collected)
-                int collectCount = o.OrderDetails?.Count(od => od.ShoppingLists != null && od.ShoppingLists.All(sl => sl.PLStatus == 1)) ?? 0;
+                // Collect: Tổng số pallet đã collect (đếm SL có PLStatus==1, không cần All)
+                int collectCount = o.OrderDetails?.Sum(od => od.ShoppingLists?.Count(sl => sl.PLStatus == 1) ?? 0) ?? 0;
 
-                // ThreePointScan: Đếm orderdetail mà TẤT CẢ shoppinglist có Status=2 (Prepared)
-                int prepareCount = o.OrderDetails?.Count(od => od.ShoppingLists != null && od.ShoppingLists.All(sl => sl.PLStatus == 2)) ?? 0;
+                // ThreePointScan: Tổng số pallet đã prepare (SL==2)
+                int prepareCount = o.OrderDetails?.Sum(od => od.ShoppingLists?.Count(sl => sl.PLStatus == 2) ?? 0) ?? 0;
 
-                // LoadCont: Đếm orderdetail mà TẤT CẢ shoppinglist có Status=3 (Loaded)
-                int loadCount = o.OrderDetails?.Count(od => od.ShoppingLists != null && od.ShoppingLists.All(sl => sl.PLStatus == 3)) ?? 0;
-
+                // LoadCont: Tổng số pallet đã load (SL==3)
+                int loadCount = o.OrderDetails?.Sum(od => od.ShoppingLists?.Count(sl => sl.PLStatus == 3) ?? 0) ?? 0;
                 return new
                 {
                     UId = o.UId,
@@ -200,8 +199,10 @@ namespace ASP.Controllers.Front
                 1 => "Pending",
                 2 => "Completed",
                 3 => "Shipped",
+                4 => "Delay",
                 _ => "Planned"
             };
         }
+    
     }
 }

@@ -8,5 +8,6 @@ namespace ASP.Models.Front
     public interface DelayHistoryRepositoryInterface
     {
         Task<IEnumerable<DelayHistory>> GetByOrderIdAsync(Guid orderId);
+        Task CreateAsync(DelayHistory delayHistory);
     }
 }

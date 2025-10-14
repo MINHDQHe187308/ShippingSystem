@@ -311,5 +311,25 @@ namespace ASP.Models.Front
 
             return statusChanged || actualTimesChanged;
         }
+       public async Task UpdateOrderStatusToDelay(Guid orderId)
+        {
+            var order = await _context.Orders.FirstOrDefaultAsync(o => o.UId == orderId);
+            if (order == null)
+            {
+                _logger.LogWarning("Order {OrderId} not found for delay status update", orderId);
+                return;
+            }
+
+            int oldStatus = order.OrderStatus;
+            order.OrderStatus = 4;  // Delay status
+
+            _context.Orders.Update(order);
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Order {OrderId} status updated to Delay (4) from {OldStatus}", orderId, oldStatus);
+
+            // Notify SignalR
+            await _hubContext.Clients.All.SendAsync("OrderStatusUpdated", order.UId.ToString(), order.OrderStatus);
+        }
     }
 }

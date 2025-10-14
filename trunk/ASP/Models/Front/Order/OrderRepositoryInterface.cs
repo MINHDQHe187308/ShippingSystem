@@ -10,5 +10,6 @@ namespace ASP.Models.Front
         public Task SaveChangesAsync();
         Task<List<Order>> GetOrdersByDate(DateTime date);
         Task<List<Order>> GetOrdersForWeek(DateTime weekStart);
+        Task UpdateOrderStatusToDelay(Guid orderId);
     }
 }
