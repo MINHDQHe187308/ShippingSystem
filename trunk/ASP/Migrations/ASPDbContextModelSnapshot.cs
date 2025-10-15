@@ -108,6 +108,44 @@ namespace ASP.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("ASP.Models.Admin.Logs.Log", b =>
+                {
+                    b.Property<long>("ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("ID"), 1L, 1);
+
+                    b.Property<string>("Author")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("ntext");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("IP")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("LogType")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("ID");
+
+                    b.ToTable("Logs");
+                });
+
             modelBuilder.Entity("ASP.Models.Admin.Roles.Role", b =>
                 {
                     b.Property<string>("Id")
@@ -192,7 +230,8 @@ namespace ASP.Migrations
             modelBuilder.Entity("ASP.Models.Front.Customer", b =>
                 {
                     b.Property<string>("CustomerCode")
-                        .HasColumnType("nvarchar(450)");
+                        .HasMaxLength(5)
+                        .HasColumnType("nvarchar(5)");
 
                     b.Property<string>("CreateBy")
                         .IsRequired()
@@ -302,13 +341,10 @@ namespace ASP.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime?>("AcAsyTime")
+                    b.Property<DateTime?>("AcEndTime")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime?>("AcDeliveryTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("AcDocumentsTime")
+                    b.Property<DateTime?>("AcStartTime")
                         .HasColumnType("datetime2");
 
                     b.Property<short>("ContSize")
@@ -321,6 +357,15 @@ namespace ASP.Migrations
                         .IsRequired()
                         .HasMaxLength(5)
                         .HasColumnType("nvarchar(5)");
+
+                    b.Property<DateTime?>("DelayStartTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<double?>("DelayTime")
+                        .HasColumnType("float");
+
+                    b.Property<DateTime>("EndTime")
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime>("OrderCreateDate")
                         .HasColumnType("datetime2");
@@ -338,16 +383,10 @@ namespace ASP.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
-                    b.Property<DateTime>("PlanAsyTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("PlanDeliveryTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("PlanDocumentsTime")
-                        .HasColumnType("datetime2");
-
                     b.Property<DateTime>("ShipDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("StartTime")
                         .HasColumnType("datetime2");
 
                     b.Property<int>("TotalColumn")
@@ -425,26 +464,67 @@ namespace ASP.Migrations
                     b.ToTable("OrderDetails");
                 });
 
+            modelBuilder.Entity("ASP.Models.Front.ShippingSchedule", b =>
+                {
+                    b.Property<string>("CustomerCode")
+                        .HasMaxLength(5)
+                        .HasColumnType("nvarchar(5)");
+
+                    b.Property<string>("TransCd")
+                        .HasMaxLength(5)
+                        .HasColumnType("nvarchar(5)");
+
+                    b.Property<int>("Weekday")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<TimeSpan>("CutOffTime")
+                        .HasColumnType("time");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("CustomerCode", "TransCd", "Weekday");
+
+                    b.ToTable("ShippingSchedules");
+                });
+
             modelBuilder.Entity("ASP.Models.Front.ShoppingList", b =>
                 {
                     b.Property<Guid>("UId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime>("CollectedDate")
+                    b.Property<DateTime?>("CollectedDate")
                         .HasColumnType("datetime2");
 
                     b.Property<long>("CollectionId")
                         .HasColumnType("bigint");
-
-                    b.Property<short>("CollectionStatus")
-                        .HasColumnType("smallint");
 
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
                     b.Property<Guid>("ODId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<short>("PLStatus")
+                        .HasColumnType("smallint");
 
                     b.Property<long>("PalletId")
                         .HasColumnType("bigint");
@@ -497,44 +577,10 @@ namespace ASP.Migrations
 
                     b.HasKey("UId");
 
-                    b.HasIndex("SPId");
+                    b.HasIndex("SPId")
+                        .IsUnique();
 
                     b.ToTable("ThreePointChecks");
-                });
-
-            modelBuilder.Entity("ASP.Models.Log", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"), 1L, 1);
-
-                    b.Property<string>("Author")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Ip")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("LogType")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("UpdatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Logs");
                 });
 
             modelBuilder.Entity("ASP.Models.Menu", b =>
@@ -742,10 +788,9 @@ namespace ASP.Migrations
             modelBuilder.Entity("ASP.Models.Front.ThreePointCheck", b =>
                 {
                     b.HasOne("ASP.Models.Front.ShoppingList", "ShoppingList")
-                        .WithMany("ThreePointChecks")
-                        .HasForeignKey("SPId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .WithOne("ThreePointCheck")
+                        .HasForeignKey("ASP.Models.Front.ThreePointCheck", "SPId")
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("ShoppingList");
                 });
@@ -815,7 +860,7 @@ namespace ASP.Migrations
 
             modelBuilder.Entity("ASP.Models.Front.ShoppingList", b =>
                 {
-                    b.Navigation("ThreePointChecks");
+                    b.Navigation("ThreePointCheck");
                 });
 #pragma warning restore 612, 618
         }
