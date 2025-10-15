@@ -1,5 +1,4 @@
-﻿// ~/js/Calendar.js
-document.addEventListener('DOMContentLoaded', function () {
+﻿document.addEventListener('DOMContentLoaded', function () {
     if (typeof FullCalendar === 'undefined') {
         console.error('FullCalendar is not loaded. Please check script imports.');
         return;
@@ -68,7 +67,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // --- Thêm CSS styles cho z-index, height, centering và CUSTOM TOOLTIP + HOVER EFFECT CHỈ CHO DELAY MODE + THÊM STYLE CHO DELAY STATUS (Viền đỏ)
+    // --- Thêm CSS styles cho z-index, height, centering và CUSTOM TOOLTIP + HOVER EFFECT CHỈ CHO DELAY MODE + THÊM STYLE CHO DELAY BAR (COMMENT CLASS DELAY-EVENT)
     const style = document.createElement('style');
     style.textContent = `
         .fc-event {
@@ -80,6 +79,8 @@ document.addEventListener('DOMContentLoaded', function () {
             line-height: 1.2 !important;
             cursor: pointer;  /* Thêm cursor pointer để dễ nhận biết hover */
             transition: transform 0.2s ease, box-shadow 0.2s ease;  /* Giữ transition để mượt mà khi có effect */
+            position: relative;  /* THÊM: Để position absolute cho delay bar */
+            overflow: visible !important;  /* THÊM: Cho phép delay bar extend ra ngoài */
         }
         .fc-event.plan-event {
             z-index: 1;
@@ -89,10 +90,13 @@ document.addEventListener('DOMContentLoaded', function () {
             height: 80px !important;  /* Đồng bộ height với .fc-event */
             line-height: 1.2 !important;
         }
-        .fc-event.delay-event {  /* THÊM MỚI: Style cho Delay status - viền đỏ bao quanh */
+        /* COMMENT: .fc-event.delay-event { ... } để không apply viền đỏ cho Delay */
+        /*
+        .fc-event.delay-event {
             border: 3px solid #ff0000 !important;
             box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
         }
+        */
         .fc-event .fc-event-main {  /* Đảm bảo inner content cũng center */
             display: flex;
             align-items: center;
@@ -113,6 +117,16 @@ document.addEventListener('DOMContentLoaded', function () {
             transform: scale(1.05);
             box-shadow: 0 4px 12px rgba(255, 0, 0, 0.3);  /* Đỏ nhạt để match theme */
             border: 2px solid #ff0000;  /* Viền đỏ */
+        }
+        /* THÊM: Style cho delay bar (màu đỏ, nối tiếp) */
+        .delay-bar {
+            position: absolute;
+            top: 0;
+            height: 100%;
+            background: #ff0000 !important;
+            border-radius: 4px;
+            z-index: 3;
+            opacity: 0.8;
         }
         /* Custom Tooltip Styles - ĐẸP MẮT VÀ DỄ NHÌN */
         #custom-tooltip {
@@ -273,27 +287,43 @@ document.addEventListener('DOMContentLoaded', function () {
         title: c.CustomerCode  // SỬA: Hiển thị CustomerCode thay vì CustomerName
     }));
 
-    // --- SỬA: Hàm lấy màu dựa trên status (thêm 'Delay' với màu đỏ)
-    function getColorByStatus(status) {
+    // --- SỬA: Hàm lấy màu dựa trên status (fallback cho Delay để giữ màu cũ)
+    function getColorByStatus(status, validActual = false) {
+        // Nếu Delay, fallback về màu dựa trên actual/plan
+        if (status === 'Delay') {
+            if (validActual) {
+                return getColorByStatus('Completed');  // Xanh lá nếu có actual
+            } else {
+                return getColorByStatus('Planned');  // Đen nếu chỉ plan
+            }
+        }
         const colors = {
             'Planned': '#000000',
             'Pending': '#007bff',
             'Completed': '#28a745',
             'Shipped': '#ffc107',
-            'Delay': '#ff0000',  // THÊM: Màu đỏ cho Delay
-            'Actual': '#17a2b8'  // Màu mới cho Actual (xanh dương nhạt, phân biệt) - nhưng không dùng nữa
+            'Delay': '#ff0000',  // Giữ nguyên nhưng không dùng cho Delay nữa
+            'Actual': '#17a2b8'
         };
         return colors[status] || '#d3d3d3';
     }
 
-    // --- Hàm lấy textColor dựa trên status
-    function getTextColorByStatus(status) {
-        const darkBgs = ['#000000', '#007bff', '#28a745', '#17a2b8', '#ff0000'];  // THÊM #ff0000 cho Delay
+    // --- SỬA: Hàm lấy textColor dựa trên status (fallback cho Delay)
+    function getTextColorByStatus(status, validActual = false) {
+        // Nếu Delay, fallback về text color dựa trên actual/plan
+        if (status === 'Delay') {
+            if (validActual) {
+                return getTextColorByStatus('Completed');
+            } else {
+                return getTextColorByStatus('Planned');
+            }
+        }
+        const darkBgs = ['#000000', '#007bff', '#28a745', '#17a2b8', '#ff0000'];
         const bgColor = getColorByStatus(status);
         return darkBgs.includes(bgColor) ? '#fff' : '#000';
     }
 
-    // --- Tạo event data từ dữ liệu Order - THÊM UId VÀO EXTENDEDPROPS VÀ THÊM CÁC TRƯỜNG PROGRESS
+    // --- Tạo event data từ dữ liệu Order - THÊM UId VÀO EXTENDEDPROPS VÀ THÊM CÁC TRƯỜNG PROGRESS + THÊM DELAY INFO NẾU STATUS=4
     const eventsData = orders.map((order, index) => {
         // Helper: Parse và validate time
         function parseAndValidate(timeStr) {
@@ -338,7 +368,19 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         const customerCode = order.CustomerCode || order.Resource || 'Unknown';
-        return {
+
+        // THÊM: Delay info nếu status=='Delay' (giả sử fetch từ API hoặc include trong data)
+        let delayStart = null, delayEnd = null, delayTime = 0;
+        if (status === 'Delay') {
+            // Giả sử order có thêm fields DelayStartTime, DelayTime (cần update controller để include)
+            delayStart = parseAndValidate(order.DelayStartTime); // Từ DB
+            delayTime = parseFloat(order.DelayTime) || 0;
+            if (delayStart) {
+                delayEnd = new Date(delayStart.getTime() + delayTime * 60 * 60 * 1000);
+            }
+        }
+
+        const eventObj = {
             id: `order-${index}`,
             resourceId: customerCode,
             start: eventStart,
@@ -363,9 +405,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 transCd: order.TransCd || 'N/A',
                 transMethod: order.TransMethod || 'N/A',
                 contSize: order.ContSize || 'N/A',
-                totalColumn: order.TotalColumn || 0
+                totalColumn: order.TotalColumn || 0,
+                // THÊM: Delay info
+                delayStart: delayStart ? delayStart.toISOString() : null,
+                delayEnd: delayEnd ? delayEnd.toISOString() : null,
+                delayTime: delayTime
             }
         };
+        return eventObj;
     }).filter(e => e);  // Remove null events
 
     // --- Khởi tạo FullCalendar
@@ -394,27 +441,32 @@ document.addEventListener('DOMContentLoaded', function () {
         resources: resources,
 
         events: eventsData.map(e => {
-            // FIX: Dùng e.extendedProps.status thay vì e.status
-            const bgColor = e.hasBoth ? 'transparent' : getColorByStatus(e.extendedProps.status);
-            const borderColor = e.hasBoth ? 'transparent' : getColorByStatus(e.extendedProps.status);
-            // FIX: Thêm classNames cho actual event để CSS apply + THÊM cho Delay
-            let classNames = e.extendedProps.validActual ? ['actual-event'] : [];
-            if (e.extendedProps.status === 'Delay') {
-                classNames.push('delay-event');
-            }
+            const extendedProps = e.extendedProps;
+            const status = extendedProps.status;
+            const validActual = extendedProps.validActual;
+
+            // SỬA: Fallback màu cho Delay
+            const bgColor = e.hasBoth ? 'transparent' : getColorByStatus(status, validActual);
+            const borderColor = e.hasBoth ? 'transparent' : getColorByStatus(status, validActual);
+
+            // SỬA: Chỉ thêm class actual-event, XÓA delay-event để không apply viền đỏ
+            let classNames = extendedProps.validActual ? ['actual-event'] : [];
+            // Không push 'delay-event' nữa
+
             return {
                 ...e,
                 backgroundColor: bgColor,
                 borderColor: borderColor,
-                textColor: getTextColorByStatus(e.extendedProps.status),  // ← SỬA: Dùng extendedProps.status
+                textColor: getTextColorByStatus(status, validActual),  // Truyền validActual
                 fontWeight: 'normal',
-                classNames: classNames  // ← SỬA THÊM Ở ĐÂY
+                classNames: classNames
             };
         }),
 
-        // SỬA: Event listener cho click event - Mở modal với OrderDetails - THÊM DEBUG LOGS + XỬ LÝ DELAY MODE + CHECK STATUS CHO DELAY
+        // SỬA: Event listener cho click event - Mở modal với OrderDetails - THÊM DEBUG LOGS + XỬ LÝ DELAY MODE + CHECK STATUS CHO DELAY + THÊM SET CURRENT UID CHO DELAY MODAL
         eventClick: function (info) {
             console.log('Event clicked! Info:', info);  // DEBUG: Log toàn bộ info
+            window.currentDelayUid = info.event.extendedProps.uid;  // THÊM: Lưu global UID cho delay modal
 
             // THÊM: Nếu delayMode on, phát sound và kiểm tra status
             if (delayMode) {
@@ -426,10 +478,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (status === 'Planned' || status === 'Pending' || status === 'Completed') {
                     const delayModalElement = document.getElementById('delayModal');
                     if (delayModalElement) {
-                        // Prefill form với data từ event nếu có (tạm thời: StartTime = actualStart)
-                        const actualStart = extendedProps.actualStart ? new Date(extendedProps.actualStart) : new Date();
-                        document.querySelector('input[name="StartTime"]').value = actualStart.toISOString().slice(0, 16);
-                        document.querySelector('input[name="ChangeTime"]').value = new Date().toISOString().slice(0, 16);
+                        // Prefill form với data từ event nếu có (tạm thời: StartTime = current time, read-only)
+                        const now = new Date();
+                        document.querySelector('input[name="StartTime"]').value = now.toISOString().slice(0, 16);
+                        document.querySelector('input[name="OrderId"]').value = window.currentDelayUid;  // THÊM: Set hidden OrderId
                         const delayModal = new bootstrap.Modal(delayModalElement);
                         delayModal.show();
                     }
@@ -489,6 +541,20 @@ document.addEventListener('DOMContentLoaded', function () {
                     console.log('JSON data sample:', data.data[0]);  // DEBUG: Log item đầu tiên để xem keys
                     loadingEl.style.display = 'none';
                     if (data.success && data.data && data.data.length > 0) {
+                        // THÊM: Hiển thị order summary nếu có delay info
+                        const summaryEl = document.getElementById('orderSummary');
+                        const extendedProps = info.event.extendedProps;  // Từ event click
+                        if (extendedProps.status === 'Delay' && data.orderSummary) {
+                            document.getElementById('summaryShipDate').textContent = extendedProps.shipDate;
+                            document.getElementById('summaryPlanTime').textContent = formatTimeRange(new Date(extendedProps.planStart), new Date(extendedProps.planEnd));
+                            document.getElementById('summaryActualTime').textContent = extendedProps.validActual ? formatTimeRange(new Date(extendedProps.actualStart), new Date(extendedProps.actualEnd)) : 'N/A';
+                            document.getElementById('summaryNewTime').textContent = data.orderSummary.newTimeRange;
+                            document.getElementById('summaryDelayTime').textContent = `${data.orderSummary.delayTime} hours`;
+                            summaryEl.style.display = 'block';
+                        } else {
+                            summaryEl.style.display = 'none';
+                        }
+
                         // Build table rows - HỖ TRỢ PROGRESS BARS VÀ ICONS
                         data.data.forEach(item => {
                             // Hỗ trợ cả Pascal và camel (lấy giá trị đầu tiên tồn tại)
@@ -576,7 +642,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
         },
 
-        // --- Custom eventContent: VẼ EVENT VÀ ATTACH HOVER EVENTS CHO TOOLTIP - THÊM HIỂN THỊ CUSTOMERCODE VÀ PROGRESS TRONG HÀNG NGANG VỚI BG KHÁC NHAU + HOVER EFFECT KHI DELAY MODE
+        // --- SỬA: Custom eventContent: VẼ EVENT VÀ ATTACH HOVER EVENTS CHO TOOLTIP - THÊM HIỂN THỊ CUSTOMERCODE VÀ PROGRESS TRONG HÀNG NGANG VỚI BG KHÁC NHAU + HOVER EFFECT KHI DELAY MODE + THÊM VẼ DELAY BAR ĐỎ NỐI TIẾP
         eventContent: function (arg) {
             // FIX: Lấy status từ extendedProps
             const status = arg.event.extendedProps.status;
@@ -608,18 +674,25 @@ document.addEventListener('DOMContentLoaded', function () {
                 planWidth = 100;
             }
 
+            // THÊM: Delay bar info nếu Delay
+            const dStart = extendedProps.delayStart ? new Date(extendedProps.delayStart) : null;
+            const dEnd = extendedProps.delayEnd ? new Date(extendedProps.delayEnd) : null;
+            const delayPercent = dStart ? ((dStart - eventStart) / eventDuration) * 100 : 100;  // Nối tiếp nên left=100%
+            const delayWidth = extendedProps.delayTime ? (extendedProps.delayTime / (eventDuration / (1000 * 60 * 60))) * 100 : 0;  // % dựa trên giờ
+
             // Debug log cho rendering (xóa sau khi test OK)
-            console.log('Rendering event:', arg.event.title, 'Status:', status, 'ValidActual:', extendedProps.validActual, 'Color for bar:', getColorByStatus(status));
+            console.log('Rendering event:', arg.event.title, 'Status:', status, 'ValidActual:', extendedProps.validActual, 'Color for bar:', getColorByStatus(status, extendedProps.validActual));
 
             return {
                 domNodes: [
                     (() => {
                         const wrapper = document.createElement('div');
-                        // FIX: Fallback bg nếu transparent để tránh xám hoàn toàn
+                        // SỬA: Background fallback cho Delay (dùng màu cũ)
+                        const fallbackColor = getColorByStatus(status, extendedProps.validActual);
                         wrapper.style.position = 'relative';
                         wrapper.style.height = '100%';  // Đồng bộ với height của .fc-event (80px)
                         wrapper.style.width = '100%';
-                        wrapper.style.background = arg.event.backgroundColor || getColorByStatus(status) || 'transparent';
+                        wrapper.style.background = arg.event.backgroundColor || fallbackColor || 'transparent';
                         wrapper.style.borderRadius = '4px';
                         wrapper.style.overflow = 'visible';  // Cho phép extend visible
                         wrapper.style.color = arg.event.textColor;
@@ -651,7 +724,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                 planBarFull.style.top = '0';
                                 planBarFull.style.height = '100%';
                                 planBarFull.style.width = '100%';
-                                planBarFull.style.background = getColorByStatus(status);
+                                planBarFull.style.background = fallbackColor;  // SỬA: Dùng fallback cho plan full
                                 planBarFull.style.borderRadius = '4px';
                                 wrapper.appendChild(planBarFull);
                             }
@@ -665,12 +738,29 @@ document.addEventListener('DOMContentLoaded', function () {
                             actualBar.style.top = '0';
                             actualBar.style.height = '100%';
                             actualBar.style.width = actualWidth + '%';
-                            actualBar.style.background = getColorByStatus(status);
+                            actualBar.style.background = fallbackColor;  // SỬA: Fallback cho actual nếu Delay
                             actualBar.style.borderRadius = '4px';
                             actualBar.style.filter = 'blur(1px)';  // Actual mờ
                             actualBar.style.opacity = '0.7';  // Actual trong suốt để thấy plan bên dưới
                             actualBar.title = `Actual: ${actualPercent.toFixed(0)}% - ${(actualPercent + actualWidth).toFixed(0)}%`;
                             wrapper.appendChild(actualBar);
+                        }
+
+                        // THÊM: Vẽ delay bar nối tiếp nếu Delay (từ delayStart đến delayEnd, cho phép overlap/extend)
+                        if (status === 'Delay' && dStart && dEnd) {
+                            const delayLeftPercent = Math.max(0, ((dStart - eventStart) / eventDuration) * 100);  // Anchor to dStart, min 0%
+                            const delayWidthPercent = ((dEnd - dStart) / eventDuration) * 100;  // Full delay duration as %, can >100% to extend
+
+                            const delayBar = document.createElement('div');
+                            delayBar.className = 'delay-bar';
+                            delayBar.style.left = delayLeftPercent + '%';
+                            delayBar.style.width = delayWidthPercent + '%';
+                            delayBar.style.background = '#ff0000';
+                            delayBar.title = `Delay: ${hhmmss(dStart)} - ${hhmmss(dEnd)} (${extendedProps.delayTime}h)`;
+                            wrapper.appendChild(delayBar);
+
+                            // Debug log (remove after testing)
+                            console.log('Delay bar drawn:', { delayLeftPercent: delayLeftPercent.toFixed(1), delayWidthPercent: delayWidthPercent.toFixed(1), dStart: hhmmss(dStart), dEnd: hhmmss(dEnd) });
                         }
 
                         // THÊM MỚI: Hiển thị CustomerCode và 3 progress thẳng hàng nhau với background khác nhau
@@ -743,6 +833,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             // Cập nhật nội dung tooltip với tất cả thông tin
                             const planTime = formatTimeRange(pStart, pEnd);
                             const actualTime = formatTimeRange(aStart, aEnd);
+                            const delayTime = formatTimeRange(dStart, dEnd);
                             const tooltip = createTooltip();
                             tooltip.innerHTML = `
                                 <h4>Order Information</h4>  <!-- SỬA: Sửa lỗi chính tả từ "Infomation" sang "Information" -->
@@ -753,6 +844,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                     <dd>${planTime}</dd>
                                     <dt>Actual Time:</dt>
                                     <dd>${actualTime}</dd>
+                                    ${status === 'Delay' ? `<dt>Delay Time:</dt><dd>${delayTime}</dd>` : ''}
                                     <dt>TransCD:</dt>
                                     <dd>${extendedProps.transCd}</dd>
                                     <dt>TransMethod:</dt>
@@ -840,7 +932,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         title: c.CustomerCode
                     }));
 
-                    // Rebuild eventsData (copy logic từ code gốc của bạn)
+                    // Rebuild eventsData (copy logic từ code gốc của bạn - THÊM DELAY INFO)
                     const newEventsData = orders.map((order, index) => {
                         // Helper: Parse và validate time (copy từ code gốc)
                         function parseAndValidate(timeStr) {
@@ -879,6 +971,17 @@ document.addEventListener('DOMContentLoaded', function () {
                         }
 
                         const customerCode = order.CustomerCode || order.Resource || 'Unknown';
+
+                        // THÊM: Delay info nếu status=='Delay'
+                        let delayStart = null, delayEnd = null, delayTime = 0;
+                        if (status === 'Delay') {
+                            delayStart = parseAndValidate(order.DelayStartTime);
+                            delayTime = parseFloat(order.DelayTime) || 0;
+                            if (delayStart) {
+                                delayEnd = new Date(delayStart.getTime() + delayTime * 60 * 60 * 1000);
+                            }
+                        }
+
                         return {
                             id: `order-${index}`,
                             resourceId: customerCode,
@@ -903,7 +1006,11 @@ document.addEventListener('DOMContentLoaded', function () {
                                 transCd: order.TransCd || 'N/A',
                                 transMethod: order.TransMethod || 'N/A',
                                 contSize: order.ContSize || 'N/A',
-                                totalColumn: order.TotalColumn || 0
+                                totalColumn: order.TotalColumn || 0,
+                                // THÊM: Delay info
+                                delayStart: delayStart ? delayStart.toISOString() : null,
+                                delayEnd: delayEnd ? delayEnd.toISOString() : null,
+                                delayTime: delayTime
                             }
                         };
                     }).filter(e => e);
@@ -912,17 +1019,23 @@ document.addEventListener('DOMContentLoaded', function () {
                     calendar.setOption('resources', resources);
                     calendar.removeAllEvents();
                     const formattedEvents = newEventsData.map(e => {
-                        const bgColor = e.hasBoth ? 'transparent' : getColorByStatus(e.extendedProps.status);
-                        const borderColor = e.hasBoth ? 'transparent' : getColorByStatus(e.extendedProps.status);
-                        let classNames = e.extendedProps.validActual ? ['actual-event'] : [];
-                        if (e.extendedProps.status === 'Delay') {
-                            classNames.push('delay-event');
-                        }
+                        const extendedProps = e.extendedProps;
+                        const status = extendedProps.status;
+                        const validActual = extendedProps.validActual;
+
+                        // SỬA: Fallback màu cho Delay
+                        const bgColor = e.hasBoth ? 'transparent' : getColorByStatus(status, validActual);
+                        const borderColor = e.hasBoth ? 'transparent' : getColorByStatus(status, validActual);
+
+                        // SỬA: Chỉ thêm class actual-event, XÓA delay-event
+                        let classNames = extendedProps.validActual ? ['actual-event'] : [];
+                        // Không push 'delay-event' nữa
+
                         return {
                             ...e,
                             backgroundColor: bgColor,
                             borderColor: borderColor,
-                            textColor: getTextColorByStatus(e.extendedProps.status),
+                            textColor: getTextColorByStatus(status, validActual),
                             fontWeight: 'normal',
                             classNames: classNames
                         };
@@ -1100,22 +1213,23 @@ document.addEventListener('DOMContentLoaded', function () {
         updateVisibleRange();  // ← SỬA: Luôn update full range với detect midnight/switch
     }, 60 * 1000);
 
-    // SỬA: Xử lý save button cho delay modal - GỌI API POST ĐỂ SAVE VÀO DELAYHISTORY + UPDATE STATUS SANG DELAY + REFETCH DATA
+    // SỬA: Xử lý save button cho delay modal - GỌI API POST ĐỂ SAVE VÀO DELAYHISTORY + UPDATE STATUS SANG DELAY + REFETCH DATA + SET STARTTIME=NOW, CHANGETIME=DEFAULT (NOW)
     document.addEventListener('click', function (e) {
         if (e.target.id === 'saveDelay') {
             const form = document.getElementById('delayForm');
             const formData = new FormData(form);
+            const now = new Date();  // THÊM: Current time cho StartTime và ChangeTime
             const data = {
                 OrderId: document.querySelector('input[name="OrderId"]').value || '',  // THÊM: Lấy OrderId từ hidden input (sẽ set khi mở modal)
                 DelayType: parseInt(formData.get('DelayType')) || 0,
                 Reason: formData.get('Reason') || '',
-                StartTime: formData.get('StartTime'),
-                ChangeTime: formData.get('ChangeTime'),
+                StartTime: now.toISOString(),  // THÊM: Set StartTime = current time
+                ChangeTime: now.toISOString(),  // THÊM: Default ChangeTime = current time
                 DelayTime: parseFloat(formData.get('DelayTime')) || 0
             };
 
             // THÊM MỚI: Gọi API POST để save
-            fetch('/api/Delay/SaveDelay', {  // Route mới trong DelayController
+            fetch('/api/DelayHistory/SaveDelay', { // Route mới trong DelayController
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1130,13 +1244,13 @@ document.addEventListener('DOMContentLoaded', function () {
                         if (delayModal) delayModal.hide();
                         playBeep(0.3); // Beep khi save
                         alert('Delay applied and status updated to Delay!');
-                        // THÊM: Refetch calendar data để update UI (status Delay + viền đỏ)
+                        // THÊM: Refetch calendar data để update UI (status Delay + viền đỏ + delay bar)
                         fetch('/DensoWareHouse/GetCalendarData')
                             .then(response => response.json())
                             .then(data => {
                                 orders = data.orders;
                                 customers = data.customers;
-                                // Rebuild và update calendar (copy logic từ SignalR)
+                                // Rebuild và update calendar (copy logic từ SignalR - với delay info)
                                 const customerMap = {};
                                 customers.forEach(c => {
                                     customerMap[c.CustomerCode] = c.CustomerName;
@@ -1176,6 +1290,17 @@ document.addEventListener('DOMContentLoaded', function () {
                                         hasBoth = true;
                                     }
                                     const customerCode = order.CustomerCode || order.Resource || 'Unknown';
+
+                                    // THÊM: Delay info
+                                    let delayStart = null, delayEnd = null, delayTime = 0;
+                                    if (status === 'Delay') {
+                                        delayStart = parseAndValidate(order.DelayStartTime);
+                                        delayTime = parseFloat(order.DelayTime) || 0;
+                                        if (delayStart) {
+                                            delayEnd = new Date(delayStart.getTime() + delayTime * 60 * 60 * 1000);
+                                        }
+                                    }
+
                                     return {
                                         id: `order-${index}`,
                                         resourceId: customerCode,
@@ -1200,24 +1325,34 @@ document.addEventListener('DOMContentLoaded', function () {
                                             transCd: order.TransCd || 'N/A',
                                             transMethod: order.TransMethod || 'N/A',
                                             contSize: order.ContSize || 'N/A',
-                                            totalColumn: order.TotalColumn || 0
+                                            totalColumn: order.TotalColumn || 0,
+                                            // THÊM: Delay info
+                                            delayStart: delayStart ? delayStart.toISOString() : null,
+                                            delayEnd: delayEnd ? delayEnd.toISOString() : null,
+                                            delayTime: delayTime
                                         }
                                     };
                                 }).filter(e => e);
                                 calendar.setOption('resources', resources);
                                 calendar.removeAllEvents();
                                 const formattedEvents = newEventsData.map(e => {
-                                    const bgColor = e.hasBoth ? 'transparent' : getColorByStatus(e.extendedProps.status);
-                                    const borderColor = e.hasBoth ? 'transparent' : getColorByStatus(e.extendedProps.status);
-                                    let classNames = e.extendedProps.validActual ? ['actual-event'] : [];
-                                    if (e.extendedProps.status === 'Delay') {
-                                        classNames.push('delay-event');
-                                    }
+                                    const extendedProps = e.extendedProps;
+                                    const status = extendedProps.status;
+                                    const validActual = extendedProps.validActual;
+
+                                    // SỬA: Fallback màu cho Delay
+                                    const bgColor = e.hasBoth ? 'transparent' : getColorByStatus(status, validActual);
+                                    const borderColor = e.hasBoth ? 'transparent' : getColorByStatus(status, validActual);
+
+                                    // SỬA: Chỉ thêm class actual-event, XÓA delay-event
+                                    let classNames = extendedProps.validActual ? ['actual-event'] : [];
+                                    // Không push 'delay-event' nữa
+
                                     return {
                                         ...e,
                                         backgroundColor: bgColor,
                                         borderColor: borderColor,
-                                        textColor: getTextColorByStatus(e.extendedProps.status),
+                                        textColor: getTextColorByStatus(status, validActual),
                                         fontWeight: 'normal',
                                         classNames: classNames
                                     };
@@ -1253,15 +1388,11 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // THÊM MỚI: Khi mở delayModal, set hidden OrderId từ event (cần thêm input hidden trong HTML)
+    // THÊM MỚI: Khi mở delayModal, set hidden OrderId từ event (cần thêm input hidden trong HTML) + Set StartTime current (read-only)
     document.getElementById('delayModal').addEventListener('show.bs.modal', function (event) {
-        const button = event.relatedTarget;  // Button that triggered the modal (nếu từ button khác, nhưng ở đây từ eventClick)
-        // Vì mở từ eventClick, cần lưu uid tạm thời (hoặc dùng global var)
-        // Giả sử set global uid khi click event
-        window.currentDelayOrderUid = info.event.extendedProps.uid;  // SỬA: Cần di chuyển vào scope, nhưng tạm dùng cách khác
-        // Tốt hơn: Thêm hidden input trong modal và set khi mở
-        const modal = bootstrap.Modal.getOrCreateInstance(this);
         const uid = window.currentDelayUid || '';  // Set global trước khi show
         document.querySelector('#delayModal input[name="OrderId"]').value = uid;
+        const now = new Date();
+        document.querySelector('#delayModal input[name="StartTime"]').value = now.toISOString().slice(0, 16);  // Set current time
     });
 });
