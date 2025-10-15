@@ -26,7 +26,7 @@ namespace ASP.Models.Front
                 .ToListAsync();
         }
 
-     
+
         public async Task CreateAsync(DelayHistory delayHistory)
         {
             _context.DelayHistory.Add(delayHistory);

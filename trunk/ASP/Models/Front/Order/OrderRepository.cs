@@ -311,7 +311,30 @@ namespace ASP.Models.Front
 
             return statusChanged || actualTimesChanged;
         }
-       public async Task UpdateOrderStatusToDelay(Guid orderId)
+      public async Task<Order?> GetOrderById(Guid orderId)  // THÊM: Method để lấy full order
+        {
+            return await _context.Orders
+                .Include(o => o.OrderDetails)
+                .ThenInclude(od => od.ShoppingLists)
+                .ThenInclude(sl => sl.ThreePointCheck)
+                .Include(o => o.DelayHistories)  // THÊM: Include DelayHistories
+                .FirstOrDefaultAsync(o => o.UId == orderId);
+        }
+
+        public async Task<List<Order>> GetOrdersWithDelayByDate(DateTime date)  // THÊM: Method để lấy orders với DelayHistories
+        {
+            return await _context.Orders
+                .Where(o =>
+                    (o.StartTime >= date.Date && o.StartTime < date.Date.AddDays(1)) ||
+                    (o.EndTime >= date.Date && o.EndTime < date.Date.AddDays(1))
+                )
+                .Include(o => o.OrderDetails)
+                .ThenInclude(od => od.ShoppingLists)
+                .Include(o => o.DelayHistories)  // THÊM: Include để lấy delay info
+                .ToListAsync();
+        }
+
+        public async Task UpdateOrderStatusToDelay(Guid orderId, DateTime delayStartTime, double delayTime)  // SỬA: Thêm params cho delay info
         {
             var order = await _context.Orders.FirstOrDefaultAsync(o => o.UId == orderId);
             if (order == null)
@@ -322,14 +345,18 @@ namespace ASP.Models.Front
 
             int oldStatus = order.OrderStatus;
             order.OrderStatus = 4;  // Delay status
+            order.DelayStartTime = delayStartTime;  // THÊM: Lưu vào Order (thêm column nếu chưa có)
+            order.DelayTime = delayTime;  // THÊM: Lưu vào Order (thêm column nếu chưa có)
 
             _context.Orders.Update(order);
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation("Order {OrderId} status updated to Delay (4) from {OldStatus}", orderId, oldStatus);
+            _logger.LogInformation("Order {OrderId} status updated to Delay (4) from {OldStatus}, DelayStart={DelayStart}, DelayTime={DelayTime}h", orderId, oldStatus, delayStartTime, delayTime);
 
             // Notify SignalR
             await _hubContext.Clients.All.SendAsync("OrderStatusUpdated", order.UId.ToString(), order.OrderStatus);
         }
+
+        // ... (các method khác)
     }
 }
