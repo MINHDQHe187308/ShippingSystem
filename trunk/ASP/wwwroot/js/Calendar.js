@@ -1,4 +1,5 @@
-﻿document.addEventListener('DOMContentLoaded', function () {
+﻿// SỬA: Calendar.js - SỬA getColorByStatus để nếu Delay && DelayTime >24h thì return màu đỏ (#ff0000) cho toàn bộ event
+document.addEventListener('DOMContentLoaded', function () {
     if (typeof FullCalendar === 'undefined') {
         console.error('FullCalendar is not loaded. Please check script imports.');
         return;
@@ -127,6 +128,12 @@
             border-radius: 4px;
             z-index: 3;
             opacity: 0.8;
+        }
+        /* THÊM MỚI: Style cho multi-day delay event (toàn bộ đỏ) */
+        .fc-event.multi-day-delay {
+            background-color: #ff0000 !important;
+            border-color: #ff0000 !important;
+            color: #fff !important;
         }
         /* Custom Tooltip Styles - ĐẸP MẮT VÀ DỄ NHÌN */
         #custom-tooltip {
@@ -287,8 +294,12 @@
         title: c.CustomerCode  // SỬA: Hiển thị CustomerCode thay vì CustomerName
     }));
 
-    // --- SỬA: Hàm lấy màu dựa trên status (fallback cho Delay để giữ màu cũ)
-    function getColorByStatus(status, validActual = false) {
+    // --- SỬA: Hàm lấy màu dựa trên status (fallback cho Delay để giữ màu cũ) + THÊM: Nếu Delay && delayTime >24 thì return #ff0000 (đỏ)
+    function getColorByStatus(status, validActual = false, delayTime = 0) {
+        // THÊM MỚI: Nếu Delay && delayTime >24h thì override toàn bộ thành đỏ
+        if (status === 'Delay' && delayTime > 24) {
+            return '#ff0000';  // Đỏ cho multi-day delay
+        }
         // Nếu Delay, fallback về màu dựa trên actual/plan
         if (status === 'Delay') {
             if (validActual) {
@@ -308,8 +319,12 @@
         return colors[status] || '#d3d3d3';
     }
 
-    // --- SỬA: Hàm lấy textColor dựa trên status (fallback cho Delay)
-    function getTextColorByStatus(status, validActual = false) {
+    // --- SỬA: Hàm lấy textColor dựa trên status (fallback cho Delay) + THÊM: Nếu multi-day delay thì text trắng (#fff)
+    function getTextColorByStatus(status, validActual = false, delayTime = 0) {
+        // THÊM MỚI: Nếu Delay && delayTime >24h thì text trắng
+        if (status === 'Delay' && delayTime > 24) {
+            return '#fff';  // Trắng trên nền đỏ
+        }
         // Nếu Delay, fallback về text color dựa trên actual/plan
         if (status === 'Delay') {
             if (validActual) {
@@ -444,29 +459,34 @@
             const extendedProps = e.extendedProps;
             const status = extendedProps.status;
             const validActual = extendedProps.validActual;
+            const delayTime = extendedProps.delayTime || 0;  // THÊM: Lấy delayTime để check multi-day
 
-            // SỬA: Fallback màu cho Delay
-            const bgColor = e.hasBoth ? 'transparent' : getColorByStatus(status, validActual);
-            const borderColor = e.hasBoth ? 'transparent' : getColorByStatus(status, validActual);
+            // SỬA: Fallback màu cho Delay + THÊM: Nếu Delay && delayTime >24 thì đỏ
+            const bgColor = e.hasBoth ? 'transparent' : getColorByStatus(status, validActual, delayTime);
+            const borderColor = e.hasBoth ? 'transparent' : getColorByStatus(status, validActual, delayTime);
 
-            // SỬA: Chỉ thêm class actual-event, XÓA delay-event để không apply viền đỏ
+            // SỬA: Chỉ thêm class actual-event, XÓA delay-event để không apply viền đỏ + THÊM: Thêm class multi-day-delay nếu >24h
             let classNames = extendedProps.validActual ? ['actual-event'] : [];
+            if (status === 'Delay' && delayTime > 24) {
+                classNames.push('multi-day-delay');  // THÊM: Class cho CSS override đỏ
+            }
             // Không push 'delay-event' nữa
 
             return {
                 ...e,
                 backgroundColor: bgColor,
                 borderColor: borderColor,
-                textColor: getTextColorByStatus(status, validActual),  // Truyền validActual
+                textColor: getTextColorByStatus(status, validActual, delayTime),  // Truyền delayTime
                 fontWeight: 'normal',
                 classNames: classNames
             };
         }),
 
-        // SỬA: Event listener cho click event - Mở modal với OrderDetails - THÊM DEBUG LOGS + XỬ LÝ DELAY MODE + CHECK STATUS CHO DELAY + THÊM SET CURRENT UID CHO DELAY MODAL
+        // SỬA: Event listener cho click event - Mở modal với OrderDetails - THÊM DEBUG LOGS + XỬ LÝ DELAY MODE + CHECK STATUS CHO DELAY + THÊM SET CURRENT UID CHO DELAY MODAL + THÊM: Lưu event info global cho future delay
         eventClick: function (info) {
             console.log('Event clicked! Info:', info);  // DEBUG: Log toàn bộ info
             window.currentDelayUid = info.event.extendedProps.uid;  // THÊM: Lưu global UID cho delay modal
+            window.currentDelayEvent = info.event;  // THÊM MỚI: Lưu full event info (cho set StartTime future)
 
             // THÊM: Nếu delayMode on, phát sound và kiểm tra status
             if (delayMode) {
@@ -479,19 +499,16 @@
                     const delayModalElement = document.getElementById('delayModal');
                     if (delayModalElement) {
                         // Prefill form với data từ event nếu có (tạm thời: StartTime = current time, read-only)
-                        const now = new Date();
-                        document.querySelector('input[name="StartTime"]').value = now.toISOString().slice(0, 16);
-                        document.querySelector('input[name="OrderId"]').value = window.currentDelayUid;  // THÊM: Set hidden OrderId
                         const delayModal = new bootstrap.Modal(delayModalElement);
                         delayModal.show();
                     }
                 } else if (status === 'Shipped') {
                     // THÊM MỚI: Hiện thông báo nếu Shipped
-                    alert('Cannot apply delay to a shipped order!');
+                    alert('không thể DELAY order đã xuất hàng đôu :_(((!');
                     playBeep(0.3, 400, 300);  // Beep thấp để báo lỗi
                 } else {
                     // Fallback cho status khác (như Delay)
-                    alert(`Cannot apply delay to ${status.toLowerCase()} order!`);
+                    alert(`Không thể DELAY order có trạng thái ${status.toLowerCase()}!`);
                 }
                 return;  // Không chạy code order details
             }
@@ -541,20 +558,6 @@
                     console.log('JSON data sample:', data.data[0]);  // DEBUG: Log item đầu tiên để xem keys
                     loadingEl.style.display = 'none';
                     if (data.success && data.data && data.data.length > 0) {
-                        // THÊM: Hiển thị order summary nếu có delay info
-                        const summaryEl = document.getElementById('orderSummary');
-                        const extendedProps = info.event.extendedProps;  // Từ event click
-                        if (extendedProps.status === 'Delay' && data.orderSummary) {
-                            document.getElementById('summaryShipDate').textContent = extendedProps.shipDate;
-                            document.getElementById('summaryPlanTime').textContent = formatTimeRange(new Date(extendedProps.planStart), new Date(extendedProps.planEnd));
-                            document.getElementById('summaryActualTime').textContent = extendedProps.validActual ? formatTimeRange(new Date(extendedProps.actualStart), new Date(extendedProps.actualEnd)) : 'N/A';
-                            document.getElementById('summaryNewTime').textContent = data.orderSummary.newTimeRange;
-                            document.getElementById('summaryDelayTime').textContent = `${data.orderSummary.delayTime} hours`;
-                            summaryEl.style.display = 'block';
-                        } else {
-                            summaryEl.style.display = 'none';
-                        }
-
                         // Build table rows - HỖ TRỢ PROGRESS BARS VÀ ICONS
                         data.data.forEach(item => {
                             // Hỗ trợ cả Pascal và camel (lấy giá trị đầu tiên tồn tại)
@@ -642,7 +645,7 @@
                 });
         },
 
-        // --- SỬA: Custom eventContent: VẼ EVENT VÀ ATTACH HOVER EVENTS CHO TOOLTIP - THÊM HIỂN THỊ CUSTOMERCODE VÀ PROGRESS TRONG HÀNG NGANG VỚI BG KHÁC NHAU + HOVER EFFECT KHI DELAY MODE + THÊM VẼ DELAY BAR ĐỎ NỐI TIẾP
+        // --- SỬA: Custom eventContent: VẼ EVENT VÀ ATTACH HOVER EVENTS CHO TOOLTIP - THÊM HIỂN THỊ CUSTOMERCODE VÀ PROGRESS TRONG HÀNG NGANG VỚI BG KHÁC NHAU + HOVER EFFECT KHI DELAY MODE + THÊM VẼ DELAY BAR ĐỎ NỐI TIẾP (handle multi-day tự động vì end updated)
         eventContent: function (arg) {
             // FIX: Lấy status từ extendedProps
             const status = arg.event.extendedProps.status;
@@ -746,10 +749,10 @@
                             wrapper.appendChild(actualBar);
                         }
 
-                        // THÊM: Vẽ delay bar nối tiếp nếu Delay (từ delayStart đến delayEnd, cho phép overlap/extend)
+                        // THÊM: Vẽ delay bar nối tiếp nếu Delay (từ delayStart đến delayEnd, cho phép overlap/extend + multi-day tự động vì end updated)
                         if (status === 'Delay' && dStart && dEnd) {
                             const delayLeftPercent = Math.max(0, ((dStart - eventStart) / eventDuration) * 100);  // Anchor to dStart, min 0%
-                            const delayWidthPercent = ((dEnd - dStart) / eventDuration) * 100;  // Full delay duration as %, can >100% to extend
+                            const delayWidthPercent = ((dEnd - dStart) / eventDuration) * 100;  // Full delay duration as %, can >100% to extend (multi-day)
 
                             const delayBar = document.createElement('div');
                             delayBar.className = 'delay-bar';
@@ -1022,20 +1025,24 @@
                         const extendedProps = e.extendedProps;
                         const status = extendedProps.status;
                         const validActual = extendedProps.validActual;
+                        const delayTime = extendedProps.delayTime || 0;  // THÊM: Lấy delayTime
 
-                        // SỬA: Fallback màu cho Delay
-                        const bgColor = e.hasBoth ? 'transparent' : getColorByStatus(status, validActual);
-                        const borderColor = e.hasBoth ? 'transparent' : getColorByStatus(status, validActual);
+                        // SỬA: Fallback màu cho Delay + THÊM: Nếu Delay && delayTime >24 thì đỏ
+                        const bgColor = e.hasBoth ? 'transparent' : getColorByStatus(status, validActual, delayTime);
+                        const borderColor = e.hasBoth ? 'transparent' : getColorByStatus(status, validActual, delayTime);
 
-                        // SỬA: Chỉ thêm class actual-event, XÓA delay-event
+                        // SỬA: Chỉ thêm class actual-event, XÓA delay-event + THÊM: Thêm multi-day-delay nếu >24h
                         let classNames = extendedProps.validActual ? ['actual-event'] : [];
+                        if (status === 'Delay' && delayTime > 24) {
+                            classNames.push('multi-day-delay');
+                        }
                         // Không push 'delay-event' nữa
 
                         return {
                             ...e,
                             backgroundColor: bgColor,
                             borderColor: borderColor,
-                            textColor: getTextColorByStatus(status, validActual),
+                            textColor: getTextColorByStatus(status, validActual, delayTime),
                             fontWeight: 'normal',
                             classNames: classNames
                         };
@@ -1213,18 +1220,17 @@
         updateVisibleRange();  // ← SỬA: Luôn update full range với detect midnight/switch
     }, 60 * 1000);
 
-    // SỬA: Xử lý save button cho delay modal - GỌI API POST ĐỂ SAVE VÀO DELAYHISTORY + UPDATE STATUS SANG DELAY + REFETCH DATA + SET STARTTIME=NOW, CHANGETIME=DEFAULT (NOW)
+    // SỬA: Xử lý save button cho delay modal - GỌI API POST ĐỂ SAVE VÀO DELAYHISTORY + UPDATE STATUS SANG DELAY + REFETCH DATA + SỬA: Sử dụng input StartTime/ChangeTime + THÊM: Switch to week view nếu delayTime >24h
     document.addEventListener('click', function (e) {
         if (e.target.id === 'saveDelay') {
             const form = document.getElementById('delayForm');
             const formData = new FormData(form);
-            const now = new Date();  // THÊM: Current time cho StartTime và ChangeTime
             const data = {
                 OrderId: document.querySelector('input[name="OrderId"]').value || '',  // THÊM: Lấy OrderId từ hidden input (sẽ set khi mở modal)
                 DelayType: parseInt(formData.get('DelayType')) || 0,
                 Reason: formData.get('Reason') || '',
-                StartTime: now.toISOString(),  // THÊM: Set StartTime = current time
-                ChangeTime: now.toISOString(),  // THÊM: Default ChangeTime = current time
+                StartTime: formData.get('StartTime') || '',  // SỬA: Lấy từ input (editable)
+                ChangeTime: new Date().toISOString(),  // Default ChangeTime = now (có thể editable nếu thêm field)
                 DelayTime: parseFloat(formData.get('DelayTime')) || 0
             };
 
@@ -1339,25 +1345,37 @@
                                     const extendedProps = e.extendedProps;
                                     const status = extendedProps.status;
                                     const validActual = extendedProps.validActual;
+                                    const delayTime = extendedProps.delayTime || 0;  // THÊM: Lấy delayTime
 
-                                    // SỬA: Fallback màu cho Delay
-                                    const bgColor = e.hasBoth ? 'transparent' : getColorByStatus(status, validActual);
-                                    const borderColor = e.hasBoth ? 'transparent' : getColorByStatus(status, validActual);
+                                    // SỬA: Fallback màu cho Delay + THÊM: Nếu Delay && delayTime >24 thì đỏ
+                                    const bgColor = e.hasBoth ? 'transparent' : getColorByStatus(status, validActual, delayTime);
+                                    const borderColor = e.hasBoth ? 'transparent' : getColorByStatus(status, validActual, delayTime);
 
-                                    // SỬA: Chỉ thêm class actual-event, XÓA delay-event
+                                    // SỬA: Chỉ thêm class actual-event, XÓA delay-event + THÊM: Thêm multi-day-delay nếu >24h
                                     let classNames = extendedProps.validActual ? ['actual-event'] : [];
+                                    if (status === 'Delay' && delayTime > 24) {
+                                        classNames.push('multi-day-delay');
+                                    }
                                     // Không push 'delay-event' nữa
 
                                     return {
                                         ...e,
                                         backgroundColor: bgColor,
                                         borderColor: borderColor,
-                                        textColor: getTextColorByStatus(status, validActual),
+                                        textColor: getTextColorByStatus(status, validActual, delayTime),
                                         fontWeight: 'normal',
                                         classNames: classNames
                                     };
                                 });
                                 calendar.addEventSource(formattedEvents);
+
+                                // THÊM MỚI: Nếu delayTime >24h, tự động switch sang week view để xem multi-day
+                                const delayInput = parseFloat(formData.get('DelayTime')) || 0;
+                                if (delayInput > 24) {
+                                    console.log('Multi-day delay detected! Switching to week view.');
+                                    calendar.changeView('resourceTimelineWeek');
+                                    alert('Delay spans multiple days. Switched to week view for better visibility.');
+                                }
                             })
                             .catch(error => console.error('Error refetching after delay save:', error));
                     } else {
@@ -1388,11 +1406,29 @@
         });
     }
 
-    // THÊM MỚI: Khi mở delayModal, set hidden OrderId từ event (cần thêm input hidden trong HTML) + Set StartTime current (read-only)
+    // SỬA MỚI: Khi mở delayModal, set hidden OrderId từ event + Set StartTime = max(now, event.start) cho future events (editable)
     document.getElementById('delayModal').addEventListener('show.bs.modal', function (event) {
         const uid = window.currentDelayUid || '';  // Set global trước khi show
         document.querySelector('#delayModal input[name="OrderId"]').value = uid;
-        const now = new Date();
-        document.querySelector('#delayModal input[name="StartTime"]').value = now.toISOString().slice(0, 16);  // Set current time
+
+        // THÊM MỚI: Set StartTime = max(now, event.planStart hoặc event.start) cho future delay
+        if (window.currentDelayEvent) {
+            const event = window.currentDelayEvent;
+            const now = new Date();
+            let defaultStart = now;
+            const planStart = event.extendedProps.planStart ? new Date(event.extendedProps.planStart) : event.start;
+            if (planStart > now) {
+                defaultStart = planStart;  // Sử dụng planStart nếu future
+            }
+            document.querySelector('#delayModal input[name="StartTime"]').value = defaultStart.toISOString().slice(0, 16);
+        } else {
+            // Fallback nếu không có event info
+            const now = new Date();
+            document.querySelector('#delayModal input[name="StartTime"]').value = now.toISOString().slice(0, 16);
+        }
+
+        // THÊM: Làm StartTime editable (remove readonly nếu có)
+        const startInput = document.querySelector('#delayModal input[name="StartTime"]');
+        startInput.removeAttribute('readonly');  // Làm editable
     });
 });

@@ -43,8 +43,12 @@ namespace ASP.Models.Front
 
         public DateTime? AcStartTime { get; set; }  
        
-        public DateTime? AcEndTime { get; set; }   
+        public DateTime? AcEndTime { get; set; }
+      
+        public DateTime? DelayStartTime { get; set; } 
 
+        public double? DelayTime { get; set; }
+        
         public ICollection<OrderDetail> OrderDetails { get; set; } = new List<OrderDetail>();
 
         public ICollection<DelayHistory> DelayHistories { get; set; } = new List<DelayHistory>();

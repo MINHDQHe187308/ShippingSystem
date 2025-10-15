@@ -1,4 +1,5 @@
-﻿using ASP.DTO.DensoDTO;
+﻿// SỬA: OrderRepository.cs - KHÔNG THAY ĐỔI (vì màu được handle ở JS, nhưng đảm bảo DelayTime được include trong GetOrdersWithDelayByDate và GetOrderById)
+using ASP.DTO.DensoDTO;
 using ASP.Models.ASPModel;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -311,7 +312,7 @@ namespace ASP.Models.Front
 
             return statusChanged || actualTimesChanged;
         }
-      public async Task<Order?> GetOrderById(Guid orderId)  // THÊM: Method để lấy full order
+        public async Task<Order?> GetOrderById(Guid orderId)  // THÊM: Method để lấy full order
         {
             return await _context.Orders
                 .Include(o => o.OrderDetails)
@@ -334,7 +335,8 @@ namespace ASP.Models.Front
                 .ToListAsync();
         }
 
-        public async Task UpdateOrderStatusToDelay(Guid orderId, DateTime delayStartTime, double delayTime)  // SỬA: Thêm params cho delay info
+        // SỬA: UpdateOrderStatusToDelay - SỬA: Sử dụng input delayStartTime + THÊM: Extend EndTime += delayTime (cho multi-day)
+        public async Task UpdateOrderStatusToDelay(Guid orderId, DateTime delayStartTime, double delayTime)  // Giữ params
         {
             var order = await _context.Orders.FirstOrDefaultAsync(o => o.UId == orderId);
             if (order == null)
@@ -345,13 +347,21 @@ namespace ASP.Models.Front
 
             int oldStatus = order.OrderStatus;
             order.OrderStatus = 4;  // Delay status
-            order.DelayStartTime = delayStartTime;  // THÊM: Lưu vào Order (thêm column nếu chưa có)
-            order.DelayTime = delayTime;  // THÊM: Lưu vào Order (thêm column nếu chưa có)
+            order.DelayStartTime = delayStartTime;  // SỬA: Sử dụng input (có thể future)
+            order.DelayTime = delayTime;  // Giữ nguyên
+
+            // THÊM MỚI: Extend EndTime để handle multi-day delay (thêm delayTime hours vào EndTime hiện tại)
+            order.EndTime = order.EndTime.AddHours(delayTime);  // Extend end time
+            if (order.AcEndTime.HasValue)  // Nếu có actual end, cũng extend (optional, tùy business logic)
+            {
+                order.AcEndTime = order.AcEndTime.Value.AddHours(delayTime);
+            }
 
             _context.Orders.Update(order);
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation("Order {OrderId} status updated to Delay (4) from {OldStatus}, DelayStart={DelayStart}, DelayTime={DelayTime}h", orderId, oldStatus, delayStartTime, delayTime);
+            _logger.LogInformation("Order {OrderId} status updated to Delay (4) from {OldStatus}, DelayStart={DelayStart}, DelayTime={DelayTime}h, New EndTime={NewEndTime}",
+                orderId, oldStatus, delayStartTime, delayTime, order.EndTime);  // THÊM: Log new EndTime
 
             // Notify SignalR
             await _hubContext.Clients.All.SendAsync("OrderStatusUpdated", order.UId.ToString(), order.OrderStatus);

@@ -45,22 +45,6 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <!-- THÊM: Order-level summary với New Time nếu Delay -->
-                <div id="orderSummary" class="alert alert-info mb-3" style="display: none;">
-                    <h6>Order Summary</h6>
-                    <dl class="row mb-0">
-                        <dt class="col-sm-3">Ship Date:</dt>
-                        <dd class="col-sm-9" id="summaryShipDate"></dd>
-                        <dt class="col-sm-3">Plan Time:</dt>
-                        <dd class="col-sm-9" id="summaryPlanTime"></dd>
-                        <dt class="col-sm-3">Actual Time:</dt>
-                        <dd class="col-sm-9" id="summaryActualTime"></dd>
-                        <dt class="col-sm-3">New Time (Delay):</dt>
-                        <dd class="col-sm-9" id="summaryNewTime" class="text-warning"></dd>
-                        <dt class="col-sm-3">Delay Time:</dt>
-                        <dd class="col-sm-9" id="summaryDelayTime"></dd>
-                    </dl>
-                </div>
                 <div id="modalLoading" class="text-center">Đang tải...</div>
                 <table class="table table-striped" id="orderDetailsTable" style="display: none;">
                     <thead>
@@ -86,7 +70,7 @@
     </div>
 </div>
 
-<!--Modal cho Delay Input - SỬA: Bỏ ChangeTime -->
+<!--Modal cho Delay Input -->
 <div class="modal fade" id="delayModal" tabindex="-1" aria-labelledby="delayModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -120,19 +104,22 @@
                                 </span>
                                 <input type="number" class="form-control" id="delayTime" name="DelayTime" step="0.1" min="0" placeholder="0.0" required>
                             </div>
+                            <small class="form-text text-muted">Enter delay hours (can be >24 for multi-day).</small>
                         </div>
 
-                        <!-- Start Time - SỬA: Set auto current time, read-only -->
-                        <div class="col-12 mb-3">
+                        <!-- Start Time - SỬA: Editable, default max(now, event.start) -->
+                        <div class="col-md-6 mb-3">
                             <label for="startTime" class="form-label fw-semibold text-dark">Start Time <span class="text-danger">*</span></label>
                             <div class="input-group">
                                 <span class="input-group-text bg-light">
                                     <i class="bi bi-play-circle text-success"></i>
                                 </span>
-                                <input type="datetime-local" class="form-control" id="startTime" name="StartTime" readonly required>
+                                <input type="datetime-local" class="form-control" id="startTime" name="StartTime" required>
                             </div>
-                            <small class="form-text text-muted">Auto-set to current time on save.</small>
+                            <small class="form-text text-muted">Set delay start time (future for planned events).</small>
                         </div>
+
+                       
 
                         <!-- Reason -->
                         <div class="col-12 mb-3">

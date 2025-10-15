@@ -1,4 +1,5 @@
-﻿using ASP.DTO.DensoDTO;
+﻿// SỬA: DelayHistoryController.cs - SỬA SaveDelay để sử dụng input StartTime và ChangeTime (không override bằng now)
+using ASP.DTO.DensoDTO;
 using ASP.Models.ASPModel;
 using ASP.Models.Front;
 using Microsoft.AspNetCore.Mvc;
@@ -36,7 +37,7 @@ namespace ASP.Controllers.Front
             }
         }
 
-        // SỬA: POST endpoint để save DelayHistory và update OrderStatus sang 4 (Delay) + SET STARTTIME=NOW, CHANGETIME=NOW
+        // SỬA: POST endpoint để save DelayHistory và update OrderStatus sang 4 (Delay) + SỬA: Sử dụng input StartTime và ChangeTime (không override)
         [HttpPost("SaveDelay")]
         public async Task<IActionResult> SaveDelay([FromBody] DelaySaveDto delayDto)
         {
@@ -47,28 +48,27 @@ namespace ASP.Controllers.Front
                     return BadRequest(new { success = false, message = "Invalid data" });
                 }
 
-                // THÊM: Parse StartTime và ChangeTime từ input (nhưng override bằng Now nếu cần)
-                var now = DateTime.Now;
-                var startTime = DateTime.Parse(delayDto.StartTime);  // Từ form, nhưng sẽ override
-                var changeTime = DateTime.Parse(delayDto.ChangeTime);  // Từ form, nhưng sẽ override
+                // SỬA: Parse StartTime và ChangeTime từ input (không override bằng now nữa)
+                var startTime = DateTime.Parse(delayDto.StartTime);
+                var changeTime = DateTime.Parse(delayDto.ChangeTime);
 
-                // Tạo DelayHistory record với StartTime=Now, ChangeTime=Now
+                // Tạo DelayHistory record với StartTime và ChangeTime từ input
                 var delayHistory = new DelayHistory
                 {
                     OId = orderId,
                     DelayType = delayDto.DelayType,
                     Reason = delayDto.Reason,
-                    StartTime = now,  // SỬA: Set current time
-                    ChangeTime = now,  // SỬA: Default current time
+                    StartTime = startTime,  // SỬA: Từ input (có thể future)
+                    ChangeTime = changeTime,  // SỬA: Từ input (default now nếu không set)
                     DelayTime = delayDto.DelayTime,
                     // Giả sử có CreatedDate = DateTime.Now
-                    CreatedDate = now
+                    CreatedDate = DateTime.Now  // Giữ CreatedDate = now
                 };
 
                 await _delayHistoryRepository.CreateAsync(delayHistory);
 
-                // Update OrderStatus sang 4 (Delay) + Lưu DelayStartTime và DelayTime vào Order (nếu cần cho query)
-                await _orderRepository.UpdateOrderStatusToDelay(orderId, now, delayDto.DelayTime);  // SỬA: Pass delay info
+                // Update OrderStatus sang 4 (Delay) + Lưu DelayStartTime và DelayTime vào Order + SỬA: Pass input delayStartTime
+                await _orderRepository.UpdateOrderStatusToDelay(orderId, startTime, delayDto.DelayTime);  // SỬA: Pass startTime từ input
 
                 return Ok(new { success = true, message = "Delay saved and status updated" });
             }
