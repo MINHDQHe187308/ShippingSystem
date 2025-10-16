@@ -1,5 +1,4 @@
-﻿// SỬA: DelayHistoryRepository.cs - THÊM CreateAsync
-using ASP.Models.ASPModel;
+﻿using ASP.Models.ASPModel;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;

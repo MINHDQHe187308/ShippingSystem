@@ -335,8 +335,8 @@ namespace ASP.Models.Front
                 .ToListAsync();
         }
 
-        // SỬA: UpdateOrderStatusToDelay - SỬA: Sử dụng input delayStartTime + THÊM: Extend EndTime += delayTime (cho multi-day)
-        public async Task UpdateOrderStatusToDelay(Guid orderId, DateTime delayStartTime, double delayTime)  // Giữ params
+        // SỬA: UpdateOrderStatusToDelay - SỬA: Sử dụng input delayStartTime 
+        public async Task UpdateOrderStatusToDelay(Guid orderId, DateTime delayStartTime, double delayTime)  
         {
             var order = await _context.Orders.FirstOrDefaultAsync(o => o.UId == orderId);
             if (order == null)
@@ -347,16 +347,8 @@ namespace ASP.Models.Front
 
             int oldStatus = order.OrderStatus;
             order.OrderStatus = 4;  // Delay status
-            order.DelayStartTime = delayStartTime;  // SỬA: Sử dụng input (có thể future)
-            order.DelayTime = delayTime;  // Giữ nguyên
-
-            // THÊM MỚI: Extend EndTime để handle multi-day delay (thêm delayTime hours vào EndTime hiện tại)
-            order.EndTime = order.EndTime.AddHours(delayTime);  // Extend end time
-            if (order.AcEndTime.HasValue)  // Nếu có actual end, cũng extend (optional, tùy business logic)
-            {
-                order.AcEndTime = order.AcEndTime.Value.AddHours(delayTime);
-            }
-
+            order.DelayStartTime = delayStartTime;  // Sử dụng input (có thể future)
+            order.DelayTime = delayTime;  
             _context.Orders.Update(order);
             await _context.SaveChangesAsync();
 
