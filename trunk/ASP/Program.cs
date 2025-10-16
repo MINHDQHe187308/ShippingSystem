@@ -157,8 +157,10 @@ app.UseEndpoints(endpoints =>
     endpoints.MapControllerRoute(
         name: "Admin",
         pattern: "admin/{controller=Auth}/{action=Index}/{id?}");
+     endpoints.MapHub<OrderHub>("/orderHub");
 });
 #endregion
 
 app.MapHub<PrivacyHub>("/privacyHub");
+
 app.Run();

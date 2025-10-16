@@ -896,47 +896,53 @@ document.addEventListener('DOMContentLoaded', function () {
     let connection = null;
 
     function initSignalR() {
-        // Kiểm tra SignalR có load chưa (dùng jQuery SignalR cũ, hoặc thay bằng @microsoft/signalr nếu dùng version mới)
-        if (typeof $.hubConnection === 'undefined') {
-            console.error('SignalR not loaded. Please include signalr.js.');
+        // Kiểm tra SignalR mới có load chưa
+        if (typeof signalR === 'undefined') {
+            console.error('SignalR client not loaded. Please include signalr.js.');
             return;
         }
 
-        connection = $.hubConnection();
-        connection.url = '/orderHub';  // Hub URL khớp với Program.cs
+        // Tạo connection với Hub URL
+        connection = new signalR.HubConnectionBuilder()
+            .withUrl('/orderHub')  // URL hub từ backend
+            .configureLogging(signalR.LogLevel.Information)  // Optional: Log level
+            .build();
 
-        connection.start().done(function () {
+        // Start connection
+        connection.start().then(function () {
             console.log('SignalR connected for realtime updates.');
-        }).fail(function (error) {
-            console.error('SignalR connection failed: ' + error);
+        }).catch(function (err) {
+            console.error('SignalR connection failed: ' + err.toString());
+            // Optional: Retry sau 5s nếu fail
+            setTimeout(() => connection.start(), 5000);
         });
 
-        // Listen event OrderStatusUpdated từ backend
-        connection.client.orderStatusUpdated = function (orderUid, newStatus) {
+        // Listen event OrderStatusUpdated từ backend (callback)
+        connection.on('orderStatusUpdated', function (orderUid, newStatus) {
             console.log(`Realtime update: Order ${orderUid} status changed to ${newStatus}`);
 
             // Refetch data từ server để update calendar
-            fetch('/DensoWareHouse/GetCalendarData')  // Action mới trả JSON {orders, customers}
+            fetch('/DensoWareHouse/GetCalendarData')
                 .then(response => response.json())
                 .then(data => {
-                    // Update global vars (giả sử orders và customers là global từ đầu file)
-                    orders = data.orders;
-                    customers = data.customers;
+                    // SỬA: Dùng local vars thay vì global const để tránh assignment error
+                    const fetchedOrders = data.orders;
+                    const fetchedCustomers = data.customers;
 
-                    // Rebuild customerMap
+                    // Rebuild customerMap từ local
                     const customerMap = {};
-                    customers.forEach(c => {
+                    fetchedCustomers.forEach(c => {
                         customerMap[c.CustomerCode] = c.CustomerName;
                     });
 
-                    // Rebuild resources
-                    const resources = customers.map(c => ({
+                    // Rebuild resources từ local
+                    const resources = fetchedCustomers.map(c => ({
                         id: c.CustomerCode,
                         title: c.CustomerCode
                     }));
 
-                    // Rebuild eventsData (copy logic từ code gốc của bạn - THÊM DELAY INFO)
-                    const newEventsData = orders.map((order, index) => {
+                    // Rebuild eventsData từ local (copy logic từ code gốc - với delay info)
+                    const newEventsData = fetchedOrders.map((order, index) => {
                         // Helper: Parse và validate time (copy từ code gốc)
                         function parseAndValidate(timeStr) {
                             if (!timeStr) return null;
@@ -1020,7 +1026,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     // Update calendar options và events
                     calendar.setOption('resources', resources);
-                    calendar.removeAllEvents();
+                    calendar.setOption('events', []);  // Clear events trước
                     const formattedEvents = newEventsData.map(e => {
                         const extendedProps = e.extendedProps;
                         const status = extendedProps.status;
@@ -1047,11 +1053,17 @@ document.addEventListener('DOMContentLoaded', function () {
                             classNames: classNames
                         };
                     });
-                    calendar.addEventSource(formattedEvents);
+                    calendar.addEventSource(formattedEvents);  // Hoặc dùng setOption('events', formattedEvents) nếu muốn force
                     console.log('Calendar updated with new data.');
                 })
                 .catch(error => console.error('Error refetching calendar data:', error));
-        };
+        });
+
+        // Handle disconnect/reconnect
+        connection.onclose(function (err) {
+            console.warn('SignalR disconnected. Reconnecting...');
+            setTimeout(() => connection.start(), 5000);
+        });
     }
 
     // Gọi init sau render
@@ -1220,6 +1232,32 @@ document.addEventListener('DOMContentLoaded', function () {
         updateVisibleRange();  // ← SỬA: Luôn update full range với detect midnight/switch
     }, 60 * 1000);
 
+    // SỬA MỚI: Khi mở delayModal, set hidden OrderId từ event + Set StartTime = max(now, event.start) cho future events (editable)
+    document.getElementById('delayModal').addEventListener('show.bs.modal', function (event) {
+        const uid = window.currentDelayUid || '';  // Set global trước khi show
+        document.querySelector('#delayModal input[name="OrderId"]').value = uid;
+
+        // THÊM MỚI: Set StartTime = max(now, event.planStart hoặc event.start) cho future delay
+        if (window.currentDelayEvent) {
+            const event = window.currentDelayEvent;
+            const now = new Date();
+            let defaultStart = now;
+            const planStart = event.extendedProps.planStart ? new Date(event.extendedProps.planStart) : event.start;
+            if (planStart > now) {
+                defaultStart = planStart;  // Sử dụng planStart nếu future
+            }
+            document.querySelector('#delayModal input[name="StartTime"]').value = defaultStart.toISOString().slice(0, 16);
+        } else {
+            // Fallback nếu không có event info
+            const now = new Date();
+            document.querySelector('#delayModal input[name="StartTime"]').value = now.toISOString().slice(0, 16);
+        }
+
+        // THÊM: Làm StartTime editable (remove readonly nếu có)
+        const startInput = document.querySelector('#delayModal input[name="StartTime"]');
+        startInput.removeAttribute('readonly');  // Làm editable
+    });
+
     // SỬA: Xử lý save button cho delay modal - GỌI API POST ĐỂ SAVE VÀO DELAYHISTORY + UPDATE STATUS SANG DELAY + REFETCH DATA + SỬA: Sử dụng input StartTime/ChangeTime + THÊM: Switch to week view nếu delayTime >24h
     document.addEventListener('click', function (e) {
         if (e.target.id === 'saveDelay') {
@@ -1254,18 +1292,24 @@ document.addEventListener('DOMContentLoaded', function () {
                         fetch('/DensoWareHouse/GetCalendarData')
                             .then(response => response.json())
                             .then(data => {
-                                orders = data.orders;
-                                customers = data.customers;
-                                // Rebuild và update calendar (copy logic từ SignalR - với delay info)
+                                // SỬA: Dùng local vars thay vì global const để tránh assignment error
+                                const fetchedOrders = data.orders;
+                                const fetchedCustomers = data.customers;
+
+                                // Rebuild customerMap từ local
                                 const customerMap = {};
-                                customers.forEach(c => {
+                                fetchedCustomers.forEach(c => {
                                     customerMap[c.CustomerCode] = c.CustomerName;
                                 });
-                                const resources = customers.map(c => ({
+
+                                // Rebuild resources từ local
+                                const resources = fetchedCustomers.map(c => ({
                                     id: c.CustomerCode,
                                     title: c.CustomerCode
                                 }));
-                                const newEventsData = orders.map((order, index) => {
+
+                                // Rebuild eventsData từ local (giữ nguyên logic)
+                                const newEventsData = fetchedOrders.map((order, index) => {
                                     function parseAndValidate(timeStr) {
                                         if (!timeStr) return null;
                                         const d = new Date(timeStr);
@@ -1339,8 +1383,10 @@ document.addEventListener('DOMContentLoaded', function () {
                                         }
                                     };
                                 }).filter(e => e);
+
                                 calendar.setOption('resources', resources);
-                                calendar.removeAllEvents();
+                                calendar.setOption('events', []);  // Clear trước
+
                                 const formattedEvents = newEventsData.map(e => {
                                     const extendedProps = e.extendedProps;
                                     const status = extendedProps.status;
@@ -1368,6 +1414,8 @@ document.addEventListener('DOMContentLoaded', function () {
                                     };
                                 });
                                 calendar.addEventSource(formattedEvents);
+
+                                console.log('Calendar updated with new data after delay save.');
 
                                 // THÊM MỚI: Nếu delayTime >24h, tự động switch sang week view để xem multi-day
                                 const delayInput = parseFloat(formData.get('DelayTime')) || 0;
@@ -1405,30 +1453,4 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     }
-
-    // SỬA MỚI: Khi mở delayModal, set hidden OrderId từ event + Set StartTime = max(now, event.start) cho future events (editable)
-    document.getElementById('delayModal').addEventListener('show.bs.modal', function (event) {
-        const uid = window.currentDelayUid || '';  // Set global trước khi show
-        document.querySelector('#delayModal input[name="OrderId"]').value = uid;
-
-        // THÊM MỚI: Set StartTime = max(now, event.planStart hoặc event.start) cho future delay
-        if (window.currentDelayEvent) {
-            const event = window.currentDelayEvent;
-            const now = new Date();
-            let defaultStart = now;
-            const planStart = event.extendedProps.planStart ? new Date(event.extendedProps.planStart) : event.start;
-            if (planStart > now) {
-                defaultStart = planStart;  // Sử dụng planStart nếu future
-            }
-            document.querySelector('#delayModal input[name="StartTime"]').value = defaultStart.toISOString().slice(0, 16);
-        } else {
-            // Fallback nếu không có event info
-            const now = new Date();
-            document.querySelector('#delayModal input[name="StartTime"]').value = now.toISOString().slice(0, 16);
-        }
-
-        // THÊM: Làm StartTime editable (remove readonly nếu có)
-        const startInput = document.querySelector('#delayModal input[name="StartTime"]');
-        startInput.removeAttribute('readonly');  // Làm editable
-    });
 });
