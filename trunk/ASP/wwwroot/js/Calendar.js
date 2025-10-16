@@ -192,6 +192,23 @@ document.addEventListener('DOMContentLoaded', function () {
             font-weight: 600;
             text-transform: uppercase;
         }
+        .delay-bar {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    background: #ff0000 !important;
+    border-radius: 4px;
+    z-index: 3;
+    opacity: 0.8;
+    /* FIX: Cho phép extend ra ngoài mà không bị clip */
+    right: auto;
+    left: 0;  /* Default, override bằng JS */
+    transform-origin: left center;  /* Để scale nếu cần */
+}
+.fc-event {  /* Đảm bảo wrapper cho extend */
+    overflow: visible !important;
+    position: relative;
+}
         #custom-tooltip .status.planned { background: #000; color: #fff; }
         #custom-tooltip .status.pending { background: #007bff; color: #fff; }
         #custom-tooltip .status.shipped { background: #ffc107; color: #000; }
@@ -396,7 +413,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         const eventObj = {
-            id: `order-${index}`,
+            id: `order-${order.UId}`,
             resourceId: customerCode,
             start: eventStart,
             end: eventEnd,
@@ -749,21 +766,40 @@ document.addEventListener('DOMContentLoaded', function () {
                             wrapper.appendChild(actualBar);
                         }
 
-                        // THÊM: Vẽ delay bar nối tiếp nếu Delay (từ delayStart đến delayEnd, cho phép overlap/extend + multi-day tự động vì end updated)
+                        // THÊM: Vẽ delay bar nối tiếp nếu Delay (từ max(eventEnd, delayStart) đến delayEnd, extend ra phải nếu >100%)
                         if (status === 'Delay' && dStart && dEnd) {
-                            const delayLeftPercent = Math.max(0, ((dStart - eventStart) / eventDuration) * 100);  // Anchor to dStart, min 0%
-                            const delayWidthPercent = ((dEnd - dStart) / eventDuration) * 100;  // Full delay duration as %, can >100% to extend (multi-day)
+                            // Calc position relative to event: Nếu delayStart >= eventEnd, vẽ từ 100% (end) + offset
+                            const eventDuration = eventEnd - eventStart;  // Giữ eventDuration gốc (plan/actual)
+                            let delayLeftPercent = ((dStart - eventStart) / eventDuration) * 100;
+                            let delayWidthPercent = ((dEnd - dStart) / eventDuration) * 100;
+
+                            // FIX: Nếu delay nối từ end (delayStart ≈ eventEnd), set left=100%, width=delayTime hours %
+                            if (Math.abs(dStart - eventEnd) < 60000) {  // <1min tolerance
+                                delayLeftPercent = 100;  // Bắt đầu từ end
+                                delayWidthPercent = (extendedProps.delayTime / (eventDuration / (1000 * 60 * 60))) * 100;  // % dựa trên giờ event
+                            } else if (dStart > eventEnd) {
+                                // Nếu delayStart future > end, vẽ từ 100% + offset (bay ra phải)
+                                const offsetPercent = ((dStart - eventEnd) / eventDuration) * 100;
+                                delayLeftPercent = 100 + offsetPercent;
+                                delayWidthPercent = ((dEnd - dStart) / eventDuration) * 100;
+                            }
 
                             const delayBar = document.createElement('div');
                             delayBar.className = 'delay-bar';
-                            delayBar.style.left = delayLeftPercent + '%';
-                            delayBar.style.width = delayWidthPercent + '%';
+                            delayBar.style.left = Math.max(0, delayLeftPercent) + '%';  // Min 0 để không âm
+                            delayBar.style.width = delayWidthPercent + '%';  // Có thể >100% để extend
                             delayBar.style.background = '#ff0000';
-                            delayBar.title = `Delay: ${hhmmss(dStart)} - ${hhmmss(dEnd)} (${extendedProps.delayTime}h)`;
+                            delayBar.style.right = 'auto';  // Để left calc đúng
+                            delayBar.title = `Delay : ${hhmmss(dStart)} - ${hhmmss(dEnd)} (${extendedProps.delayTime}h)`;
                             wrapper.appendChild(delayBar);
 
-                            // Debug log (remove after testing)
-                            console.log('Delay bar drawn:', { delayLeftPercent: delayLeftPercent.toFixed(1), delayWidthPercent: delayWidthPercent.toFixed(1), dStart: hhmmss(dStart), dEnd: hhmmss(dEnd) });
+                            // Nếu width >100%, thêm pseudo-element để extend visual (optional, nếu CSS hỗ trợ)
+                            if (delayWidthPercent > 100) {
+                                delayBar.style.position = 'absolute';
+                                delayBar.style.clipPath = 'none';  // Đảm bảo không clip
+                            }
+
+                            console.log('Delay bar positioned:', { left: delayLeftPercent.toFixed(1), width: delayWidthPercent.toFixed(1), isExtend: delayWidthPercent > 100 });
                         }
 
                         // THÊM MỚI: Hiển thị CustomerCode và 3 progress thẳng hàng nhau với background khác nhau
@@ -1026,7 +1062,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     // Update calendar options và events
                     calendar.setOption('resources', resources);
-                    calendar.setOption('events', []);  // Clear events trước
+                    calendar.removeAllEventSources();
                     const formattedEvents = newEventsData.map(e => {
                         const extendedProps = e.extendedProps;
                         const status = extendedProps.status;
@@ -1286,30 +1322,32 @@ document.addEventListener('DOMContentLoaded', function () {
                         console.log('Delay saved successfully:', result);
                         const delayModal = bootstrap.Modal.getInstance(document.getElementById('delayModal'));
                         if (delayModal) delayModal.hide();
-                        playBeep(0.3); // Beep khi save
+                        playBeep(0.3);
                         alert('Delay applied and status updated to Delay!');
-                        // THÊM: Refetch calendar data để update UI (status Delay + viền đỏ + delay bar)
+
+                        // FIX: Refetch và force re-render (giữ nguyên logic rebuild)
                         fetch('/DensoWareHouse/GetCalendarData')
-                            .then(response => response.json())
+                            .then(response => {
+                                if (!response.ok) throw new Error('Refetch failed');
+                                return response.json();
+                            })
                             .then(data => {
-                                // SỬA: Dùng local vars thay vì global const để tránh assignment error
+                                console.log('Refetched data:', data);  // DEBUG: Check Status=4, EndTime unchanged
+
                                 const fetchedOrders = data.orders;
                                 const fetchedCustomers = data.customers;
 
-                                // Rebuild customerMap từ local
                                 const customerMap = {};
                                 fetchedCustomers.forEach(c => {
                                     customerMap[c.CustomerCode] = c.CustomerName;
                                 });
-
-                                // Rebuild resources từ local
                                 const resources = fetchedCustomers.map(c => ({
                                     id: c.CustomerCode,
                                     title: c.CustomerCode
                                 }));
 
-                                // Rebuild eventsData từ local (giữ nguyên logic)
-                                const newEventsData = fetchedOrders.map((order, index) => {
+                                // Rebuild newEventsData (giữ EndTime = planEnd, không extend)
+                                const newEventsData = fetchedOrders.map((order) => {
                                     function parseAndValidate(timeStr) {
                                         if (!timeStr) return null;
                                         const d = new Date(timeStr);
@@ -1317,7 +1355,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                         return d;
                                     }
                                     const planStart = parseAndValidate(order.StartTime);
-                                    const planEnd = parseAndValidate(order.EndTime);
+                                    const planEnd = parseAndValidate(order.EndTime);  // Giữ planEnd nguyên
                                     const actualStart = parseAndValidate(order.AcStartTime);
                                     const actualEnd = parseAndValidate(order.AcEndTime);
                                     const validPlan = planStart && planEnd && planStart < planEnd;
@@ -1329,19 +1367,18 @@ document.addEventListener('DOMContentLoaded', function () {
                                         eventEnd = actualEnd;
                                     } else if (validPlan) {
                                         eventStart = planStart;
-                                        eventEnd = planEnd;
+                                        eventEnd = planEnd;  // Không extend!
                                     } else {
                                         return null;
                                     }
                                     let hasBoth = false;
                                     if (validActual && validPlan) {
                                         eventStart = new Date(Math.min(actualStart, planStart));
-                                        eventEnd = new Date(Math.max(actualEnd, planEnd));
+                                        eventEnd = new Date(Math.max(actualEnd, planEnd));  // Vẫn max, nhưng planEnd unchanged
                                         hasBoth = true;
                                     }
                                     const customerCode = order.CustomerCode || order.Resource || 'Unknown';
 
-                                    // THÊM: Delay info
                                     let delayStart = null, delayEnd = null, delayTime = 0;
                                     if (status === 'Delay') {
                                         delayStart = parseAndValidate(order.DelayStartTime);
@@ -1352,10 +1389,10 @@ document.addEventListener('DOMContentLoaded', function () {
                                     }
 
                                     return {
-                                        id: `order-${index}`,
+                                        id: `order-${order.UId}`,  // Unique ID để tránh conflict
                                         resourceId: customerCode,
                                         start: eventStart,
-                                        end: eventEnd,
+                                        end: eventEnd,  // Giữ nguyên span
                                         title: '',
                                         hasBoth: hasBoth,
                                         extendedProps: {
@@ -1376,7 +1413,6 @@ document.addEventListener('DOMContentLoaded', function () {
                                             transMethod: order.TransMethod || 'N/A',
                                             contSize: order.ContSize || 'N/A',
                                             totalColumn: order.TotalColumn || 0,
-                                            // THÊM: Delay info
                                             delayStart: delayStart ? delayStart.toISOString() : null,
                                             delayEnd: delayEnd ? delayEnd.toISOString() : null,
                                             delayTime: delayTime
@@ -1384,48 +1420,47 @@ document.addEventListener('DOMContentLoaded', function () {
                                     };
                                 }).filter(e => e);
 
+                                // FIX: Force re-render clean
                                 calendar.setOption('resources', resources);
-                                calendar.setOption('events', []);  // Clear trước
+                                setTimeout(() => {
+                                    calendar.getEventSources().forEach(source => source.remove());
+                                    const formattedEvents = newEventsData.map(e => {
+                                        const extendedProps = e.extendedProps;
+                                        const status = extendedProps.status;
+                                        const validActual = extendedProps.validActual;
+                                        const delayTime = extendedProps.delayTime || 0;
+                                        const bgColor = e.hasBoth ? 'transparent' : getColorByStatus(status, validActual, delayTime);
+                                        const borderColor = e.hasBoth ? 'transparent' : getColorByStatus(status, validActual, delayTime);
+                                        let classNames = extendedProps.validActual ? ['actual-event'] : [];
+                                        if (status === 'Delay' && delayTime > 24) {
+                                            classNames.push('multi-day-delay');
+                                        }
+                                        return {
+                                            ...e,
+                                            backgroundColor: bgColor,
+                                            borderColor: borderColor,
+                                            textColor: getTextColorByStatus(status, validActual, delayTime),
+                                            fontWeight: 'normal',
+                                            classNames: classNames
+                                        };
+                                    });
+                                    calendar.addEventSource(formattedEvents);
+                                    calendar.render();  // Force visual update
+                                }, 100);
 
-                                const formattedEvents = newEventsData.map(e => {
-                                    const extendedProps = e.extendedProps;
-                                    const status = extendedProps.status;
-                                    const validActual = extendedProps.validActual;
-                                    const delayTime = extendedProps.delayTime || 0;  // THÊM: Lấy delayTime
+                                console.log('Calendar re-rendered without changing plan EndTime.');
 
-                                    // SỬA: Fallback màu cho Delay + THÊM: Nếu Delay && delayTime >24 thì đỏ
-                                    const bgColor = e.hasBoth ? 'transparent' : getColorByStatus(status, validActual, delayTime);
-                                    const borderColor = e.hasBoth ? 'transparent' : getColorByStatus(status, validActual, delayTime);
-
-                                    // SỬA: Chỉ thêm class actual-event, XÓA delay-event + THÊM: Thêm multi-day-delay nếu >24h
-                                    let classNames = extendedProps.validActual ? ['actual-event'] : [];
-                                    if (status === 'Delay' && delayTime > 24) {
-                                        classNames.push('multi-day-delay');
-                                    }
-                                    // Không push 'delay-event' nữa
-
-                                    return {
-                                        ...e,
-                                        backgroundColor: bgColor,
-                                        borderColor: borderColor,
-                                        textColor: getTextColorByStatus(status, validActual, delayTime),
-                                        fontWeight: 'normal',
-                                        classNames: classNames
-                                    };
-                                });
-                                calendar.addEventSource(formattedEvents);
-
-                                console.log('Calendar updated with new data after delay save.');
-
-                                // THÊM MỚI: Nếu delayTime >24h, tự động switch sang week view để xem multi-day
+                                // Switch week nếu >24h (để xem bar dài)
                                 const delayInput = parseFloat(formData.get('DelayTime')) || 0;
                                 if (delayInput > 24) {
-                                    console.log('Multi-day delay detected! Switching to week view.');
-                                    calendar.changeView('resourceTimelineWeek');
-                                    alert('Delay spans multiple days. Switched to week view for better visibility.');
+                                    setTimeout(() => calendar.changeView('resourceTimelineWeek'), 200);
+                                    alert('Delay spans multiple days. Switched to week view to see full delay bar!');
                                 }
                             })
-                            .catch(error => console.error('Error refetching after delay save:', error));
+                            .catch(error => {
+                                console.error('Refetch error:', error);
+                                alert('Cập nhật UI thất bại! Reload trang nhé.');
+                            });
                     } else {
                         alert('Error saving delay: ' + (result.message || 'Unknown error'));
                     }
