@@ -304,6 +304,17 @@
         customerMap[c.CustomerCode] = c.CustomerName;
     });
 
+    // THÊM: Đảm bảo resourceId của mọi event đều có trong resources (cho initial load)
+    const allResourceIds = Array.from(new Set(orders.map(o => o.resource)));
+    if (customers) {
+        const customerIds = customers.map(c => c.CustomerCode);
+        allResourceIds.forEach(rid => {
+            if (!customerIds.includes(rid)) {
+                customers.push({ CustomerCode: rid, CustomerName: rid });
+            }
+        });
+    }
+
     // Tạo resources từ customers hiển thị CustomerCode theo CustomerCode
     const resources = customers.map(c => ({
         id: c.CustomerCode,
@@ -967,10 +978,27 @@
                 })
                 .then(data => {
                     console.log('SignalR refetched data:', data);  // ← THÊM LOG DATA RAW
+                    // Log chi tiết từng order
+                    if (data.orders) {
+                        data.orders.forEach((order, idx) => {
+                            console.log(`Order[${idx}]:`, order);
+                        });
+                    }
                     console.log('SignalR orders length:', data.orders ? data.orders.length : 0);  // ← THÊM LOG LENGTH
 
                     const fetchedOrders = data.orders;
                     const fetchedCustomers = data.customers;
+
+                    // THÊM: Đảm bảo resourceId của mọi event đều có trong resources
+                    const allResourceIds = Array.from(new Set(fetchedOrders.map(o => o.resource)));
+                    if (fetchedCustomers) {
+                        const customerIds = fetchedCustomers.map(c => c.CustomerCode);
+                        allResourceIds.forEach(rid => {
+                            if (!customerIds.includes(rid)) {
+                                fetchedCustomers.push({ CustomerCode: rid, CustomerName: rid });
+                            }
+                        });
+                    }
 
                     // Rebuild customerMap từ local
                     const customerMap = {};
@@ -1098,6 +1126,8 @@
 
                     // Update calendar options và events (FIX: Clear sources đúng cách, chỉ render)
                     calendar.setOption('resources', resources);
+                    // Log resources hiện tại
+                    console.log('Current resources:', resources.map(r => r.id));
                     calendar.removeAllEventSources();  // ← GIỮ, clear tất cả sources cũ
                     const formattedEvents = newEventsData.map(e => {
                         const extendedProps = e.extendedProps;
@@ -1123,15 +1153,17 @@
                         };
                     });
                     calendar.addEventSource(formattedEvents);
-
-                    // FIX: Chỉ render sau timeout ngắn, bỏ refetch/changeDate (không cần cho static source)
-                    setTimeout(() => {
-                        calendar.render();  // ← FIX: Chỉ render để update DOM
-                        console.log('SignalR Events after render:', calendar.getEvents().length);  // ← THÊM LOG DEBUG
-                        console.log('SignalR Visible events in DOM:', document.querySelectorAll('.fc-event').length);  // ← THÊM LOG DOM
-                    }, 300);  // Giảm timeout xuống 300ms
+                    // Log resourceId của từng event
+                    formattedEvents.forEach((ev, idx) => {
+                        console.log(`Event[${idx}] resourceId:`, ev.resourceId, '| id:', ev.id, '| start:', ev.start, '| end:', ev.end);
+                    });
 
                     console.log('SignalR Calendar updated with new data.');
+                    // Log để debug sau khi FullCalendar tự render
+                    setTimeout(() => {
+                        console.log('SignalR Events after refetch:', calendar.getEvents().length);
+                        console.log('SignalR Visible events in DOM:', document.querySelectorAll('.fc-event').length);
+                    }, 100);
                 })
                 .catch(error => {
                     console.error('SignalR Error refetching calendar data:', error);  // ← THÊM LOG ERROR
