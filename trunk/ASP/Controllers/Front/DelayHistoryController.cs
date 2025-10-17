@@ -1,11 +1,12 @@
 ﻿using ASP.DTO.DensoDTO;
+using ASP.Hubs;
 using ASP.Models.ASPModel;
 using ASP.Models.Front;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;  
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
-using ASP.DTO.DensoDTO;
+
 namespace ASP.Controllers.Front
 {
     [ApiController]
@@ -15,10 +16,15 @@ namespace ASP.Controllers.Front
         private readonly DelayHistoryRepositoryInterface _delayHistoryRepository;
         private readonly OrderRepositoryInterface _orderRepository;
 
-        public DelayHistoryController(DelayHistoryRepositoryInterface delayHistoryRepository, OrderRepositoryInterface orderRepository)
+
+        public DelayHistoryController(
+            DelayHistoryRepositoryInterface delayHistoryRepository,
+            OrderRepositoryInterface orderRepository
+           )  // THÊM: Constructor param
         {
             _delayHistoryRepository = delayHistoryRepository;
             _orderRepository = orderRepository;
+
         }
 
         [HttpGet("{orderId}")]
@@ -36,7 +42,7 @@ namespace ASP.Controllers.Front
             }
         }
 
-        // SỬA: POST endpoint để save DelayHistory và update OrderStatus sang 4 (Delay) + SỬA: Sử dụng input StartTime và ChangeTime (không override)
+        // SỬA: POST endpoint để save DelayHistory và update OrderStatus sang 4 (Delay) + THÊM: Send SignalR sau save
         [HttpPost("SaveDelay")]
         public async Task<IActionResult> SaveDelay([FromBody] DelaySaveDto delayDto)
         {
@@ -73,6 +79,7 @@ namespace ASP.Controllers.Front
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"SaveDelay error: {ex.Message}");  // THÊM: Log error
                 return BadRequest(new { success = false, message = ex.Message });
             }
         }

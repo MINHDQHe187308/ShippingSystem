@@ -161,6 +161,4 @@ app.UseEndpoints(endpoints =>
 });
 #endregion
 
-app.MapHub<PrivacyHub>("/privacyHub");
-
 app.Run();

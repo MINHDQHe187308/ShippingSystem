@@ -1,5 +1,4 @@
-﻿// SỬA: Calendar.js - SỬA getColorByStatus để nếu Delay && DelayTime >24h thì return màu đỏ (#ff0000) cho toàn bộ event
-document.addEventListener('DOMContentLoaded', function () {
+﻿document.addEventListener('DOMContentLoaded', function () {
     if (typeof FullCalendar === 'undefined') {
         console.error('FullCalendar is not loaded. Please check script imports.');
         return;
@@ -928,7 +927,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
     calendar.render();
 
-    // --- THÊM MỚI: SignalR cho realtime status update
+    // --- THÊM MỚI: SignalR cho realtime status update (FIX: Cải thiện update logic - remove refetch/changeDate, chỉ render)
     let connection = null;
 
     function initSignalR() {
@@ -954,14 +953,22 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         // Listen event OrderStatusUpdated từ backend (callback)
-        connection.on('orderStatusUpdated', function (orderUid, newStatus) {
+        connection.on('OrderStatusUpdated', function (orderUid, newStatus) {
             console.log(`Realtime update: Order ${orderUid} status changed to ${newStatus}`);
+
+            console.log('SignalR refetch starting...');  // ← THÊM LOG BẮT ĐẦU
 
             // Refetch data từ server để update calendar
             fetch('/DensoWareHouse/GetCalendarData')
-                .then(response => response.json())
+                .then(response => {
+                    console.log('SignalR response status:', response.status);  // ← THÊM LOG STATUS
+                    if (!response.ok) throw new Error('SignalR refetch failed');
+                    return response.json();
+                })
                 .then(data => {
-                    // SỬA: Dùng local vars thay vì global const để tránh assignment error
+                    console.log('SignalR refetched data:', data);  // ← THÊM LOG DATA RAW
+                    console.log('SignalR orders length:', data.orders ? data.orders.length : 0);  // ← THÊM LOG LENGTH
+
                     const fetchedOrders = data.orders;
                     const fetchedCustomers = data.customers;
 
@@ -977,26 +984,47 @@ document.addEventListener('DOMContentLoaded', function () {
                         title: c.CustomerCode
                     }));
 
-                    // Rebuild eventsData từ local (copy logic từ code gốc - với delay info)
-                    const newEventsData = fetchedOrders.map((order, index) => {
-                        // Helper: Parse và validate time (copy từ code gốc)
+                    // Rebuild eventsData từ local (copy logic từ code gốc - với delay info + LOG/FALLBACK)
+                    const newEventsData = fetchedOrders.map((order) => {  // ← BỎ index, dùng UId cho id
                         function parseAndValidate(timeStr) {
                             if (!timeStr) return null;
+                            console.log(`SignalR Parsing time for ${order.uId}: "${timeStr}"`);  // ← THÊM LOG RAW TIME
                             const d = new Date(timeStr);
-                            if (isNaN(d.getTime())) return null;
+                            if (isNaN(d.getTime())) {
+                                console.warn(`SignalR Invalid time parse for ${order.uId}: "${timeStr}" → null`);  // ← THÊM LOG FAIL
+                                return null;
+                            }
+                            console.log(`SignalR Parsed OK: ${d.toISOString()}`);  // ← THÊM LOG SUCCESS
                             return d;
                         }
 
-                        const planStart = parseAndValidate(order.StartTime);
-                        const planEnd = parseAndValidate(order.EndTime);
-                        const actualStart = parseAndValidate(order.AcStartTime);
-                        const actualEnd = parseAndValidate(order.AcEndTime);
+                        const planStart = parseAndValidate(order.startTime);
+                        const planEnd = parseAndValidate(order.endTime);
+                        const actualStart = parseAndValidate(order.acStartTime);
+                        const actualEnd = parseAndValidate(order.acEndTime);
 
-                        const validPlan = planStart && planEnd && planStart < planEnd;
-                        const validActual = actualStart && actualEnd && actualStart < actualEnd;
+                        // THÊM LOG: Check raw values
+                        console.log(`SignalR Order ${order.uId}: planStart="${order.startTime}", planEnd="${order.endTime}", actualStart="${order.acStartTime}", actualEnd="${order.acEndTime}"`);  // ← THÊM RAW TIMES
+
+                        let validPlan = planStart && planEnd && planStart < planEnd;
+                        let validActual = actualStart && actualEnd && actualStart < actualEnd;
+
+                        // FIX: Fallback nếu chỉ có plan nhưng invalid (e.g., EndTime null sau delay) - dùng current time dummy
+                        if (!validPlan && order.startTime && !order.endTime) {  // Chỉ StartTime có, EndTime null
+                            validPlan = true;
+                            planEnd = new Date(planStart.getTime() + 60 * 60 * 1000);  // Dummy 1h end
+                            console.log(`SignalR Fallback dummy end for ${order.uId}: ${planEnd.toISOString()}`);  // ← THÊM LOG FALLBACK
+                        }
+                        if (!validActual && order.acStartTime && !order.acEndTime) {
+                            validActual = true;
+                            actualEnd = new Date(actualStart.getTime() + 60 * 60 * 1000);  // Dummy
+                            console.log(`SignalR Fallback dummy actual end for ${order.uId}`);  // ← THÊM LOG
+                        }
 
                         let eventStart, eventEnd;
-                        let status = statusMap[parseInt(order.Status, 10)] || 'Planned';  // Dùng statusMap mới
+                        let status = statusMap[parseInt(order.status, 10)] || 'Planned';
+
+                        console.log(`SignalR Rebuilding order ${order.uId}: Status=${order.status} (${status}), ValidPlan=${validPlan}, ValidActual=${validActual}`);  // ← THÊM LOG REBUILD
 
                         if (validActual) {
                             eventStart = actualStart;
@@ -1005,6 +1033,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             eventStart = planStart;
                             eventEnd = planEnd;
                         } else {
+                            console.warn(`SignalR Skipping invalid order ${order.uId}: No valid times even after fallback`);  // ← THÊM LOG SKIP
                             return null;
                         }
 
@@ -1015,27 +1044,27 @@ document.addEventListener('DOMContentLoaded', function () {
                             hasBoth = true;
                         }
 
-                        const customerCode = order.CustomerCode || order.Resource || 'Unknown';
+                        const customerCode = order.customerCode || order.resource || 'Unknown';
 
                         // THÊM: Delay info nếu status=='Delay'
                         let delayStart = null, delayEnd = null, delayTime = 0;
                         if (status === 'Delay') {
-                            delayStart = parseAndValidate(order.DelayStartTime);
-                            delayTime = parseFloat(order.DelayTime) || 0;
+                            delayStart = parseAndValidate(order.delayStartTime);
+                            delayTime = parseFloat(order.delayTime) || 0;
                             if (delayStart) {
                                 delayEnd = new Date(delayStart.getTime() + delayTime * 60 * 60 * 1000);
                             }
                         }
 
                         return {
-                            id: `order-${index}`,
+                            id: `order-${order.uId}`,  // ← SỬA: Dùng UId thay index để unique
                             resourceId: customerCode,
                             start: eventStart,
                             end: eventEnd,
                             title: '',
                             hasBoth: hasBoth,
                             extendedProps: {
-                                uid: order.UId,
+                                uid: order.uId,
                                 customerCode: customerCode,
                                 planStart: validPlan ? planStart.toISOString() : null,
                                 planEnd: validPlan ? planEnd.toISOString() : null,
@@ -1043,15 +1072,15 @@ document.addEventListener('DOMContentLoaded', function () {
                                 actualEnd: validActual ? actualEnd.toISOString() : null,
                                 validActual: validActual,
                                 status: status,
-                                totalPallet: order.TotalPallet || 0,
-                                collectPallet: order.CollectPallet || '0 / 0',
-                                threePointScan: order.ThreePointScan || '0 / 0',
-                                loadCont: order.LoadCont || '0 / 0',
-                                shipDate: order.ShipDate || 'N/A',
-                                transCd: order.TransCd || 'N/A',
-                                transMethod: order.TransMethod || 'N/A',
-                                contSize: order.ContSize || 'N/A',
-                                totalColumn: order.TotalColumn || 0,
+                                totalPallet: order.totalPallet || 0,
+                                collectPallet: order.collectPallet || '0 / 0',
+                                threePointScan: order.threePointScan || '0 / 0',
+                                loadCont: order.loadCont || '0 / 0',
+                                shipDate: order.shipDate || 'N/A',
+                                transCd: order.transCd || 'N/A',
+                                transMethod: order.transMethod || 'N/A',
+                                contSize: order.contSize || 'N/A',
+                                totalColumn: order.totalColumn || 0,
                                 // THÊM: Delay info
                                 delayStart: delayStart ? delayStart.toISOString() : null,
                                 delayEnd: delayEnd ? delayEnd.toISOString() : null,
@@ -1060,25 +1089,29 @@ document.addEventListener('DOMContentLoaded', function () {
                         };
                     }).filter(e => e);
 
-                    // Update calendar options và events
+                    console.log('SignalR newEventsData length:', newEventsData.length);  // ← THÊM LOG LENGTH
+
+                    if (newEventsData.length === 0) {
+                        console.error('SignalR: No events after rebuild! Skipping update to avoid blank calendar.');
+                        return;  // ← THÊM: Không update nếu fail, tránh mất events (fallback manual sẽ chạy sau)
+                    }
+
+                    // Update calendar options và events (FIX: Clear sources đúng cách, chỉ render)
                     calendar.setOption('resources', resources);
-                    calendar.removeAllEventSources();
+                    calendar.removeAllEventSources();  // ← GIỮ, clear tất cả sources cũ
                     const formattedEvents = newEventsData.map(e => {
                         const extendedProps = e.extendedProps;
                         const status = extendedProps.status;
                         const validActual = extendedProps.validActual;
-                        const delayTime = extendedProps.delayTime || 0;  // THÊM: Lấy delayTime
+                        const delayTime = extendedProps.delayTime || 0;
 
-                        // SỬA: Fallback màu cho Delay + THÊM: Nếu Delay && delayTime >24 thì đỏ
                         const bgColor = e.hasBoth ? 'transparent' : getColorByStatus(status, validActual, delayTime);
                         const borderColor = e.hasBoth ? 'transparent' : getColorByStatus(status, validActual, delayTime);
 
-                        // SỬA: Chỉ thêm class actual-event, XÓA delay-event + THÊM: Thêm multi-day-delay nếu >24h
                         let classNames = extendedProps.validActual ? ['actual-event'] : [];
                         if (status === 'Delay' && delayTime > 24) {
                             classNames.push('multi-day-delay');
                         }
-                        // Không push 'delay-event' nữa
 
                         return {
                             ...e,
@@ -1089,12 +1122,24 @@ document.addEventListener('DOMContentLoaded', function () {
                             classNames: classNames
                         };
                     });
-                    calendar.addEventSource(formattedEvents);  // Hoặc dùng setOption('events', formattedEvents) nếu muốn force
-                    console.log('Calendar updated with new data.');
-                })
-                .catch(error => console.error('Error refetching calendar data:', error));
-        });
+                    calendar.addEventSource(formattedEvents);
 
+                    // FIX: Chỉ render sau timeout ngắn, bỏ refetch/changeDate (không cần cho static source)
+                    setTimeout(() => {
+                        calendar.render();  // ← FIX: Chỉ render để update DOM
+                        console.log('SignalR Events after render:', calendar.getEvents().length);  // ← THÊM LOG DEBUG
+                        console.log('SignalR Visible events in DOM:', document.querySelectorAll('.fc-event').length);  // ← THÊM LOG DOM
+                    }, 300);  // Giảm timeout xuống 300ms
+
+                    console.log('SignalR Calendar updated with new data.');
+                })
+                .catch(error => {
+                    console.error('SignalR Error refetching calendar data:', error);  // ← THÊM LOG ERROR
+                    // FALLBACK: Manual refetch nếu SignalR fail (gọi lại GetCalendarData và rebuild như save handler)
+                    console.log('SignalR fallback: Manual refetch...');
+                    // ... (copy logic refetch từ save handler ở dưới, nếu cần)
+                });
+        });
         // Handle disconnect/reconnect
         connection.onclose(function (err) {
             console.warn('SignalR disconnected. Reconnecting...');
@@ -1294,9 +1339,10 @@ document.addEventListener('DOMContentLoaded', function () {
         startInput.removeAttribute('readonly');  // Làm editable
     });
 
-    // SỬA: Xử lý save button cho delay modal - GỌI API POST ĐỂ SAVE VÀO DELAYHISTORY + UPDATE STATUS SANG DELAY + REFETCH DATA + SỬA: Sử dụng input StartTime/ChangeTime + THÊM: Switch to week view nếu delayTime >24h
+    // SỬA: Xử lý save button cho delay modal - GỌI API POST ĐỂ SAVE VÀO DELAYHISTORY + UPDATE STATUS SANG DELAY + REFETCH DATA + SỬA: Sử dụng input StartTime/ChangeTime + THÊM: Switch to week view nếu delayTime >24h (FIX: BỎ REFETCH THỦ CÔNG, DÙNG SIGNALR)
     document.addEventListener('click', function (e) {
         if (e.target.id === 'saveDelay') {
+            console.log('SAVE DELAY CLICKED! Starting handler...');
             const form = document.getElementById('delayForm');
             const formData = new FormData(form);
             const data = {
@@ -1324,143 +1370,6 @@ document.addEventListener('DOMContentLoaded', function () {
                         if (delayModal) delayModal.hide();
                         playBeep(0.3);
                         alert('Delay applied and status updated to Delay!');
-
-                        // FIX: Refetch và force re-render (giữ nguyên logic rebuild)
-                        fetch('/DensoWareHouse/GetCalendarData')
-                            .then(response => {
-                                if (!response.ok) throw new Error('Refetch failed');
-                                return response.json();
-                            })
-                            .then(data => {
-                                console.log('Refetched data:', data);  // DEBUG: Check Status=4, EndTime unchanged
-
-                                const fetchedOrders = data.orders;
-                                const fetchedCustomers = data.customers;
-
-                                const customerMap = {};
-                                fetchedCustomers.forEach(c => {
-                                    customerMap[c.CustomerCode] = c.CustomerName;
-                                });
-                                const resources = fetchedCustomers.map(c => ({
-                                    id: c.CustomerCode,
-                                    title: c.CustomerCode
-                                }));
-
-                                // Rebuild newEventsData (giữ EndTime = planEnd, không extend)
-                                const newEventsData = fetchedOrders.map((order) => {
-                                    function parseAndValidate(timeStr) {
-                                        if (!timeStr) return null;
-                                        const d = new Date(timeStr);
-                                        if (isNaN(d.getTime())) return null;
-                                        return d;
-                                    }
-                                    const planStart = parseAndValidate(order.StartTime);
-                                    const planEnd = parseAndValidate(order.EndTime);  // Giữ planEnd nguyên
-                                    const actualStart = parseAndValidate(order.AcStartTime);
-                                    const actualEnd = parseAndValidate(order.AcEndTime);
-                                    const validPlan = planStart && planEnd && planStart < planEnd;
-                                    const validActual = actualStart && actualEnd && actualStart < actualEnd;
-                                    let eventStart, eventEnd;
-                                    let status = statusMap[parseInt(order.Status, 10)] || 'Planned';
-                                    if (validActual) {
-                                        eventStart = actualStart;
-                                        eventEnd = actualEnd;
-                                    } else if (validPlan) {
-                                        eventStart = planStart;
-                                        eventEnd = planEnd;  // Không extend!
-                                    } else {
-                                        return null;
-                                    }
-                                    let hasBoth = false;
-                                    if (validActual && validPlan) {
-                                        eventStart = new Date(Math.min(actualStart, planStart));
-                                        eventEnd = new Date(Math.max(actualEnd, planEnd));  // Vẫn max, nhưng planEnd unchanged
-                                        hasBoth = true;
-                                    }
-                                    const customerCode = order.CustomerCode || order.Resource || 'Unknown';
-
-                                    let delayStart = null, delayEnd = null, delayTime = 0;
-                                    if (status === 'Delay') {
-                                        delayStart = parseAndValidate(order.DelayStartTime);
-                                        delayTime = parseFloat(order.DelayTime) || 0;
-                                        if (delayStart) {
-                                            delayEnd = new Date(delayStart.getTime() + delayTime * 60 * 60 * 1000);
-                                        }
-                                    }
-
-                                    return {
-                                        id: `order-${order.UId}`,  // Unique ID để tránh conflict
-                                        resourceId: customerCode,
-                                        start: eventStart,
-                                        end: eventEnd,  // Giữ nguyên span
-                                        title: '',
-                                        hasBoth: hasBoth,
-                                        extendedProps: {
-                                            uid: order.UId,
-                                            customerCode: customerCode,
-                                            planStart: validPlan ? planStart.toISOString() : null,
-                                            planEnd: validPlan ? planEnd.toISOString() : null,
-                                            actualStart: validActual ? actualStart.toISOString() : null,
-                                            actualEnd: validActual ? actualEnd.toISOString() : null,
-                                            validActual: validActual,
-                                            status: status,
-                                            totalPallet: order.TotalPallet || 0,
-                                            collectPallet: order.CollectPallet || '0 / 0',
-                                            threePointScan: order.ThreePointScan || '0 / 0',
-                                            loadCont: order.LoadCont || '0 / 0',
-                                            shipDate: order.ShipDate || 'N/A',
-                                            transCd: order.TransCd || 'N/A',
-                                            transMethod: order.TransMethod || 'N/A',
-                                            contSize: order.ContSize || 'N/A',
-                                            totalColumn: order.TotalColumn || 0,
-                                            delayStart: delayStart ? delayStart.toISOString() : null,
-                                            delayEnd: delayEnd ? delayEnd.toISOString() : null,
-                                            delayTime: delayTime
-                                        }
-                                    };
-                                }).filter(e => e);
-
-                                // FIX: Force re-render clean
-                                calendar.setOption('resources', resources);
-                                setTimeout(() => {
-                                    calendar.getEventSources().forEach(source => source.remove());
-                                    const formattedEvents = newEventsData.map(e => {
-                                        const extendedProps = e.extendedProps;
-                                        const status = extendedProps.status;
-                                        const validActual = extendedProps.validActual;
-                                        const delayTime = extendedProps.delayTime || 0;
-                                        const bgColor = e.hasBoth ? 'transparent' : getColorByStatus(status, validActual, delayTime);
-                                        const borderColor = e.hasBoth ? 'transparent' : getColorByStatus(status, validActual, delayTime);
-                                        let classNames = extendedProps.validActual ? ['actual-event'] : [];
-                                        if (status === 'Delay' && delayTime > 24) {
-                                            classNames.push('multi-day-delay');
-                                        }
-                                        return {
-                                            ...e,
-                                            backgroundColor: bgColor,
-                                            borderColor: borderColor,
-                                            textColor: getTextColorByStatus(status, validActual, delayTime),
-                                            fontWeight: 'normal',
-                                            classNames: classNames
-                                        };
-                                    });
-                                    calendar.addEventSource(formattedEvents);
-                                    calendar.render();  // Force visual update
-                                }, 100);
-
-                                console.log('Calendar re-rendered without changing plan EndTime.');
-
-                                // Switch week nếu >24h (để xem bar dài)
-                                const delayInput = parseFloat(formData.get('DelayTime')) || 0;
-                                if (delayInput > 24) {
-                                    setTimeout(() => calendar.changeView('resourceTimelineWeek'), 200);
-                                    alert('Delay spans multiple days. Switched to week view to see full delay bar!');
-                                }
-                            })
-                            .catch(error => {
-                                console.error('Refetch error:', error);
-                                alert('Cập nhật UI thất bại! Reload trang nhé.');
-                            });
                     } else {
                         alert('Error saving delay: ' + (result.message || 'Unknown error'));
                     }

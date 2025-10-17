@@ -15,13 +15,13 @@ namespace ASP.Controllers.Front
         private readonly OrderRepositoryInterface _orderRepository;
         private readonly CustomerRepositoryInterface _customerRepository;
         private readonly OrderDetailRepositoryInterface _orderDetailRepository;
-        private readonly DelayHistoryRepositoryInterface _delayHistoryRepository;  // THÊM: Inject DelayHistoryRepo
+        private readonly DelayHistoryRepositoryInterface _delayHistoryRepository;  
 
         public DensoWareHouseController(
             OrderRepositoryInterface orderRepository,
             CustomerRepositoryInterface customerRepository,
             OrderDetailRepositoryInterface orderDetailRepository,
-            DelayHistoryRepositoryInterface delayHistoryRepository)  // THÊM
+            DelayHistoryRepositoryInterface delayHistoryRepository) 
         {
             _orderRepository = orderRepository;
             _customerRepository = customerRepository;
@@ -64,37 +64,37 @@ namespace ASP.Controllers.Front
                 double delayTime = 0;
                 if (o.OrderStatus == 4)
                 {
-                    delayStartTime = o.DelayStartTime?.ToString("yyyy-MM-ddTHH:mm:ss");  // ← FIX: Từ Order field
-                    delayTime = o.DelayTime ?? 0;  // ← FIX: Handle nullable double? with null-coalescing
+                    delayStartTime = o.DelayStartTime?.ToString("yyyy-MM-ddTHH:mm:ss");  
+                    delayTime = o.DelayTime ?? 0;  
                     Console.WriteLine($"Order {o.UId}: DelayStartTime={o.DelayStartTime}, DelayTime={o.DelayTime}");  // ← DEBUG LOG
                 }
 
                 return new
                 {
-                    UId = o.UId,
-                    Resource = o.CustomerCode,
-                    ShipDate = o.ShipDate.ToString("yyyy-MM-dd"),
-                    StartTime = o.StartTime.ToString("yyyy-MM-ddTHH:mm:ss"),
-                    EndTime = o.EndTime.ToString("yyyy-MM-ddTHH:mm:ss"),
-                    AcStartTime = o.AcStartTime?.ToString("yyyy-MM-ddTHH:mm:ss"),
-                    AcEndTime = o.AcEndTime?.ToString("yyyy-MM-ddTHH:mm:ss"),
-                    Status = o.OrderStatus,
-                    TotalPallet = o.TotalPallet,
-                    // THÊM: Các trường mới cho progress (dạng string "X / Y")
+                    UId = o.UId.ToString(),  // Explicit ToString() cho Guid? để tránh null/undefined
+                    Resource = o.CustomerCode ?? "Unknown",  //  Fallback nếu null
+                    ShipDate = o.ShipDate.ToString("yyyy-MM-dd"), 
+                    StartTime = o.StartTime.ToString("yyyy-MM-ddTHH:mm:ss"), 
+                    EndTime = o.EndTime.ToString("yyyy-MM-ddTHH:mm:ss"), 
+                    AcStartTime = o.AcStartTime?.ToString("yyyy-MM-ddTHH:mm:ss"), 
+                    AcEndTime = o.AcEndTime?.ToString("yyyy-MM-ddTHH:mm:ss"),  
+                    Status = o.OrderStatus, 
+                    TotalPallet = o.TotalPallet,  
+                    //Các trường mới cho progress
                     CollectPallet = $"{collectCount} / {o.TotalPallet}",
                     ThreePointScan = $"{prepareCount} / {o.TotalPallet}",
                     LoadCont = $"{loadCount} / {o.TotalPallet}",
-                    TransCd = o.TransCd,
-                    TransMethod = o.TransMethod,
-                    ContSize = o.ContSize,
-                    TotalColumn = o.TotalColumn,
-                    // THÊM: Delay fields
+                    TransCd = o.TransCd ?? "N/A", 
+                    TransMethod = o.TransMethod.ToString(), 
+                    ContSize = o.ContSize.ToString(), 
+                    TotalColumn = o.TotalColumn,  
+                    // Delay fields
                     DelayStartTime = delayStartTime,
                     DelayTime = delayTime
                 };
             }).ToArray();
             Console.WriteLine($"First mapped UId string: {ordersForView.FirstOrDefault()?.UId}");
-            // Map customers sang anonymous object (giữ nguyên)
+            // Map customers sang anonymous object
             var customersForView = customers.Select(c => new
             {
                 CustomerCode = c.CustomerCode,
@@ -108,7 +108,7 @@ namespace ASP.Controllers.Front
                 Customers = customersForView
             };
 
-            return View("~/Views/Front/DensoWareHouse/Calendar.cshtml", modelForView);
+            return View("~/Views/Front/DensoWareHouse/Calendar.cshtml", modelForView);      
         }
 
         [HttpGet]
@@ -122,13 +122,13 @@ namespace ASP.Controllers.Front
                 }
 
                 var orderDetails = await _orderDetailRepository.GetOrderDetailsByOrderId(parsedOrderId);
-                var order = await _orderRepository.GetOrderById(parsedOrderId);  // THÊM: Lấy full order để tính New Time
+                var order = await _orderRepository.GetOrderById(parsedOrderId);  
 
-                // DEBUG LOG: Kiểm tra load dữ liệu
+              
                 foreach (var od in orderDetails)
                 {
                     var slCount = od.ShoppingLists?.Count ?? 0;
-                    var tpcTotal = od.ShoppingLists?.Sum(sl => sl.ThreePointCheck != null ? 1 : 0) ?? 0;  // SỬA: 1-1 relationship, đếm 1 nếu có ThreePointCheck
+                    var tpcTotal = od.ShoppingLists?.Sum(sl => sl.ThreePointCheck != null ? 1 : 0) ?? 0;  
                     Console.WriteLine($"OrderDetail {od.UId}: TotalPallet={od.TotalPallet}, SL Count={slCount}, Total TPC={tpcTotal}");
                 }
 
@@ -153,13 +153,13 @@ namespace ASP.Controllers.Front
                     };
                 }).ToList();
 
-                // SỬA: Tính New Time nếu Delay - DÙNG ORDER FIELDS
+              
                 object orderSummary = null;
                 if (order != null && order.OrderStatus == 4)
                 {
-                    // SỬA: Không dùng latestDelay từ Histories
-                    DateTime? delayStart = order.DelayStartTime;  // ← FIX
-                    double delayTime = order.DelayTime ?? 0;  // ← FIX: Handle nullable double?
+                
+                    DateTime? delayStart = order.DelayStartTime; 
+                    double delayTime = order.DelayTime ?? 0; 
                     if (delayStart.HasValue)
                     {
                         DateTime baseStart = order.AcStartTime.HasValue ? order.AcStartTime.Value : order.StartTime;
@@ -172,7 +172,7 @@ namespace ASP.Controllers.Front
                             newTimeRange = newTimeRange,
                             delayTime = delayTime
                         };
-                        Console.WriteLine($"Order {order.UId}: Calculated newTimeRange={newTimeRange}, delayTime={delayTime}");  // ← DEBUG LOG
+                        Console.WriteLine($"Order {order.UId}: Calculated newTimeRange={newTimeRange}, delayTime={delayTime}"); 
                     }
                 }
 
@@ -187,58 +187,53 @@ namespace ASP.Controllers.Front
         [HttpGet]
         public async Task<JsonResult> GetCalendarData()
         {
-            var today = DateTime.Today;
-            var orders = await _orderRepository.GetOrdersWithDelayByDate(today);  // SỬA: Dùng method include DelayHistories (nhưng map dùng Order fields)
+            var today = DateTime.Today;     
+            var orders = await _orderRepository.GetOrdersByDate(today);
             var allCustomers = await _customerRepository.GetAllCustomers();
             var customerCodesWithOrders = orders.Select(o => o.CustomerCode).Distinct().ToHashSet();
             var customers = allCustomers.Where(c => customerCodesWithOrders.Contains(c.CustomerCode)).ToList();
 
-            // THÊM: Include DelayHistories cho Delay info (nhưng không dùng)
-
-            var ordersForView = orders.Select(o => {  // SỬA: Dùng Select thay vì Select(o => { ... }).ToArray() cho consistency
-                // Collect: Tổng số pallet đã collect (đếm SL có PLStatus==1, không cần All)
+            var ordersForView = orders.Select(o => {
+                // Collect/Prepare/Load counts (giữ nguyên)
                 int collectCount = o.OrderDetails?.Sum(od => od.ShoppingLists?.Count(sl => sl.PLStatus == 1) ?? 0) ?? 0;
-
-                // ThreePointScan: Tổng số pallet đã prepare (SL==2)
                 int prepareCount = o.OrderDetails?.Sum(od => od.ShoppingLists?.Count(sl => sl.PLStatus == 2) ?? 0) ?? 0;
-
-                // LoadCont: Tổng số pallet đã load (SL==3)
                 int loadCount = o.OrderDetails?.Sum(od => od.ShoppingLists?.Count(sl => sl.PLStatus == 3) ?? 0) ?? 0;
 
-                // SỬA: Delay info nếu OrderStatus==4 - DÙNG ORDER FIELDS THAY VÌ HISTORIES
+                // Delay info nếu OrderStatus==4 (giữ nguyên, nhưng null-safe cho DelayTime)
                 string delayStartTime = null;
                 double delayTime = 0;
                 if (o.OrderStatus == 4)
                 {
-                    delayStartTime = o.DelayStartTime?.ToString("yyyy-MM-ddTHH:mm:ss");  // ← FIX: Từ Order field
-                    delayTime = o.DelayTime ?? 0;  // ← FIX: Handle nullable double?
-                    Console.WriteLine($"GetCalendarData Order {o.UId}: DelayStartTime={o.DelayStartTime}, DelayTime={o.DelayTime}");  // ← DEBUG LOG
+                    delayStartTime = o.DelayStartTime?.ToString("yyyy-MM-ddTHH:mm:ss"); 
+                    delayTime = o.DelayTime ?? 0; 
+                    Console.WriteLine($"Order {o.UId}: DelayStartTime={o.DelayStartTime}, DelayTime={o.DelayTime}");  
                 }
 
                 return new
                 {
-                    UId = o.UId,
-                    Resource = o.CustomerCode,
+                    UId = o.UId.ToString(),  
+                    Resource = o.CustomerCode ?? "Unknown",
                     ShipDate = o.ShipDate.ToString("yyyy-MM-dd"),
-                    StartTime = o.StartTime.ToString("yyyy-MM-ddTHH:mm:ss"),
-                    EndTime = o.EndTime.ToString("yyyy-MM-ddTHH:mm:ss"),
-                    AcStartTime = o.AcStartTime?.ToString("yyyy-MM-ddTHH:mm:ss"),
-                    AcEndTime = o.AcEndTime?.ToString("yyyy-MM-ddTHH:mm:ss"),
+                    StartTime = o.StartTime.ToString("yyyy-MM-ddTHH:mm:ss"),  
+                    EndTime = o.EndTime.ToString("yyyy-MM-ddTHH:mm:ss"),    
+                    AcStartTime = o.AcStartTime?.ToString("yyyy-MM-ddTHH:mm:ss") ?? "", 
+                    AcEndTime = o.AcEndTime?.ToString("yyyy-MM-ddTHH:mm:ss") ?? "",      
                     Status = o.OrderStatus,
                     TotalPallet = o.TotalPallet,
-                    // THÊM: Các trường mới cho progress (dạng string "X / Y")
                     CollectPallet = $"{collectCount} / {o.TotalPallet}",
                     ThreePointScan = $"{prepareCount} / {o.TotalPallet}",
                     LoadCont = $"{loadCount} / {o.TotalPallet}",
-                    TransCd = o.TransCd,
-                    TransMethod = o.TransMethod,
-                    ContSize = o.ContSize,
+                    TransCd = o.TransCd ?? "N/A",
+                    TransMethod = o.TransMethod.ToString(), 
+                    ContSize = o.ContSize.ToString(),       
                     TotalColumn = o.TotalColumn,
-                    // THÊM: Delay fields
+                    // Delay fields
                     DelayStartTime = delayStartTime,
                     DelayTime = delayTime
                 };
             }).ToArray();
+
+            Console.WriteLine($"GetCalendarData: Loaded {ordersForView.Length} orders. First UId: {ordersForView.FirstOrDefault()?.UId}");
 
             var customersForView = customers.Select(c => new
             {
