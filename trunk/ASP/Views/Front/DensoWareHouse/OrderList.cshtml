@@ -143,9 +143,14 @@
                                     </td>
                                     <td class="fw-medium">@order.EndTime.ToString("HH:mm")</td>
                                     <td>
-                                        <button class="btn btn-sm btn-outline-info rounded-pill" onclick="loadDelayHistory('@order.UId')" title="View Delay History">
-                                            <i class="bi bi-eye me-1"></i>View History
-                                        </button>
+                                        <div class="btn-group" role="group">
+                                            <button class="btn btn-sm btn-outline-info rounded-pill me-1" onclick="loadDelayHistory('@order.UId')" title="View Delay History">
+                                                <i class="bi bi-eye me-1"></i>View History
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-success rounded-pill" onclick="exportToExcel('@order.UId')" title="Export Picking List to Excel">
+                                                <i class="bi bi-file-earmark-excel me-1"></i>Export Excel
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             }
@@ -199,5 +204,4 @@
 
 @section Scripts {
     <script src="~/js/OrderList.js"></script>
-    
 }

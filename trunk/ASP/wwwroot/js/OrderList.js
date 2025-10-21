@@ -60,3 +60,13 @@ function loadDelayHistory(uid) {
         $('#delayTable tbody').html('<tr><td colspan="4" class="text-center py-4 text-danger"><i class="bi bi-exclamation-triangle fs-3 mb-2"></i><br>Error loading data (' + status + '). Check console for details.</td></tr>');
     });
 }
+
+// THÊM MỚI: Function để export Excel
+function exportToExcel(uid) {
+    if (!uid) {
+        alert('ID đơn hàng không hợp lệ. Vui lòng làm mới và thử lại.');
+        return;
+    }
+    // Redirect đến action export với orderId
+    window.location.href = '/Order/ExportExcel?orderId=' + encodeURIComponent(uid);
+}
