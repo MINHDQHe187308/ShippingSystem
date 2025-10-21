@@ -16,7 +16,7 @@ function loadDelayHistory(uid) {
     console.log('Function called with UID:', uid); // Debug: Xác nhận UID
 
     // Hiển thị trạng thái loading
-    $('#delayTable tbody').html('<tr><td colspan="5" class="text-center py-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></td></tr>');
+    $('#delayTable tbody').html('<tr><td colspan="4" class="text-center py-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></td></tr>');
 
     // Hiển thị modal ngay lập tức để UX tốt hơn
     $('#delayModal').modal('show');
@@ -48,16 +48,15 @@ function loadDelayHistory(uid) {
                     '<td class="fw-semibold">' + (item.delayType || 'N/A') + '</td>' +
                     '<td class="text-muted">' + (item.reason || 'N/A') + '</td>' +
                     '<td><span class="badge bg-light text-dark px-2 py-1">' + parseSafeDate(item.startTime) + '</span></td>' +
-                    '<td><span class="badge bg-light text-dark px-2 py-1">' + parseSafeDate(item.changeTime) + '</span></td>' +
                     '<td class="fw-semibold text-warning">' + (item.delayTime || 'N/A') + '</td>' +
                     '</tr>'
                 );
             });
         } else {
-            $('#delayTable tbody').append('<tr><td colspan="5" class="text-center py-4 text-muted"><i class="bi bi-info-circle fs-3 mb-2"></i><br>No delay history found.</td></tr>');
+            $('#delayTable tbody').append('<tr><td colspan="4" class="text-center py-4 text-muted"><i class="bi bi-info-circle fs-3 mb-2"></i><br>No delay history found.</td></tr>');
         }
     }).fail(function (xhr, status, error) {
         console.error('AJAX Error:', status, error, xhr.responseText, xhr.status); // Debug: Chi tiết lỗi đầy đủ
-        $('#delayTable tbody').html('<tr><td colspan="5" class="text-center py-4 text-danger"><i class="bi bi-exclamation-triangle fs-3 mb-2"></i><br>Error loading data (' + status + '). Check console for details.</td></tr>');
+        $('#delayTable tbody').html('<tr><td colspan="4" class="text-center py-4 text-danger"><i class="bi bi-exclamation-triangle fs-3 mb-2"></i><br>Error loading data (' + status + '). Check console for details.</td></tr>');
     });
 }
