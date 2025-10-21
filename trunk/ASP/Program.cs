@@ -10,15 +10,17 @@ using ASP.Models.ASPModel;
 using ASP.Models.Front;
 using ASP.Policies;
 using ASP.SeedData;
+using ASP.Service.Implentations;
+using ASP.Services;
 using ASP.Utilss;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
 using ReflectionIT.Mvc.Paging;
 using Serilog;
-using Microsoft.AspNetCore.SignalR;
 
 var builder = WebApplication.CreateBuilder(args);
 #region signalR
@@ -62,6 +64,10 @@ builder.Services.AddScoped<OrderDetailRepositoryInterface, OrderDetailRepository
 builder.Services.AddScoped<ShippingScheduleRepositoryInterface, ShippingScheduleRepository>();
 builder.Services.AddScoped<LeadtimeMasterRepositoryInterface, LeadtimeRepository>();
 builder.Services.AddScoped<DelayHistoryRepositoryInterface, DelayHistoryRepository>();
+builder.Services.AddScoped<EmailServiceInterface, EmailApiService>(); 
+builder.Services.AddHttpClient<EmailApiService>();  // Với HttpClient factory
+builder.Services.Configure<EmailApiSettings>(builder.Configuration.GetSection("EmailAPI"));
+//builder.Services.AddTransient<EmailServiceInterface, GmailSmtpService>();
 // frontend
 //policies
 builder.Services.AddSingleton<IAuthorizationHandler, UserPolicyAuthorizationHandler>();

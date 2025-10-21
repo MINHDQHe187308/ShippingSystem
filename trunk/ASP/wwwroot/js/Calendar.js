@@ -1401,7 +1401,13 @@
                         const delayModal = bootstrap.Modal.getInstance(document.getElementById('delayModal'));
                         if (delayModal) delayModal.hide();
                         playBeep(0.3);
-                        alert('Delay applied and status updated to Delay!');
+
+                        // THÊM: Hiển thị thông báo dựa trên message
+                        if (result.message.includes('email sent')) {
+                            alert('Delay applied, status updated, and email notification sent successfully!');  // Thông báo đầy đủ
+                        } else {
+                            alert('Delay applied and status updated!');
+                        }
                     } else {
                         alert('Error saving delay: ' + (result.message || 'Unknown error'));
                     }
