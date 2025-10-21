@@ -23,12 +23,7 @@ namespace ASP.Controllers.Front
         private readonly EmailServiceInterface _emailService;
         private readonly ILogger<DelayHistoryController> _logger;
         private readonly IConfiguration _configuration;
-        private readonly Dictionary<string, string> _relatedEmails = new()
-        {
-            { "CUST001", "customer1@ap.denso.com" },
-            { "9001", "nguyen.duc.tuan.a7d@ap.denso.com" },
-        };
-
+       
         public DelayHistoryController(
             DelayHistoryRepositoryInterface delayHistoryRepository,
             OrderRepositoryInterface orderRepository,
