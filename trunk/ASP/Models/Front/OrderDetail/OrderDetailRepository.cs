@@ -1,4 +1,4 @@
-﻿using ASP.DTO.DensoDTO;  
+﻿using ASP.DTO.DensoDTO;
 using ASP.Models.ASPModel;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
