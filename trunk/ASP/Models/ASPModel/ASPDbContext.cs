@@ -45,39 +45,64 @@ namespace ASP.Models.ASPModel
                 }
             }
         }
-
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-            var allEtities = modelBuilder.Model.GetEntityTypes();
-            foreach (var entity in allEtities)
+
+            // Apply CreatedDate and UpdatedDate to all entities (giữ nguyên)
+            var allEntities = modelBuilder.Model.GetEntityTypes();
+            foreach (var entity in allEntities)
             {
                 entity.AddProperty("CreatedDate", typeof(DateTime));
                 entity.AddProperty("UpdatedDate", typeof(DateTime));
             }
+
+            // Configure Role Default Value (giữ nguyên)
             modelBuilder.Entity<Role>()
                 .Property(b => b.DefaultRole)
                 .HasDefaultValue(false);
 
+            // Cấu hình One-to-Many: Customer -> LeadtimeMaster (cập nhật với composite key)
+            modelBuilder.Entity<LeadtimeMaster>()
+                .HasKey(lm => new { lm.CustomerCode, lm.TransCd });  // Composite PK mới
+
+            modelBuilder.Entity<LeadtimeMaster>()
+                .HasOne(lm => lm.Customer)
+                .WithMany(c => c.LeadtimeMasters)
+                .HasForeignKey(lm => lm.CustomerCode)
+                .OnDelete(DeleteBehavior.Cascade)  // Xóa cascade nếu xóa Customer
+                .IsRequired();
+
+            // Cấu hình One-to-Many: Customer -> ShippingSchedule (giữ nguyên)
+            modelBuilder.Entity<ShippingSchedule>()
+                .HasOne(ss => ss.Customer)
+                .WithMany(c => c.ShippingSchedules)
+                .HasForeignKey(ss => ss.CustomerCode)
+                .OnDelete(DeleteBehavior.Cascade)
+                .IsRequired();
+
+            // Existing configurations (giữ nguyên)
             modelBuilder.Entity<ShoppingList>()
                 .HasOne(s => s.ThreePointCheck)
                 .WithOne(t => t.ShoppingList)
                 .HasForeignKey<ThreePointCheck>(t => t.SPId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired(false);
+
             modelBuilder.Entity<ThreePointCheck>()
                 .HasIndex(t => t.SPId)
                 .IsUnique();
+
             modelBuilder.Entity<ShippingSchedule>()
-             .HasKey(e => new { e.CustomerCode, e.TransCd, e.Weekday });
+                .HasKey(e => new { e.CustomerCode, e.TransCd, e.Weekday });
 
             modelBuilder.Entity<ShippingSchedule>()
                 .Property(e => e.CutOffTime)
                 .HasConversion(
-                v => v.ToTimeSpan(),
-                v => TimeOnly.FromTimeSpan(v)
-        )
-        .HasColumnType("time");
+                    v => v.ToTimeSpan(),
+                    v => TimeOnly.FromTimeSpan(v)
+                )
+                .HasColumnType("time");
         }
 
         public DbSet<Log> Logs { get; set; }

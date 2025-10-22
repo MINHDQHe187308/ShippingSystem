@@ -9,22 +9,20 @@ namespace ASP.Models.Front
         [Key]
         [MaxLength(5)]
         public string CustomerCode { get; set; } = null!;
-
-        [Key] 
+        [Key]
         [MaxLength(5)]
         public string TransCd { get; set; } = null!;
-
         [Key]
         public DayOfWeek Weekday { get; set; }
-
-        public TimeOnly CutOffTime { get; set; }  
-
+        public TimeOnly CutOffTime { get; set; }
         [MaxLength(255)]
         public string Description { get; set; } = null!;
-
         [MaxLength(10)]
         public string CreatedBy { get; set; } = null!;
         [MaxLength(10)]
         public string? UpdatedBy { get; set; }
+
+   
+        public virtual Customer Customer { get; set; } = null!;
     }
 }

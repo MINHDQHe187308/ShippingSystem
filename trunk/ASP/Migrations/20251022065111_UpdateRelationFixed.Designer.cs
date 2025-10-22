@@ -4,6 +4,7 @@ using ASP.Models.ASPModel;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,10 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ASP.Migrations
 {
     [DbContext(typeof(ASPDbContext))]
-    partial class ASPDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251022065111_UpdateRelationFixed")]
+    partial class UpdateRelationFixed
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -302,13 +304,7 @@ namespace ASP.Migrations
                 {
                     b.Property<string>("CustomerCode")
                         .HasMaxLength(5)
-                        .HasColumnType("nvarchar(5)")
-                        .HasColumnOrder(0);
-
-                    b.Property<string>("TransCd")
-                        .HasMaxLength(5)
-                        .HasColumnType("nvarchar(5)")
-                        .HasColumnOrder(1);
+                        .HasColumnType("nvarchar(5)");
 
                     b.Property<double>("CollectTimePerPallet")
                         .HasColumnType("float");
@@ -326,13 +322,18 @@ namespace ASP.Migrations
                     b.Property<double>("PrepareTimePerPallet")
                         .HasColumnType("float");
 
+                    b.Property<string>("TransCd")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("UpdateBy")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("UpdatedDate")
                         .HasColumnType("datetime2");
 
-                    b.HasKey("CustomerCode", "TransCd");
+                    b.HasKey("CustomerCode");
 
                     b.ToTable("LeadtimeMasters");
                 });
