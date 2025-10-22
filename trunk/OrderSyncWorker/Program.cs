@@ -10,7 +10,7 @@ using DensoWorkerService;
 using Serilog;
 using Microsoft.AspNetCore.SignalR;
 using ASP.Hubs;
-using Microsoft.Extensions.Hosting;  
+using Microsoft.Extensions.Hosting;
 
 var builder = Host.CreateDefaultBuilder(args);
 
@@ -28,8 +28,6 @@ builder.ConfigureServices((hostContext, services) =>
 
     // SignalR cho HubContext
     services.AddSignalR();
-    services.AddScoped<IHubContext<OrderHub>>();
-
     // HttpClient và Scoped
     services.AddHttpClient<ExternalApiServiceInterface, ExternalApiService>();
     services.AddScoped<OrderServiceInterface, OrderService>();
@@ -42,7 +40,7 @@ builder.ConfigureServices((hostContext, services) =>
     // Set ShutdownTimeout
     services.Configure<HostOptions>(options =>
     {
-        options.ShutdownTimeout = TimeSpan.FromSeconds(120);  
+        options.ShutdownTimeout = TimeSpan.FromSeconds(120);
     });
 });
 

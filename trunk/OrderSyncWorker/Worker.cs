@@ -29,12 +29,13 @@ namespace DensoWorkerService
                 _logger.LogInformation("Worker dang chay luc: {time}", DateTimeOffset.Now);
                 try
                 {
-                   
+
                     using (var scope = _serviceScopeFactory.CreateScope())
                     {
                         // Giai quyet OrderServiceInterface trong pham vi
                         var orderService = scope.ServiceProvider.GetRequiredService<OrderServiceInterface>();
-                        await orderService.SyncOrdersAsync();
+                        // Sync ALL orders + full hierarchy (OrderDetails + ShoppingLists for each order)
+                        await orderService.SyncOrdersAsync(forceSyncAll: true);
                     }
                 }
                 catch (Exception ex)

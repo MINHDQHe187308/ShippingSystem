@@ -14,17 +14,17 @@ namespace ASP.Models.Front
         public Guid SPId { get; set; }
 
         [ForeignKey(nameof(SPId))]
-        public ShoppingList ShoppingList { get; set; } = null!;  
+        public ShoppingList ShoppingList { get; set; } = null!;
 
         [MaxLength(125)]
-        public string PalletMarkQrContent { get; set; } = null!;
+        public string PalletMarkQrContent { get; set; } = string.Empty;
 
         [MaxLength(50)]
-        public string PalletNoQrContent { get; set; } = null!;
+        public string PalletNoQrContent { get; set; } = string.Empty;
 
         [MaxLength(255)]
-        public string CasemarkQrContent { get; set; } = null!;
+        public string CasemarkQrContent { get; set; } = string.Empty;
 
-        public DateTime IssuedDate { get; set; }
+        public DateTime IssuedDate { get; set; }  
     }
 }

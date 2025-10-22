@@ -22,7 +22,7 @@ namespace ASP.Models.Front
 
         public int PalletNo { get; set; }
 
-        public short PLStatus { get; set; }
+        public short PLStatus { get; set; } 
 
         public DateTime? CollectedDate { get; set; }
 
