@@ -5,26 +5,29 @@ namespace ASP.Service.Implentations
 {
     public interface ExternalApiServiceInterface
     {
-        public Task<IEnumerable<OrderDTO>> GetOrdersFromApiAsync();
-        public Task<IEnumerable<ShippingScheduleDTO>> GetShippingSchedulesFromApiAsync();
-        public  Task<IEnumerable<LeadtimeMasterDTO>> GetLeadtimesFromApiAsync();
+        Task<IEnumerable<OrderDTO>> GetOrdersFromApiAsync();
+        Task<IEnumerable<ShippingScheduleDTO>> GetShippingSchedulesFromApiAsync();
+        Task<IEnumerable<LeadtimeMasterDTO>> GetLeadtimesFromApiAsync();
     }
+
     public class ExternalApiService : ExternalApiServiceInterface
     {
         private readonly HttpClient _httpClient;
         private readonly ILogger<ExternalApiService> _logger;
-        private readonly string _baseApiUrl;
+        private readonly string _baseApiUrl;  
         private readonly string _shippingApiUrl;
         private readonly string _leadtimemasterApiUrl;
+
         public ExternalApiService(HttpClient httpClient, ILogger<ExternalApiService> logger, IConfiguration configuration)
         {
             _httpClient = httpClient;
             _logger = logger;
-            _baseApiUrl = configuration["ApiSettings:BaseUrl"] ?? "http://10.73.131.20/vzstockforbookcont/api/delivery/pcorder";
+            _baseApiUrl = configuration["ApiSettings:BaseUrl"] ?? "http://10.73.131.20/vzstockforbookcont/api/delivery/shippingprogress";  
             _shippingApiUrl = configuration["ApiSettings:ShippingScheduleUrl"] ?? "http://10.73.131.20/vzstockforbookcont/api/shipping/schedule";
             _leadtimemasterApiUrl = configuration["ApiSettings:LeadtimeUrl"] ?? "http://10.73.131.20/vzstockforbookcont/api/leadtime/master";
         }
-        //Lấy Data Orrder từ API
+
+        // Lấy Data Order từ API mới (shippingprogress)
         public async Task<IEnumerable<OrderDTO>> GetOrdersFromApiAsync()
         {
             try
@@ -39,15 +42,15 @@ namespace ASP.Service.Implentations
 
                 var content = await response.Content.ReadAsStringAsync();
                 _logger.LogInformation("API Response content length: {Length}", content?.Length ?? 0);
-                var apiResponse = JsonSerializer.Deserialize<ApiResponse<OrderDTO>>(
+                var apiResponse = JsonSerializer.Deserialize<DeliveryResponse<OrderDTO>>(
                     content,
                     new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
                 );
 
-                if (apiResponse?.data != null)
+                if (apiResponse?.Data != null && apiResponse.Data.Any())
                 {
-                    _logger.LogInformation("Retrieved {Count} orders from external API", apiResponse.data.Length);
-                    return apiResponse.data;
+                    _logger.LogInformation("Retrieved {Count} orders from external API", apiResponse.Data.Count);
+                    return apiResponse.Data;
                 }
 
                 _logger.LogWarning("No data returned from external API");
@@ -59,7 +62,8 @@ namespace ASP.Service.Implentations
                 return new List<OrderDTO>();
             }
         }
-        //Lấy Data ShippingSchedule từ API
+
+        // Lấy Data ShippingSchedule từ API (giữ nguyên)
         public async Task<IEnumerable<ShippingScheduleDTO>> GetShippingSchedulesFromApiAsync()
         {
             try
@@ -74,15 +78,15 @@ namespace ASP.Service.Implentations
 
                 var content = await response.Content.ReadAsStringAsync();
                 _logger.LogInformation("ShippingSchedule API Response content length: {Length}", content?.Length ?? 0);
-                var apiResponse = JsonSerializer.Deserialize<ApiResponse<ShippingScheduleDTO>>(
+                var apiResponse = JsonSerializer.Deserialize<DeliveryResponse<ShippingScheduleDTO>>(
                     content,
                     new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
                 );
 
-                if (apiResponse?.data != null)
+                if (apiResponse?.Data != null && apiResponse.Data.Any())
                 {
-                    _logger.LogInformation("Retrieved {Count} shipping schedules from external API", apiResponse.data.Length);
-                    return apiResponse.data;
+                    _logger.LogInformation("Retrieved {Count} shipping schedules from external API", apiResponse.Data.Count);
+                    return apiResponse.Data;
                 }
 
                 _logger.LogWarning("No shipping schedule data returned from external API");
@@ -94,8 +98,8 @@ namespace ASP.Service.Implentations
                 return new List<ShippingScheduleDTO>();
             }
         }
-       
-        //Lấy Data LeadtimeMaster từ API
+
+        // Lấy Data LeadtimeMaster từ API (giữ nguyên, dùng DeliveryResponse)
         public async Task<IEnumerable<LeadtimeMasterDTO>> GetLeadtimesFromApiAsync()
         {
             try
@@ -110,15 +114,15 @@ namespace ASP.Service.Implentations
 
                 var content = await response.Content.ReadAsStringAsync();
                 _logger.LogInformation("Leadtime API Response content length: {Length}", content?.Length ?? 0);
-                var apiResponse = JsonSerializer.Deserialize<ApiResponse<LeadtimeMasterDTO>>(
+                var apiResponse = JsonSerializer.Deserialize<DeliveryResponse<LeadtimeMasterDTO>>(
                     content,
                     new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
                 );
 
-                if (apiResponse?.data != null)
+                if (apiResponse?.Data != null && apiResponse.Data.Any())
                 {
-                    _logger.LogInformation("Retrieved {Count} leadtimes from external API", apiResponse.data.Length);
-                    return apiResponse.data;
+                    _logger.LogInformation("Retrieved {Count} leadtimes from external API", apiResponse.Data.Count);
+                    return apiResponse.Data;
                 }
 
                 _logger.LogWarning("No leadtime data returned from external API");
@@ -132,8 +136,3 @@ namespace ASP.Service.Implentations
         }
     }
 }
-    
-
-
-
-

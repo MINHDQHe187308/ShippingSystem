@@ -1,8 +1,9 @@
-﻿using ASP.DTO.DensoDTO;
+﻿// File: ASP.Service.Implentations/OrderService.cs (Updated to sync ALL orders by default, with optional force flag)
+using ASP.DTO.DensoDTO;
 using ASP.Models.Front;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Caching.Memory; 
-using Microsoft.Extensions.Hosting;  
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Hosting;
 
 namespace ASP.Service.Implentations
 {
@@ -11,17 +12,18 @@ namespace ASP.Service.Implentations
         private readonly ExternalApiServiceInterface _externalApiService;
         private readonly OrderRepositoryInterface _orderRepository;
         private readonly ILogger<OrderService> _logger;
-        private readonly IMemoryCache _memoryCache;  //  Cache để lưu lastSync info
-        private readonly IHostApplicationLifetime _lifetime;  // Để stop app
+        private readonly IMemoryCache _memoryCache;
+        private readonly IHostApplicationLifetime _lifetime;
         private readonly ShippingScheduleRepositoryInterface _shippingRepo;
         private readonly LeadtimeMasterRepositoryInterface _leadtimeRepo;
+
         public OrderService(ExternalApiServiceInterface externalApiService,
                             OrderRepositoryInterface orderRepository,
                             ILogger<OrderService> logger,
-                            IMemoryCache memoryCache,  // Inject cache
+                            IMemoryCache memoryCache,
                             IHostApplicationLifetime lifetime,
                             ShippingScheduleRepositoryInterface shippingRepo,
-                            LeadtimeMasterRepositoryInterface leadtimeRepo)  // Inject lifetime
+                            LeadtimeMasterRepositoryInterface leadtimeRepo)
         {
             _externalApiService = externalApiService;
             _orderRepository = orderRepository;
@@ -31,10 +33,12 @@ namespace ASP.Service.Implentations
             _shippingRepo = shippingRepo;
             _leadtimeRepo = leadtimeRepo;
         }
-        public async Task SyncOrdersAsync()
+
+        public async Task SyncOrdersAsync(bool forceSyncAll = true)  // Default to true: sync all orders + full hierarchy
         {
             try
             {
+                // Sync leadtimes (giữ nguyên)
                 var leadtimes = await _externalApiService.GetLeadtimesFromApiAsync();
                 if (leadtimes != null && leadtimes.Any())
                 {
@@ -49,6 +53,8 @@ namespace ASP.Service.Implentations
                 {
                     _logger.LogWarning("No leadtimes retrieved from API");
                 }
+
+                // Sync schedules (giữ nguyên)
                 var schedules = await _externalApiService.GetShippingSchedulesFromApiAsync();
                 if (schedules != null && schedules.Any())
                 {
@@ -63,62 +69,86 @@ namespace ASP.Service.Implentations
                 {
                     _logger.LogWarning("No shipping schedules retrieved from API");
                 }
+
+                // Sync orders từ API mới
                 var orders = await _externalApiService.GetOrdersFromApiAsync();
                 if (orders == null || !orders.Any())
                 {
                     _logger.LogWarning("No orders retrieved from API – checking for stop condition");
-                    CheckAndStopIfNoNewData(0);  // Check với count=0
+                    CheckAndStopIfNoNewData(0);
                     return;
                 }
 
-                // Lấy lastSyncTimestamp từ cache (default 1 ngày trước nếu chưa có)
-                if (!_memoryCache.TryGetValue("LastSyncTimestamp", out DateTime lastSync))
+                // Log sample data để debug SL
+                var totalSL = orders.Sum(o => o.OrderDetails.Sum(d => d.ShoppingLists?.Count ?? 0));
+                _logger.LogInformation("Retrieved {Total} orders from API. Total ShoppingLists: {TotalSL}. Sample: First Order SL={FirstSL}",
+                    orders.Count(), totalSL, orders.FirstOrDefault()?.OrderDetails?.FirstOrDefault()?.ShoppingLists?.Count ?? 0);
+
+                DateTime lastSync = DateTime.MinValue;  // Default xa để sync all nếu force
+                if (!forceSyncAll)
                 {
-                    lastSync = DateTime.Now.AddDays(-1);
-                }
-
-                // Filter orders mới (tránh sync thừa)
-                var newOrders = orders.Where(o => o.CreateDate > lastSync).ToList();
-                int newCount = newOrders.Count;
-
-                _logger.LogInformation("Retrieved {Total} orders from API, {New} new since last sync", orders.Count(), newCount);
-
-                if (newCount == 0)
-                {
-                    CheckAndStopIfNoNewData(newCount);  // Check nếu không có mới
-                    return;
-                }
-
-                // Sync chỉ newOrders (tránh thiếu nếu API full)
-                foreach (var orderDto in newOrders)
-                {
-                    if (orderDto.OrderId == Guid.Empty || string.IsNullOrEmpty(orderDto.CustomerCode) ||
-                        string.IsNullOrEmpty(orderDto.TransCode) || string.IsNullOrEmpty(orderDto.PartNo))
+                    if (!_memoryCache.TryGetValue("LastSyncTimestamp", out lastSync))
                     {
-                        _logger.LogWarning("Invalid order data: {OrderId}", orderDto.OrderId);
+                        lastSync = DateTime.Now.AddDays(-1);
+                    }
+                }
+                else
+                {
+                    _logger.LogInformation("Force sync ALL orders + full hierarchy (OrderDetails + ShoppingLists for each order)");
+                }
+
+                // Sync ALL orders (or filter if not force) - lấy full hierarchy cho mỗi order
+                var syncOrders = forceSyncAll ? orders.ToList() : orders.Where(o => o.OrderCreatedDate > lastSync).ToList();
+                int syncCount = syncOrders.Count;
+
+                // Log SL in sync orders
+                var syncSLCount = syncOrders.Sum(o => o.OrderDetails.Sum(d => d.ShoppingLists?.Count ?? 0));
+                _logger.LogInformation("Syncing {Sync} orders (mode: {Mode}). Total SL in sync orders: {SyncSL}",
+                    syncCount, forceSyncAll ? "ALL (full hierarchy)" : "new only", syncSLCount);
+
+                if (syncCount == 0)
+                {
+                    CheckAndStopIfNoNewData(syncCount);
+                    return;
+                }
+
+                // Sync với validation và upsert full hierarchy (Order + Details + SL for each)
+                foreach (var orderDto in syncOrders)
+                {
+                    if (orderDto.PcOrderId == Guid.Empty || string.IsNullOrEmpty(orderDto.CustomerCode) ||
+                        string.IsNullOrEmpty(orderDto.TranCd) || !orderDto.OrderDetails.Any())
+                    {
+                        _logger.LogWarning("Invalid order data: {PcOrderId}", orderDto.PcOrderId);
                         continue;
                     }
 
+                    // Log hierarchy per order để trace
+                    var orderDetailsCount = orderDto.OrderDetails.Count;
+                    var orderSLCount = orderDto.OrderDetails.Sum(d => d.ShoppingLists?.Count ?? 0);
+                    _logger.LogInformation("Upserting Order {Id}: {Details} details, {SL} shopping lists (full hierarchy sync)",
+                        orderDto.PcOrderId, orderDetailsCount, orderSLCount);
+
                     await _orderRepository.UpsertOrderAsync(orderDto);
-                    await ((OrderRepository)_orderRepository).UpdateOrderStatusIfNeeded(orderDto.OrderId);
+                    await ((OrderRepository)_orderRepository).UpdateOrderStatusIfNeeded(orderDto.PcOrderId);
                 }
 
                 await _orderRepository.SaveChangesAsync();
-                _logger.LogInformation("Synced {NewCount} new orders to database", newCount);
+                _logger.LogInformation("Synced {SyncCount} orders to database. Inserted/Updated SL: {SyncSL}", syncCount, syncSLCount);
 
-                // THÊM: Update cache lastSync
-                _memoryCache.Set("LastSyncTimestamp", DateTime.Now, TimeSpan.FromHours(24));  // Cache 24h
-                _memoryCache.Set("NoNewDataCount", 0, TimeSpan.FromHours(24));  // Reset counter
+                // Update cache lastSync only if not force all
+                if (!forceSyncAll)
+                {
+                    _memoryCache.Set("LastSyncTimestamp", DateTime.Now, TimeSpan.FromHours(24));
+                    _memoryCache.Set("NoNewDataCount", 0, TimeSpan.FromHours(24));
+                }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error syncing orders or schedules");
-                // Không stop nếu lỗi, để retry
             }
         }
 
-        // THÊM MỚI: Phương thức check và stop nếu hết dữ liệu
-        private void CheckAndStopIfNoNewData(int newCount)
+        private void CheckAndStopIfNoNewData(int syncCount)
         {
             if (!_memoryCache.TryGetValue("NoNewDataCount", out int noNewCount))
             {
@@ -130,11 +160,11 @@ namespace ASP.Service.Implentations
 
             _memoryCache.Set("NoNewDataCount", noNewCount, TimeSpan.FromHours(24));
 
-            const int threshold = 5;  // Ngưỡng: 5 lần liên tiếp không có mới → Stop
+            const int threshold = 5;
             if (noNewCount >= threshold)
             {
                 _logger.LogInformation("No new data for {Threshold} syncs – Stopping WorkerService to avoid redundant syncs", threshold);
-                _lifetime.StopApplication();  // Dừng app graceful
+                _lifetime.StopApplication();
             }
         }
     }

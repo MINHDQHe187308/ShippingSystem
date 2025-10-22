@@ -1,7 +1,7 @@
 ﻿namespace ASP.Service
 {
     public interface OrderServiceInterface
-    {    
-       Task SyncOrdersAsync();    
+    {
+        Task SyncOrdersAsync(bool forceSyncAll = false);
     }
 }
