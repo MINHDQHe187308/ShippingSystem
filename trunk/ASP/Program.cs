@@ -62,9 +62,10 @@ builder.Services.AddScoped<CustomerRepositoryInterface, CustomerRepository>();
 builder.Services.AddScoped<OrderRepositoryInterface, OrderRepository>();
 builder.Services.AddScoped<OrderDetailRepositoryInterface, OrderDetailRepository>();
 builder.Services.AddScoped<ShippingScheduleRepositoryInterface, ShippingScheduleRepository>();
-builder.Services.AddScoped<LeadtimeMasterRepositoryInterface, LeadtimeRepository>();
 builder.Services.AddScoped<DelayHistoryRepositoryInterface, DelayHistoryRepository>();
-builder.Services.AddScoped<EmailServiceInterface, EmailApiService>(); 
+builder.Services.AddScoped<EmailServiceInterface, EmailApiService>();
+builder.Services.AddScoped<LeadtimeMasterRepositoryInterface, LeadtimeMasterRepository>();
+builder.Services.AddScoped<ShippingScheduleRepositoryInterface, ShippingScheduleRepository>();
 builder.Services.AddHttpClient<EmailApiService>();  // Với HttpClient factory
 builder.Services.Configure<EmailApiSettings>(builder.Configuration.GetSection("EmailAPI"));
 //builder.Services.AddTransient<EmailServiceInterface, GmailSmtpService>();
