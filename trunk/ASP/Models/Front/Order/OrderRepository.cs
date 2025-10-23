@@ -72,8 +72,8 @@ namespace ASP.Models.Front
                         AcEndTime = null,
                         TransMethod = 0,
                         ContSize = 0,
-                        // Bỏ TotalColumn vì không sử dụng
-                        PartList = string.Join(",", orderDto.OrderDetails.Select(od => od.PartNo)),
+                        //// Bỏ TotalColumn vì không sử dụng
+                        //PartList = string.Join(",", orderDto.OrderDetails.Select(od => od.PartNo)),
                     };
                     await _context.Orders.AddAsync(orderToUpdate);
                     isNewOrder = true;

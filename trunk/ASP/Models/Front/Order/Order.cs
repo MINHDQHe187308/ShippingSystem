@@ -29,7 +29,7 @@ namespace ASP.Models.Front
         public int TotalColumn { get; set; }
 
         [MaxLength(255)]
-        public string PartList { get; set; } = null!;
+        public string? PartList { get; set; } = null!;
 
         public int TotalPallet { get; set; }
 
