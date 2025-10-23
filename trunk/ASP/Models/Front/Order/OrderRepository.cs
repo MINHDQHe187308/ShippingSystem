@@ -260,16 +260,12 @@ namespace ASP.Models.Front
         public async Task<List<Order>> GetOrdersByDate(DateTime date)
         {
             return await _context.Orders
-                .Where(o =>
-                    (o.StartTime >= date.Date && o.StartTime < date.Date.AddDays(1)) ||
-                    (o.EndTime >= date.Date && o.EndTime < date.Date.AddDays(1))
-                )
+                .Where(o => o.ShipDate.Date == date.Date) // Lọc theo ShipDate
                 .Include(o => o.OrderDetails)
                 .ThenInclude(od => od.ShoppingLists)
                 .ThenInclude(sl => sl.ThreePointCheck)
                 .ToListAsync();
         }
-
         public async Task<List<Order>> GetOrdersForWeek(DateTime weekStart)
         {
             var weekEnd = weekStart.AddDays(7);
