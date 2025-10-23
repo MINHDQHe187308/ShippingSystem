@@ -1,4 +1,4 @@
-﻿// File: ASP.DTO.DensoDTO/OrderDetailExtensions.cs (Cập nhật logic progress dùng PalletStatus enum mapping và BookContStatus)
+﻿// File: ASP.DTO.DensoDTO/OrderDetailExtensions.cs (Cập nhật logic progress dùng cumulative count với >= PalletStatus enum mapping và BookContStatus)
 using ASP.DTO.DensoDTO;
 using ASP.Models.Front;
 using System;
@@ -15,7 +15,6 @@ namespace ASP.DTO.DensoDTO
             var totalPallets = orderDetail.TotalPallet > 0
                 ? orderDetail.TotalPallet
                 : allShoppingLists.Select(sl => sl.PalletNo).Distinct().Count();
-
             if (totalPallets == 0)
             {
                 return new OrderDetailProgress
@@ -34,26 +33,28 @@ namespace ASP.DTO.DensoDTO
                     Status = GetBookContStatusText(orderDetail.BookContStatus)
                 };
             }
-
-            // % Collect: PLStatus == Collected (1)
+            // Cumulative % Collect: PLStatus >= Collected (1), loại trừ Canceled (4)
             var collectedPallets = allShoppingLists
-                .Where(sl => sl.PLStatus == (short)CollectionStatusEnumDTO.Collected)
+                .Where(sl => sl.PLStatus >= (short)CollectionStatusEnumDTO.Collected &&
+                             sl.PLStatus != (short)CollectionStatusEnumDTO.Canceled)
                 .Select(sl => sl.PalletNo)
                 .Distinct()
                 .Count();
             var collectPercent = (double)collectedPallets / totalPallets * 100;
 
-            // % Prepare: PLStatus == Exported (2, ThreePointCheck)
+            // Cumulative % Prepare: PLStatus >= Exported (2, ThreePointCheck)
             var preparedPallets = allShoppingLists
-                .Where(sl => sl.PLStatus == (short)CollectionStatusEnumDTO.Exported)
+                .Where(sl => sl.PLStatus >= (short)CollectionStatusEnumDTO.Exported &&
+                             sl.PLStatus != (short)CollectionStatusEnumDTO.Canceled)
                 .Select(sl => sl.PalletNo)
                 .Distinct()
                 .Count();
             var preparePercent = (double)preparedPallets / totalPallets * 100;
 
-            // % Loading: PLStatus == Delivered (3)
+            // Cumulative % Loading: PLStatus >= Delivered (3)
             var loadedPallets = allShoppingLists
-                .Where(sl => sl.PLStatus == (short)CollectionStatusEnumDTO.Delivered)
+                .Where(sl => sl.PLStatus >= (short)CollectionStatusEnumDTO.Delivered &&
+                             sl.PLStatus != (short)CollectionStatusEnumDTO.Canceled)
                 .Select(sl => sl.PalletNo)
                 .Distinct()
                 .Count();
@@ -61,7 +62,6 @@ namespace ASP.DTO.DensoDTO
 
             string currentStage = DetermineCurrentStage(collectPercent, preparePercent, loadingPercent, orderDetail.BookContStatus);
             string statusText = GetBookContStatusText(orderDetail.BookContStatus);
-
             return new OrderDetailProgress
             {
                 UId = orderDetail.UId,
@@ -92,7 +92,9 @@ namespace ASP.DTO.DensoDTO
             return status switch
             {
                 (short)BookingStatusEnumDTO.None => "Chưa Book Cont",
-                (short)BookingStatusEnumDTO.Exported => "Đã Book Cont",
+                (short)BookingStatusEnumDTO.New => "Mới Tạo Booking",
+                (short)BookingStatusEnumDTO.Exported => "Đã Book/Export Cont",
+                (short)BookingStatusEnumDTO.Canceled => "Hủy Booking",
                 _ => "Không xác định"
             };
         }

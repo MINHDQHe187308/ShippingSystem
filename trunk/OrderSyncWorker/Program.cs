@@ -32,8 +32,6 @@ builder.ConfigureServices((hostContext, services) =>
     services.AddHttpClient<ExternalApiServiceInterface, ExternalApiService>();
     services.AddScoped<OrderServiceInterface, OrderService>();
     services.AddScoped<OrderRepositoryInterface, OrderRepository>();
-    services.AddScoped<ShippingScheduleRepositoryInterface, ShippingScheduleRepository>();
-    services.AddScoped<LeadtimeMasterRepositoryInterface, LeadtimeRepository>();
     services.AddMemoryCache();
     services.AddHostedService<Worker>();
 

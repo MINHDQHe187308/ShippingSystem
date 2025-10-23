@@ -1,5 +1,4 @@
-﻿// File: ASP.Service.Implentations/OrderService.cs (Updated to sync ALL orders by default, with optional force flag)
-using ASP.DTO.DensoDTO;
+﻿using ASP.DTO.DensoDTO;
 using ASP.Models.Front;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Caching.Memory;
@@ -14,63 +13,29 @@ namespace ASP.Service.Implentations
         private readonly ILogger<OrderService> _logger;
         private readonly IMemoryCache _memoryCache;
         private readonly IHostApplicationLifetime _lifetime;
-        private readonly ShippingScheduleRepositoryInterface _shippingRepo;
-        private readonly LeadtimeMasterRepositoryInterface _leadtimeRepo;
+
+
 
         public OrderService(ExternalApiServiceInterface externalApiService,
                             OrderRepositoryInterface orderRepository,
                             ILogger<OrderService> logger,
                             IMemoryCache memoryCache,
-                            IHostApplicationLifetime lifetime,
-                            ShippingScheduleRepositoryInterface shippingRepo,
-                            LeadtimeMasterRepositoryInterface leadtimeRepo)
+                            IHostApplicationLifetime lifetime
+                          )
         {
             _externalApiService = externalApiService;
             _orderRepository = orderRepository;
             _logger = logger;
             _memoryCache = memoryCache;
             _lifetime = lifetime;
-            _shippingRepo = shippingRepo;
-            _leadtimeRepo = leadtimeRepo;
+
         }
 
-        public async Task SyncOrdersAsync(bool forceSyncAll = true)  // Default to true: sync all orders + full hierarchy
+        public async Task SyncOrdersAsync(bool forceSyncAll = true)
         {
             try
             {
-                // Sync leadtimes (giữ nguyên)
-                var leadtimes = await _externalApiService.GetLeadtimesFromApiAsync();
-                if (leadtimes != null && leadtimes.Any())
-                {
-                    foreach (var leadtimeDto in leadtimes)
-                    {
-                        await _leadtimeRepo.UpsertLeadtimeAsync(leadtimeDto);
-                    }
-                    await _leadtimeRepo.SaveChangesAsync();
-                    _logger.LogInformation("Synced {Count} leadtimes to database", leadtimes.Count());
-                }
-                else
-                {
-                    _logger.LogWarning("No leadtimes retrieved from API");
-                }
 
-                // Sync schedules (giữ nguyên)
-                var schedules = await _externalApiService.GetShippingSchedulesFromApiAsync();
-                if (schedules != null && schedules.Any())
-                {
-                    foreach (var scheduleDto in schedules)
-                    {
-                        await _shippingRepo.UpsertShippingScheduleAsync(scheduleDto);
-                    }
-                    await _shippingRepo.SaveChangesAsync();
-                    _logger.LogInformation("Synced {Count} shipping schedules to database", schedules.Count());
-                }
-                else
-                {
-                    _logger.LogWarning("No shipping schedules retrieved from API");
-                }
-
-                // Sync orders từ API mới
                 var orders = await _externalApiService.GetOrdersFromApiAsync();
                 if (orders == null || !orders.Any())
                 {
@@ -144,7 +109,7 @@ namespace ASP.Service.Implentations
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error syncing orders or schedules");
+                _logger.LogError(ex, "Error syncing orders");
             }
         }
 

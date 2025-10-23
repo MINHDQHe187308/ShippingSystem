@@ -822,7 +822,7 @@
                         customerDiv.style.color = '#000000';
                         customerDiv.style.padding = '4px 8px';
                         customerDiv.style.borderRadius = '4px';
-                        customerDiv.style.fontSize = '12px';
+                        customerDiv.style.fontSize = '14px';
                         customerDiv.style.fontWeight = 'bold';
                         customerDiv.style.textAlign = 'center';
                         customerDiv.style.minWidth = '60px';  // Đảm bảo không bị ép
@@ -830,7 +830,7 @@
 
                         // Phần 2: CollectPallet (background xanh dương, chữ trắng, đậm)
                         const collectDiv = document.createElement('div');
-                        collectDiv.textContent = `COLLECTEDPL: ${extendedProps.collectPallet}`;
+                       collectDiv.textContent = ` ${extendedProps.collectPallet}`;
                         collectDiv.style.position = 'relative';
                         collectDiv.style.zIndex = '2';
                         collectDiv.style.backgroundColor = '#FFF2CC';  // Xanh dương trực quan cho Collect
@@ -845,7 +845,7 @@
 
                         // Phần 3: ThreePointScan (background xanh lá, chữ trắng, đậm)
                         const threeDiv = document.createElement('div');
-                        threeDiv.textContent = `3POINTCHECKED: ${extendedProps.threePointScan}`;
+                        threeDiv.textContent = `${extendedProps.threePointScan}`;
                         threeDiv.style.position = 'relative';
                         threeDiv.style.zIndex = '2';
                         threeDiv.style.backgroundColor = '#FFCE9F';  // Xanh lá trực quan cho Prepared
@@ -860,7 +860,7 @@
 
                         // Phần 4: LoadCont (background cam, chữ đen, đậm)
                         const loadDiv = document.createElement('div');
-                        loadDiv.textContent = `LOADCONT: ${extendedProps.loadCont}`;
+                        loadDiv.textContent = `${extendedProps.loadCont}`;
                         loadDiv.style.position = 'relative';
                         loadDiv.style.zIndex = '2';
                         loadDiv.style.backgroundColor = '#F19C99';  // Cam trực quan cho Loaded

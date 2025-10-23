@@ -1,12 +1,43 @@
 ﻿$(document).ready(function () {
     console.log("customer.js loaded"); // Xác nhận tệp được tải
 
+    // Validation helper (thêm mới để tránh gửi dữ liệu rỗng)
+    function validateShippingData(customerCode, transCd) {
+        if (!customerCode || !transCd) {
+            alert("Customer Code và Trans Cd không được để trống!");
+            return false;
+        }
+        return true;
+    }
+
+    function validateLeadtimeData(customerCode, transCd) {
+        if (!customerCode || !transCd) {
+            alert("Customer Code và Trans Cd không được để trống!");
+            return false;
+        }
+        return true;
+    }
+
+    function validateSupplierData(customerCode, customerName) {
+        if (!customerCode || !customerName) {
+            alert("Mã và tên nhà cung cấp không được để trống!");
+            return false;
+        }
+        return true;
+    }
+
     // Thêm nhà cung cấp
     $('#btnAddSupplier').click(function () {
+        var customerCode = $('#customerCode').val().trim();
+        var customerName = $('#customerName').val().trim();
+        var descriptions = $('#description').val().trim();
+
+        if (!validateSupplierData(customerCode, customerName)) return;
+
         var data = {
-            CustomerCode: $('#customerCode').val(),
-            CustomerName: $('#customerName').val(),
-            Descriptions: $('#description').val()
+            customerCode: customerCode,
+            customerName: customerName,
+            descriptions: descriptions
         };
         console.log("Add data being sent:", data);
         $.ajax({
@@ -49,10 +80,16 @@
 
     // Cập nhật nhà cung cấp
     $('#btnUpdateSupplier').click(function () {
+        var customerCode = $('#updateCustomerCode').val().trim();
+        var customerName = $('#updateCustomerName').val().trim();
+        var descriptions = $('#updateDescription').val().trim();
+
+        if (!validateSupplierData(customerCode, customerName)) return;
+
         var data = {
-            CustomerCode: $('#updateCustomerCode').val(),
-            CustomerName: $('#updateCustomerName').val(),
-            Descriptions: $('#updateDescription').val()
+            customerCode: customerCode,
+            customerName: customerName,
+            descriptions: descriptions
         };
         console.log("Update data being sent:", data);
         $.ajax({
@@ -152,12 +189,24 @@
     $('#btnSaveLeadtime').click(function () {
         var isEdit = $('#editLeadtimeId').val() !== '';
         var url = isEdit ? updateLeadtimeUrl : addLeadtimeUrl;
+        var customerCode = $('#currentCustomerCodeLeadtimeEdit').val().trim() || $('#currentCustomerCodeLeadtime').val().trim();
+        var transCd = $('#transCd').val().trim();
+        var collectTime = parseFloat($('#collectTime').val());
+        var prepareTime = parseFloat($('#prepareTime').val());
+        var loadingTime = parseFloat($('#loadingTime').val());
+
+        if (!validateLeadtimeData(customerCode, transCd)) return;
+        if (isNaN(collectTime) || isNaN(prepareTime) || isNaN(loadingTime)) {
+            $('#leadtimeFormMessage').text('Thời gian phải là số hợp lệ').addClass('text-danger');
+            return;
+        }
+
         var data = {
-            CustomerCode: $('#currentCustomerCodeLeadtimeEdit').val() || $('#currentCustomerCodeLeadtime').val(),
-            TransCd: $('#transCd').val(),
-            CollectTimePerPallet: parseFloat($('#collectTime').val()),
-            PrepareTimePerPallet: parseFloat($('#prepareTime').val()),
-            LoadingTimePerColumn: parseFloat($('#loadingTime').val())
+            customerCode: customerCode,
+            transCd: transCd,
+            collectTimePerPallet: collectTime,
+            prepareTimePerPallet: prepareTime,
+            loadingTimePerColumn: loadingTime
         };
         console.log("Save leadtime data:", data); // Debug
         $.ajax({
@@ -251,18 +300,42 @@
         addModal.show();
     };
 
-    // Save Shipping Schedule
+    // Save Shipping Schedule (phần sửa)
     $('#btnSaveShipping').click(function () {
         var isEdit = $('#editShippingId').val() !== '';
         var url = isEdit ? updateShippingScheduleUrl : addShippingScheduleUrl;
+        var customerCode = $('#currentCustomerCodeShippingEdit').val().trim() || $('#currentCustomerCodeShipping').val().trim();
+        var transCd = $('#shippingTransCd').val().trim();
+        var weekday = parseInt($('#weekday').val());
+        var cutOffTimeInput = $('#cutOffTime').val().trim();
+        var description = $('#shippingDescription').val().trim();
+
+        if (!validateShippingData(customerCode, transCd)) return;
+        if (isNaN(weekday)) {
+            $('#shippingFormMessage').text('Weekday phải là số hợp lệ (0-6)').addClass('text-danger');
+            return;
+        }
+        // Fix: Append ":00" nếu cutOffTime chỉ có HH:mm (e.g., "13:00" → "13:00:00")
+        var cutOffTime = cutOffTimeInput;
+        if (cutOffTimeInput && !cutOffTimeInput.includes(':')) {
+            $('#shippingFormMessage').text('Cut Off Time phải có định dạng HH:mm').addClass('text-danger');
+            return;
+        }
+        if (cutOffTimeInput.split(':').length === 2) {
+            cutOffTime = cutOffTimeInput + ':00'; // Thêm giây
+        } else if (cutOffTimeInput.split(':').length !== 3) {
+            $('#shippingFormMessage').text('Cut Off Time phải có định dạng HH:mm:ss').addClass('text-danger');
+            return;
+        }
+
         var data = {
-            CustomerCode: $('#currentCustomerCodeShippingEdit').val() || $('#currentCustomerCodeShipping').val(),
-            TransCd: $('#shippingTransCd').val(),
-            Weekday: parseInt($('#weekday').val()),
-            CutOffTime: $('#cutOffTime').val(),
-            Description: $('#shippingDescription').val()
+            customerCode: customerCode,
+            transCd: transCd,
+            weekday: weekday,
+            cutOffTime: cutOffTime,  // Bây giờ là "13:00:00"
+            description: description
         };
-        console.log("Save shipping data:", data); // Debug
+        console.log("Save shipping data:", data); // Debug: Check "13:00:00"
         $.ajax({
             url: url,
             type: 'POST',
@@ -291,7 +364,6 @@
             }
         });
     });
-
     // Delete Shipping Schedule
     window.deleteShipping = function (customerCode, transCd, weekday) {
         if (confirm('Are you sure you want to delete this schedule?')) {

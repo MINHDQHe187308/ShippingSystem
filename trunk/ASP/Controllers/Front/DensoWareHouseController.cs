@@ -1,5 +1,4 @@
-﻿// File: ASP.Controllers.Front/DensoWareHouseController.cs (Cập nhật để sử dụng BookContStatus và progress mới; giữ logic delay)
-using ASP.DTO.DensoDTO;
+﻿using ASP.DTO.DensoDTO;
 using ASP.Models.ASPModel;
 using ASP.Models.Front;
 using Microsoft.AspNetCore.Mvc;
@@ -34,20 +33,27 @@ namespace ASP.Controllers.Front
         {
             var today = DateTime.Today;
             var orders = await _orderRepository.GetOrdersByDate(today);
-
             if (orders.Any())
             {
                 Console.WriteLine($"First Order Details: UId={orders.First().UId}, Status={orders.First().OrderStatus}, StartTime={orders.First().StartTime}");
             }
-
             var allCustomers = await _customerRepository.GetAllCustomers();
             var customerCodesWithOrders = orders.Select(o => o.CustomerCode).Distinct().ToHashSet();
             var customers = allCustomers.Where(c => customerCodesWithOrders.Contains(c.CustomerCode)).ToList();
 
             var ordersForView = orders.Select(o => {
-                int collectCount = o.OrderDetails?.Sum(od => od.ShoppingLists?.Count(sl => sl.PLStatus == (short)CollectionStatusEnumDTO.Collected) ?? 0) ?? 0;
-                int prepareCount = o.OrderDetails?.Sum(od => od.ShoppingLists?.Count(sl => sl.PLStatus == (short)CollectionStatusEnumDTO.Exported) ?? 0) ?? 0;
-                int loadCount = o.OrderDetails?.Sum(od => od.ShoppingLists?.Count(sl => sl.PLStatus == (short)CollectionStatusEnumDTO.Delivered) ?? 0) ?? 0;
+                // Cumulative counts: Đã đạt mốc này trở lên, loại trừ Canceled
+                int collectCount = o.OrderDetails?.Sum(od => od.ShoppingLists?.Count(sl =>
+                    sl.PLStatus >= (short)CollectionStatusEnumDTO.Collected &&
+                    sl.PLStatus != (short)CollectionStatusEnumDTO.Canceled) ?? 0) ?? 0;
+
+                int prepareCount = o.OrderDetails?.Sum(od => od.ShoppingLists?.Count(sl =>
+                    sl.PLStatus >= (short)CollectionStatusEnumDTO.Exported &&
+                    sl.PLStatus != (short)CollectionStatusEnumDTO.Canceled) ?? 0) ?? 0;
+
+                int loadCount = o.OrderDetails?.Sum(od => od.ShoppingLists?.Count(sl =>
+                    sl.PLStatus >= (short)CollectionStatusEnumDTO.Delivered &&
+                    sl.PLStatus != (short)CollectionStatusEnumDTO.Canceled) ?? 0) ?? 0;
 
                 string delayStartTime = null;
                 double delayTime = 0;
@@ -56,7 +62,6 @@ namespace ASP.Controllers.Front
                     delayStartTime = o.DelayStartTime?.ToString("yyyy-MM-ddTHH:mm:ss");
                     delayTime = o.DelayTime ?? 0;
                 }
-
                 return new
                 {
                     UId = o.UId.ToString(),
@@ -91,7 +96,6 @@ namespace ASP.Controllers.Front
                 Orders = ordersForView,
                 Customers = customersForView
             };
-
             return View("~/Views/Front/DensoWareHouse/Calendar.cshtml", modelForView);
         }
 
@@ -104,16 +108,13 @@ namespace ASP.Controllers.Front
                 {
                     return Json(new { success = false, message = "Invalid orderId format" });
                 }
-
                 var orderDetails = await _orderDetailRepository.GetOrderDetailsByOrderId(parsedOrderId);
                 var order = await _orderRepository.GetOrderById(parsedOrderId);
-
                 foreach (var od in orderDetails)
                 {
                     var slCount = od.ShoppingLists?.Count ?? 0;
                     var tpcTotal = od.ShoppingLists?.Count(sl => sl.ThreePointCheck != null) ?? 0;
                 }
-
                 var detailsForView = orderDetails.Select(od => {
                     var progress = od.GetProgress();
                     return new
@@ -133,7 +134,6 @@ namespace ASP.Controllers.Front
                         status = progress.Status
                     };
                 }).ToList();
-
                 object orderSummary = null;
                 if (order != null && order.OrderStatus == 4)
                 {
@@ -145,7 +145,6 @@ namespace ASP.Controllers.Front
                         DateTime baseEnd = order.AcEndTime.HasValue ? order.AcEndTime.Value : order.EndTime;
                         DateTime newEnd = baseEnd.AddHours(delayTime);
                         string newTimeRange = $"{baseStart:HH:mm:ss} - {newEnd:HH:mm:ss}";
-
                         orderSummary = new
                         {
                             newTimeRange = newTimeRange,
@@ -153,7 +152,6 @@ namespace ASP.Controllers.Front
                         };
                     }
                 }
-
                 return Json(new { success = true, data = detailsForView, orderSummary = orderSummary });
             }
             catch (Exception ex)
@@ -172,9 +170,18 @@ namespace ASP.Controllers.Front
             var customers = allCustomers.Where(c => customerCodesWithOrders.Contains(c.CustomerCode)).ToList();
 
             var ordersForView = orders.Select(o => {
-                int collectCount = o.OrderDetails?.Sum(od => od.ShoppingLists?.Count(sl => sl.PLStatus == (short)CollectionStatusEnumDTO.Collected) ?? 0) ?? 0;
-                int prepareCount = o.OrderDetails?.Sum(od => od.ShoppingLists?.Count(sl => sl.PLStatus == (short)CollectionStatusEnumDTO.Exported) ?? 0) ?? 0;
-                int loadCount = o.OrderDetails?.Sum(od => od.ShoppingLists?.Count(sl => sl.PLStatus == (short)CollectionStatusEnumDTO.Delivered) ?? 0) ?? 0;
+                // Cumulative counts: Đã đạt mốc này trở lên, loại trừ Canceled
+                int collectCount = o.OrderDetails?.Sum(od => od.ShoppingLists?.Count(sl =>
+                    sl.PLStatus >= (short)CollectionStatusEnumDTO.Collected &&
+                    sl.PLStatus != (short)CollectionStatusEnumDTO.Canceled) ?? 0) ?? 0;
+
+                int prepareCount = o.OrderDetails?.Sum(od => od.ShoppingLists?.Count(sl =>
+                    sl.PLStatus >= (short)CollectionStatusEnumDTO.Exported &&
+                    sl.PLStatus != (short)CollectionStatusEnumDTO.Canceled) ?? 0) ?? 0;
+
+                int loadCount = o.OrderDetails?.Sum(od => od.ShoppingLists?.Count(sl =>
+                    sl.PLStatus >= (short)CollectionStatusEnumDTO.Delivered &&
+                    sl.PLStatus != (short)CollectionStatusEnumDTO.Canceled) ?? 0) ?? 0;
 
                 string delayStartTime = null;
                 double delayTime = 0;
@@ -183,7 +190,6 @@ namespace ASP.Controllers.Front
                     delayStartTime = o.DelayStartTime?.ToString("yyyy-MM-ddTHH:mm:ss");
                     delayTime = o.DelayTime ?? 0;
                 }
-
                 return new
                 {
                     UId = o.UId.ToString(),
