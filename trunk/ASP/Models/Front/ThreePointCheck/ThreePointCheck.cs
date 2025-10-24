@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using ASP.Models.Admin;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using ASP.Models.Admin;
 
 namespace ASP.Models.Front
 {
@@ -25,6 +23,6 @@ namespace ASP.Models.Front
         [MaxLength(255)]
         public string CasemarkQrContent { get; set; } = string.Empty;
 
-        public DateTime IssuedDate { get; set; }  
+        public DateTime IssuedDate { get; set; }
     }
 }
