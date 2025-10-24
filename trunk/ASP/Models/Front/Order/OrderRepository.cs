@@ -84,6 +84,14 @@ namespace ASP.Models.Front
 
             // Map ApiOrderStatus cho cả update case (nếu existing)
             orderToUpdate.ApiOrderStatus = (short)orderDto.OrderStatus;
+            
+            // Update ShipDate nếu thay đổi từ API
+            if (orderToUpdate.ShipDate != orderDto.ShippingDate)
+            {
+                _logger.LogInformation("Order {OrderId}: ShipDate changed from {OldDate} to {NewDate}", 
+                    orderDto.PcOrderId, orderToUpdate.ShipDate, orderDto.ShippingDate);
+                orderToUpdate.ShipDate = orderDto.ShippingDate;
+            }
 
             var shippingSchedule = await _context.ShippingSchedules
                 .FirstOrDefaultAsync(s => s.CustomerCode == orderDto.CustomerCode &&
