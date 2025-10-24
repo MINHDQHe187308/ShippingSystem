@@ -144,12 +144,16 @@
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
             z-index: 10001;
             pointer-events: none;
-            max-width: 300px;  /* Tăng max-width từ 250px lên 300px */
+            min-width: 250px;  /* Tối thiểu 250px */
+            max-width: 400px;  /* Tăng từ 300px lên 400px cho responsive */
+            width: auto;  /* Tự động điều chỉnh */
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             font-size: 15px;  /* Tăng font-size tổng thể từ 14px lên 15px */
             line-height: 1.5;  /* Tăng line-height từ 1.4 lên 1.5 cho dễ đọc hơn */
             display: none;
             transition: opacity 0.1s ease-out, transform 0.1s ease-out;  /* Transition mượt mà nhưng nhanh */
+            word-wrap: break-word;  /* Tự động xuống dòng nếu text quá dài */
+            overflow-wrap: break-word;  /* Hỗ trợ break word */
         }
         #custom-tooltip.show {
             display: block;
@@ -822,7 +826,7 @@
                         customerDiv.style.color = '#000000';
                         customerDiv.style.padding = '4px 8px';
                         customerDiv.style.borderRadius = '4px';
-                        customerDiv.style.fontSize = '14px';
+                        customerDiv.style.fontSize = '18px';
                         customerDiv.style.fontWeight = 'bold';
                         customerDiv.style.textAlign = 'center';
                         customerDiv.style.minWidth = '60px';  // Đảm bảo không bị ép
@@ -837,7 +841,7 @@
                         collectDiv.style.color = '#000000';
                         collectDiv.style.padding = '4px 8px';
                         collectDiv.style.borderRadius = '4px';
-                        collectDiv.style.fontSize = '11px';
+                        collectDiv.style.fontSize = '20px';
                         collectDiv.style.fontWeight = 'bold';
                         collectDiv.style.textAlign = 'center';
                         collectDiv.style.minWidth = '70px';
@@ -852,7 +856,7 @@
                         threeDiv.style.color = '#000000';
                         threeDiv.style.padding = '4px 8px';
                         threeDiv.style.borderRadius = '4px';
-                        threeDiv.style.fontSize = '11px';
+                        threeDiv.style.fontSize = '20px';
                         threeDiv.style.fontWeight = 'bold';
                         threeDiv.style.textAlign = 'center';
                         threeDiv.style.minWidth = '70px';
@@ -867,7 +871,7 @@
                         loadDiv.style.color = '#000000';
                         loadDiv.style.padding = '4px 8px';
                         loadDiv.style.borderRadius = '4px';
-                        loadDiv.style.fontSize = '11px';
+                        loadDiv.style.fontSize = '20px';
                         loadDiv.style.fontWeight = 'bold';
                         loadDiv.style.textAlign = 'center';
                         loadDiv.style.minWidth = '70px';
@@ -909,13 +913,48 @@
                                 </dl>
                             `;
 
-                            // Position tooltip dưới event
+                            // Position tooltip dưới event với responsive logic
                             const rect = e.currentTarget.getBoundingClientRect();
-                            tooltip.style.left = (rect.left + window.scrollX) + 'px';
-                            tooltip.style.top = (rect.bottom + window.scrollY + 5) + 'px';
-
-                            // Hiển thị ngay lập tức với class show
-                            tooltip.classList.add('show');
+                            tooltip.classList.add('show'); // Hiển thị để tính toán kích thước
+                            
+                            // Tính toán vị trí ban đầu
+                            let left = rect.left + window.scrollX;
+                            let top = rect.bottom + window.scrollY + 5;
+                            
+                            // Đặt vị trí tạm thời để lấy kích thước thực
+                            tooltip.style.left = left + 'px';
+                            tooltip.style.top = top + 'px';
+                            
+                            // Lấy kích thước tooltip sau khi render
+                            const tooltipRect = tooltip.getBoundingClientRect();
+                            const windowWidth = window.innerWidth;
+                            const windowHeight = window.innerHeight;
+                            
+                            // Kiểm tra tràn bên phải
+                            if (tooltipRect.right > windowWidth) {
+                                left = windowWidth - tooltipRect.width - 10; // 10px padding
+                                if (left < 10) left = 10; // Tối thiểu 10px từ mép trái
+                            }
+                            
+                            // Kiểm tra tràn bên trái
+                            if (tooltipRect.left < 0) {
+                                left = 10;
+                            }
+                            
+                            // Kiểm tra tràn phía dưới
+                            if (tooltipRect.bottom > windowHeight) {
+                                // Hiển thị phía trên event thay vì dưới
+                                top = rect.top + window.scrollY - tooltipRect.height - 5;
+                            }
+                            
+                            // Kiểm tra tràn phía trên (nếu đã đổi lên trên)
+                            if (top < window.scrollY) {
+                                top = window.scrollY + 10;
+                            }
+                            
+                            // Áp dụng vị trí cuối cùng
+                            tooltip.style.left = left + 'px';
+                            tooltip.style.top = top + 'px';
                         });
 
                         wrapper.addEventListener('mouseleave', () => {
