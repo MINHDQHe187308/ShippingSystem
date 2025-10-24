@@ -35,26 +35,22 @@ namespace ASP.Controllers.Front
             var orders = await _orderRepository.GetOrdersByDate(today);
             if (orders.Any())
             {
-                Console.WriteLine($"First Order Details: UId={orders.First().UId}, Status={orders.First().OrderStatus}, StartTime={orders.First().StartTime}");
+                Console.WriteLine($"First Order Details: UId={orders.First().UId}, ProgressStatus={orders.First().OrderStatus}, ApiStatus={orders.First().ApiOrderStatus}, StartTime={orders.First().StartTime}");
             }
             var allCustomers = await _customerRepository.GetAllCustomers();
             var customerCodesWithOrders = orders.Select(o => o.CustomerCode).Distinct().ToHashSet();
             var customers = allCustomers.Where(c => customerCodesWithOrders.Contains(c.CustomerCode)).ToList();
-
             var ordersForView = orders.Select(o => {
                 // Cumulative counts: Đã đạt mốc này trở lên, loại trừ Canceled
                 int collectCount = o.OrderDetails?.Sum(od => od.ShoppingLists?.Count(sl =>
                     sl.PLStatus >= (short)CollectionStatusEnumDTO.Collected &&
                     sl.PLStatus != (short)CollectionStatusEnumDTO.Canceled) ?? 0) ?? 0;
-
                 int prepareCount = o.OrderDetails?.Sum(od => od.ShoppingLists?.Count(sl =>
                     sl.PLStatus >= (short)CollectionStatusEnumDTO.Exported &&
                     sl.PLStatus != (short)CollectionStatusEnumDTO.Canceled) ?? 0) ?? 0;
-
                 int loadCount = o.OrderDetails?.Sum(od => od.ShoppingLists?.Count(sl =>
                     sl.PLStatus >= (short)CollectionStatusEnumDTO.Delivered &&
                     sl.PLStatus != (short)CollectionStatusEnumDTO.Canceled) ?? 0) ?? 0;
-
                 string delayStartTime = null;
                 double delayTime = 0;
                 if (o.OrderStatus == 4)
@@ -69,9 +65,10 @@ namespace ASP.Controllers.Front
                     ShipDate = o.ShipDate.ToString("yyyy-MM-dd"),
                     StartTime = o.StartTime.ToString("yyyy-MM-ddTHH:mm:ss"),
                     EndTime = o.EndTime.ToString("yyyy-MM-ddTHH:mm:ss"),
-                    AcStartTime = o.AcStartTime?.ToString("yyyy-MM-ddTHH:mm:ss"),
-                    AcEndTime = o.AcEndTime?.ToString("yyyy-MM-ddTHH:mm:ss"),
-                    Status = o.OrderStatus,
+                    AcStartTime = o.AcStartTime?.ToString("yyyy-MM-ddTHH:mm:ss") ?? "",
+                    AcEndTime = o.AcEndTime?.ToString("yyyy-MM-ddTHH:mm:ss") ?? "",
+                    Status = o.OrderStatus,  // ProgressStatus cho UI
+                    ApiStatus = o.ApiOrderStatus,  // Thêm để expose nếu cần (optional cho debug/admin)
                     TotalPallet = o.TotalPallet,
                     CollectPallet = $"{collectCount} / {o.TotalPallet}",
                     ThreePointScan = $"{prepareCount} / {o.TotalPallet}",
@@ -84,13 +81,11 @@ namespace ASP.Controllers.Front
                     DelayTime = delayTime
                 };
             }).ToArray();
-
             var customersForView = customers.Select(c => new
             {
                 CustomerCode = c.CustomerCode,
                 CustomerName = c.CustomerName
             }).ToArray();
-
             var modelForView = new
             {
                 Orders = ordersForView,
@@ -131,7 +126,7 @@ namespace ASP.Controllers.Front
                         preparePercent = progress.PreparePercent,
                         loadingPercent = progress.LoadingPercent,
                         currentStage = progress.CurrentStage,
-                        status = progress.Status
+                        status = progress.Status  // Progress status từ local
                     };
                 }).ToList();
                 object orderSummary = null;
@@ -148,7 +143,8 @@ namespace ASP.Controllers.Front
                         orderSummary = new
                         {
                             newTimeRange = newTimeRange,
-                            delayTime = delayTime
+                            delayTime = delayTime,
+                            apiStatus = order.ApiOrderStatus  // Thêm ApiStatus nếu cần trace delay với API
                         };
                     }
                 }
@@ -168,21 +164,17 @@ namespace ASP.Controllers.Front
             var allCustomers = await _customerRepository.GetAllCustomers();
             var customerCodesWithOrders = orders.Select(o => o.CustomerCode).Distinct().ToHashSet();
             var customers = allCustomers.Where(c => customerCodesWithOrders.Contains(c.CustomerCode)).ToList();
-
             var ordersForView = orders.Select(o => {
                 // Cumulative counts: Đã đạt mốc này trở lên, loại trừ Canceled
                 int collectCount = o.OrderDetails?.Sum(od => od.ShoppingLists?.Count(sl =>
                     sl.PLStatus >= (short)CollectionStatusEnumDTO.Collected &&
                     sl.PLStatus != (short)CollectionStatusEnumDTO.Canceled) ?? 0) ?? 0;
-
                 int prepareCount = o.OrderDetails?.Sum(od => od.ShoppingLists?.Count(sl =>
                     sl.PLStatus >= (short)CollectionStatusEnumDTO.Exported &&
                     sl.PLStatus != (short)CollectionStatusEnumDTO.Canceled) ?? 0) ?? 0;
-
                 int loadCount = o.OrderDetails?.Sum(od => od.ShoppingLists?.Count(sl =>
                     sl.PLStatus >= (short)CollectionStatusEnumDTO.Delivered &&
                     sl.PLStatus != (short)CollectionStatusEnumDTO.Canceled) ?? 0) ?? 0;
-
                 string delayStartTime = null;
                 double delayTime = 0;
                 if (o.OrderStatus == 4)
@@ -199,7 +191,8 @@ namespace ASP.Controllers.Front
                     EndTime = o.EndTime.ToString("yyyy-MM-ddTHH:mm:ss"),
                     AcStartTime = o.AcStartTime?.ToString("yyyy-MM-ddTHH:mm:ss") ?? "",
                     AcEndTime = o.AcEndTime?.ToString("yyyy-MM-ddTHH:mm:ss") ?? "",
-                    Status = o.OrderStatus,
+                    Status = o.OrderStatus, 
+                    ApiStatus = o.ApiOrderStatus, 
                     TotalPallet = o.TotalPallet,
                     CollectPallet = $"{collectCount} / {o.TotalPallet}",
                     ThreePointScan = $"{prepareCount} / {o.TotalPallet}",
@@ -212,13 +205,11 @@ namespace ASP.Controllers.Front
                     DelayTime = delayTime
                 };
             }).ToArray();
-
             var customersForView = customers.Select(c => new
             {
                 CustomerCode = c.CustomerCode,
                 CustomerName = c.CustomerName
             }).ToArray();
-
             return Json(new { orders = ordersForView, customers = customersForView });
         }
 

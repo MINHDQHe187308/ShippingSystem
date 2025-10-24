@@ -34,6 +34,8 @@ namespace ASP.Models.Front
         public int TotalPallet { get; set; }
 
         public short OrderStatus { get; set; }
+      
+        public short ApiOrderStatus { get; set; }
 
         public DateTime OrderCreateDate { get; set; }
 

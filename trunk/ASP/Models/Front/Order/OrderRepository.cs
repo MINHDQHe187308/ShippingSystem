@@ -36,6 +36,7 @@ namespace ASP.Models.Front
         {
             if (orderDto == null || orderDto.PcOrderId == Guid.Empty)
                 throw new ArgumentException("OrderDTO or PcOrderId cannot be null");
+
             var trackedOrder = _context.ChangeTracker.Entries<Order>()
                 .FirstOrDefault(e => e.Entity.UId == orderDto.PcOrderId);
             Order orderToUpdate;
@@ -65,8 +66,9 @@ namespace ASP.Models.Front
                         TransCd = orderDto.TranCd,
                         TotalPallet = orderDto.TotalPallet,
                         OrderCreateDate = orderDto.OrderCreatedDate,
-                        OrderStatus = (short)orderDto.OrderStatus,
-                        StartTime = orderDto.OrderCreatedDate, // Default
+                        ApiOrderStatus = (short)orderDto.OrderStatus,                 
+                        OrderStatus = 0,  
+                        StartTime = orderDto.OrderCreatedDate,
                         EndTime = orderDto.OrderCreatedDate.AddHours(3),
                         AcStartTime = null,
                         AcEndTime = null,
@@ -79,6 +81,10 @@ namespace ASP.Models.Front
                     isNewOrder = true;
                 }
             }
+
+            // Map ApiOrderStatus cho cả update case (nếu existing)
+            orderToUpdate.ApiOrderStatus = (short)orderDto.OrderStatus;
+
             var shippingSchedule = await _context.ShippingSchedules
                 .FirstOrDefaultAsync(s => s.CustomerCode == orderDto.CustomerCode &&
                                          s.TransCd == orderDto.TranCd &&
@@ -146,8 +152,9 @@ namespace ASP.Models.Front
             }
             if (isNewOrder)
             {
-                orderToUpdate.OrderStatus = (int)OrderStatusEnumDTO.Available;
+                orderToUpdate.OrderStatus = (short)OrderStatusEnumDTO.Available;  // Default cho progress local (có thể là 0 nếu Planned)
             }
+
             // Upsert OrderDetails (giữ nguyên phần này)
             foreach (var detailDto in orderDto.OrderDetails)
             {
@@ -252,7 +259,6 @@ namespace ASP.Models.Front
                 }
             }
             await _context.SaveChangesAsync();
-
             // Trigger status update sau khi upsert để recalculate cumulative counts và push SignalR
             await UpdateOrderStatusIfNeeded(orderToUpdate.UId);
         }
@@ -260,23 +266,26 @@ namespace ASP.Models.Front
         public async Task<List<Order>> GetOrdersByDate(DateTime date)
         {
             return await _context.Orders
-                .Where(o => o.ShipDate.Date == date.Date) // Lọc theo ShipDate
+                .Where(o => o.ShipDate.Date == date.Date
+                            && o.ApiOrderStatus != (short)OrderStatusEnumDTO.Cancel)  // Thêm filter: Bỏ qua Cancel từ API
                 .Include(o => o.OrderDetails)
                 .ThenInclude(od => od.ShoppingLists)
                 .ThenInclude(sl => sl.ThreePointCheck)
                 .ToListAsync();
         }
+
         public async Task<List<Order>> GetOrdersForWeek(DateTime weekStart)
         {
             var weekEnd = weekStart.AddDays(7);
             return await _context.Orders
-                .Where(o => o.ShipDate >= weekStart && o.ShipDate < weekEnd) 
+                .Where(o => o.ShipDate >= weekStart && o.ShipDate < weekEnd)
                 .Include(o => o.OrderDetails)
                 .ThenInclude(od => od.ShoppingLists)
                 .ThenInclude(sl => sl.ThreePointCheck)
-                .OrderBy(o => o.ShipDate)  
+                .OrderBy(o => o.ShipDate)
                 .ToListAsync();
         }
+
         public async Task SaveChangesAsync()
         {
             await _context.SaveChangesAsync();
@@ -295,7 +304,7 @@ namespace ASP.Models.Front
                 _logger.LogWarning("Order {OrderId} not found for status update", orderId);
                 return false;
             }
-            int oldStatus = order.OrderStatus;
+            short oldStatus = order.OrderStatus;  // Sử dụng short để nhất quán
             var allShoppingLists = order.OrderDetails.SelectMany(od => od.ShoppingLists ?? new List<ShoppingList>()).ToList();
             // Cumulative: Đã Collected (status >=1, loại trừ Canceled)
             var collectedPallets = allShoppingLists
@@ -315,6 +324,9 @@ namespace ASP.Models.Front
                 order.OrderStatus = 2; // Completed
             else if (collectedPallets > 0 && collectedPallets < totalOrderPallet)
                 order.OrderStatus = 1; // Pending
+            else
+                order.OrderStatus = 0;  // Planned (default nếu không match)
+
             bool actualTimesChanged = false;
             var today = DateTime.Now.Date;
             // Detect nếu order "sang ngày mới" (điều kiện reset: ShipDate hoặc StartTime trong today, ví dụ delay/reschedule)
@@ -412,9 +424,9 @@ namespace ASP.Models.Front
             {
                 _context.Orders.Update(order);
                 await _context.SaveChangesAsync();
-                _logger.LogInformation("Order {OrderId} updated: Status from {Old} to {New}, ActualTimes changed: {Changed}",
-                    orderId, oldStatus, order.OrderStatus, actualTimesChanged);
-                await _hubContext.Clients.All.SendAsync("OrderStatusUpdated", order.UId.ToString(), order.OrderStatus);
+                _logger.LogInformation("Order {OrderId} updated: ProgressStatus from {Old} to {New} (ApiOrderStatus unchanged: {ApiStatus}), ActualTimes changed: {Changed}",
+                    orderId, oldStatus, order.OrderStatus, order.ApiOrderStatus, actualTimesChanged);
+                await _hubContext.Clients.All.SendAsync("OrderStatusUpdated", order.UId.ToString(), order.OrderStatus, order.ApiOrderStatus);
             }
             return statusChanged || actualTimesChanged;
         }
@@ -450,15 +462,15 @@ namespace ASP.Models.Front
                 _logger.LogWarning("Order {OrderId} not found for delay status update", orderId);
                 return;
             }
-            int oldStatus = order.OrderStatus;
+            short oldStatus = order.OrderStatus;
             order.OrderStatus = 4;
             order.DelayStartTime = delayStartTime;
             order.DelayTime = delayTime;
             _context.Orders.Update(order);
             await _context.SaveChangesAsync();
-            _logger.LogInformation("Order {OrderId} status updated to Delay (4) from {OldStatus}, DelayStart={DelayStart}, DelayTime={DelayTime}h",
-                orderId, oldStatus, delayStartTime, delayTime);
-            await _hubContext.Clients.All.SendAsync("OrderStatusUpdated", order.UId.ToString(), order.OrderStatus);
+            _logger.LogInformation("Order {OrderId} status updated to Delay (4) from {OldStatus}, ApiOrderStatus unchanged: {ApiStatus}, DelayStart={DelayStart}, DelayTime={DelayTime}h",
+                orderId, oldStatus, order.ApiOrderStatus, delayStartTime, delayTime);
+            await _hubContext.Clients.All.SendAsync("OrderStatusUpdated", order.UId.ToString(), order.OrderStatus, order.ApiOrderStatus);
         }
     }
 }
