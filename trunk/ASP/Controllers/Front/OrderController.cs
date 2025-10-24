@@ -29,29 +29,23 @@ namespace ASP.Controllers.Front
             if (diff < 0) diff += 7;
             var weekStart = today.AddDays(-diff);
             var allOrders = await _orderRepository.GetOrdersForWeek(weekStart);
-
             var customerCodes = allOrders.Select(o => o.CustomerCode).Distinct().OrderBy(c => c).ToList();
             ViewBag.CustomerCodes = customerCodes;
-
             IEnumerable<ASP.Models.Front.Order> orders = allOrders;
-
             if (!string.IsNullOrEmpty(customerCode))
             {
                 orders = orders.Where(o => o.CustomerCode == customerCode);
             }
-
             if (!string.IsNullOrEmpty(dayOfWeek))
             {
                 if (Enum.TryParse<DayOfWeek>(dayOfWeek, true, out var day))
                 {
-                    orders = orders.Where(o => o.StartTime.DayOfWeek == day);
+                    orders = orders.Where(o => o.ShipDate.DayOfWeek == day); 
                 }
             }
-
             ViewData["WeekStart"] = weekStart;
             ViewBag.DayOfWeek = dayOfWeek;
             ViewBag.CustomerCode = customerCode;
-
             return View("~/Views/Front/DensoWareHouse/OrderList.cshtml", orders);
         }
 

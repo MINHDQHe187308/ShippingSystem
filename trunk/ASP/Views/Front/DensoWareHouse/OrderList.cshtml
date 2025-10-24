@@ -1,21 +1,17 @@
 ﻿@* ~/Views/Front/Order/OrderList.cshtml *@
 @using System
 @model IEnumerable<ASP.Models.Front.Order>
-
 @{
     ViewData["Title"] = "Order List";
     Layout = "../Shared/Layout/Front/_Layout";
 }
-
 <div class="container-fluid px-4">
     <!-- Header Section -->
     <div class="text-center mb-5 pt-3">
         <h1 class="fw-bold text-primary mb-2">
             <i class="bi bi-receipt-cutoff me-2"></i>Order Management
         </h1>
-
     </div>
-
     <!-- Filters Section -->
     <div class="d-flex justify-content-end mb-4">
         <div class="card shadow-sm border-0" style="width: 450px; border-radius: 12px;">
@@ -61,11 +57,9 @@
             </div>
         </div>
     </div>
-
     @{
-        var grouped = Model.GroupBy(o => o.StartTime.Date).OrderBy(g => g.Key);
+        var grouped = Model.GroupBy(o => o.ShipDate.Date).OrderBy(g => g.Key);
     }
-
     @if (!grouped.Any())
     {
         <div class="text-center py-5">
@@ -93,7 +87,6 @@
                         <h3 class="fw-bold mb-0">@group.Key.ToString("MMMM dd, yyyy")</h3>
                     </div>
                 </div>
-
                 <!-- Orders Table -->
                 <div class="table-responsive">
                     <table class="table table-hover mb-0 align-middle" id="ordersTable_@group.Key.ToString("yyyyMMdd")">
@@ -110,7 +103,7 @@
                             </tr>
                         </thead>
                         <tbody class="table-group-divider">
-                            @foreach (var order in group)
+                            @foreach (var order in group.OrderBy(o => o.ShipDate))
                             {
                                 <tr class="align-middle">
                                     <td class="fw-medium text-primary">@order.CustomerCode</td>
@@ -160,7 +153,6 @@
             </div>
         }
     }
-
     <!-- Delay History Modal -->
     <div class="modal fade" id="delayModal" tabindex="-1" aria-labelledby="delayModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-centered">
@@ -195,13 +187,11 @@
         </div>
     </div>
 </div>
-
 @section Styles {
     <link href="~/css/OrderList.css" rel="stylesheet" />
     <!-- Optional: Include AOS for animations if not already in layout -->
     <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet">
 }
-
 @section Scripts {
     <script src="~/js/OrderList.js"></script>
 }

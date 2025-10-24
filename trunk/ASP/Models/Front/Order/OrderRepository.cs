@@ -270,16 +270,13 @@ namespace ASP.Models.Front
         {
             var weekEnd = weekStart.AddDays(7);
             return await _context.Orders
-                .Where(o =>
-                    o.StartTime < weekEnd && o.EndTime > weekStart
-                )
+                .Where(o => o.ShipDate >= weekStart && o.ShipDate < weekEnd) 
                 .Include(o => o.OrderDetails)
                 .ThenInclude(od => od.ShoppingLists)
                 .ThenInclude(sl => sl.ThreePointCheck)
-                .OrderBy(o => o.StartTime)
+                .OrderBy(o => o.ShipDate)  
                 .ToListAsync();
         }
-
         public async Task SaveChangesAsync()
         {
             await _context.SaveChangesAsync();
@@ -300,7 +297,6 @@ namespace ASP.Models.Front
             }
             int oldStatus = order.OrderStatus;
             var allShoppingLists = order.OrderDetails.SelectMany(od => od.ShoppingLists ?? new List<ShoppingList>()).ToList();
-
             // Cumulative: Đã Collected (status >=1, loại trừ Canceled)
             var collectedPallets = allShoppingLists
                 .Where(sl => sl.PLStatus >= (short)CollectionStatusEnumDTO.Collected &&
@@ -308,23 +304,21 @@ namespace ASP.Models.Front
                 .Select(sl => sl.PalletNo)
                 .Distinct()
                 .Count();
-
             var totalOrderPallet = order.TotalPallet;
             bool isCompleted = totalOrderPallet > 0 && collectedPallets >= totalOrderPallet;
-
             // Shipped: Tất cả completed VÀ BookContStatus >= Exported (cumulative cho BookCont nếu cần)
             bool isShipped = isCompleted &&
                              order.OrderDetails.All(od => od.BookContStatus >= (short)BookingStatusEnumDTO.Exported); // Sử dụng All thay vì Any để đảm bảo full
-
             if (isShipped)
                 order.OrderStatus = 3; // Shipped
             else if (isCompleted)
                 order.OrderStatus = 2; // Completed
             else if (collectedPallets > 0 && collectedPallets < totalOrderPallet)
                 order.OrderStatus = 1; // Pending
-
             bool actualTimesChanged = false;
             var today = DateTime.Now.Date;
+            // Detect nếu order "sang ngày mới" (điều kiện reset: ShipDate hoặc StartTime trong today, ví dụ delay/reschedule)
+            bool isNewDayOrder = order.ShipDate.Date == today || order.StartTime.Date == today;
             // Filter CollectedDate: Chỉ lấy trong today
             var validCollectedDates = allShoppingLists
                 .Where(sl => sl.CollectedDate.HasValue && sl.CollectedDate.Value.Date == today)
@@ -344,8 +338,19 @@ namespace ASP.Models.Front
             }
             else
             {
-                _logger.LogDebug("Order {OrderId}: No CollectedDates in today {Today}, keeping existing AcStartTime",
-                    orderId, today);
+                // Reset nếu không có data fresh VÀ là ngày mới (delay/reschedule case)
+                if (isNewDayOrder && order.AcStartTime.HasValue)
+                {
+                    order.AcStartTime = null;
+                    actualTimesChanged = true;
+                    _logger.LogInformation("Order {OrderId}: Reset AcStartTime to null (no fresh data in today {Today}, new day order)",
+                        orderId, today);
+                }
+                else
+                {
+                    _logger.LogDebug("Order {OrderId}: No CollectedDates in today {Today}, keeping existing AcStartTime",
+                        orderId, today);
+                }
             }
             if (order.AcStartTime.HasValue)
             {
@@ -378,6 +383,28 @@ namespace ASP.Models.Front
                         _logger.LogInformation("Order {OrderId}: Shipped but no TPC in today, fallback AcEndTime to {FallbackEnd}",
                             orderId, fallbackEnd);
                     }
+                }
+                else
+                {
+                    // Reset AcEndTime nếu không có data fresh, AcStartTime có (và là ngày mới)
+                    if (isNewDayOrder && order.AcEndTime.HasValue)
+                    {
+                        order.AcEndTime = null;
+                        actualTimesChanged = true;
+                        _logger.LogInformation("Order {OrderId}: Reset AcEndTime to null (no fresh data in today {Today}, new day order)",
+                            orderId, today);
+                    }
+                }
+            }
+            else
+            {
+                // Nếu AcStartTime null (sau reset hoặc chưa có), cũng reset AcEndTime nếu cần
+                if (isNewDayOrder && order.AcEndTime.HasValue)
+                {
+                    order.AcEndTime = null;
+                    actualTimesChanged = true;
+                    _logger.LogInformation("Order {OrderId}: Reset AcEndTime to null (AcStartTime null, new day order)",
+                        orderId);
                 }
             }
             bool statusChanged = order.OrderStatus != oldStatus;
