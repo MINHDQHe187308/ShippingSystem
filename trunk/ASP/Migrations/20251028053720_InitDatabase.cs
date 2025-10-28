@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace ASP.Migrations
 {
-    public partial class InitDb : Migration
+    public partial class InitDatabase : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -63,7 +63,7 @@ namespace ASP.Migrations
                 name: "Customers",
                 columns: table => new
                 {
-                    CustomerCode = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    CustomerCode = table.Column<string>(type: "nvarchar(5)", maxLength: 5, nullable: false),
                     CustomerName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Descriptions = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CreateBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
@@ -77,40 +77,21 @@ namespace ASP.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "LeadtimeMasters",
-                columns: table => new
-                {
-                    CustomerCode = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    TransCd = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    CollectTimePerPallet = table.Column<double>(type: "float", nullable: false),
-                    PrepareTimePerPallet = table.Column<double>(type: "float", nullable: false),
-                    LoadingTimePerColumn = table.Column<double>(type: "float", nullable: false),
-                    CreateBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    UpdateBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_LeadtimeMasters", x => x.CustomerCode);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Logs",
                 columns: table => new
                 {
-                    Id = table.Column<long>(type: "bigint", nullable: false)
+                    ID = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    LogType = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Content = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Author = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Ip = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    LogType = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
+                    Content = table.Column<string>(type: "ntext", nullable: false),
+                    Author = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
+                    IP = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Logs", x => x.Id);
+                    table.PrimaryKey("PK_Logs", x => x.ID);
                 });
 
             migrationBuilder.CreateTable(
@@ -143,16 +124,17 @@ namespace ASP.Migrations
                     TransMethod = table.Column<short>(type: "smallint", nullable: false),
                     ContSize = table.Column<short>(type: "smallint", nullable: false),
                     TotalColumn = table.Column<int>(type: "int", nullable: false),
-                    PartList = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
+                    PartList = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
                     TotalPallet = table.Column<int>(type: "int", nullable: false),
                     OrderStatus = table.Column<short>(type: "smallint", nullable: false),
+                    ApiOrderStatus = table.Column<short>(type: "smallint", nullable: false),
                     OrderCreateDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    PlanAsyTime = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    PlanDocumentsTime = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    PlanDeliveryTime = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    AcAsyTime = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    AcDocumentsTime = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    AcDeliveryTime = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    StartTime = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    EndTime = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    AcStartTime = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    AcEndTime = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DelayStartTime = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DelayTime = table.Column<double>(type: "float", nullable: true),
                     CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
@@ -296,6 +278,56 @@ namespace ASP.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "LeadtimeMasters",
+                columns: table => new
+                {
+                    CustomerCode = table.Column<string>(type: "nvarchar(5)", maxLength: 5, nullable: false),
+                    TransCd = table.Column<string>(type: "nvarchar(5)", maxLength: 5, nullable: false),
+                    CollectTimePerPallet = table.Column<double>(type: "float", nullable: false),
+                    PrepareTimePerPallet = table.Column<double>(type: "float", nullable: false),
+                    LoadingTimePerColumn = table.Column<double>(type: "float", nullable: false),
+                    CreateBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    UpdateBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_LeadtimeMasters", x => new { x.CustomerCode, x.TransCd });
+                    table.ForeignKey(
+                        name: "FK_LeadtimeMasters_Customers_CustomerCode",
+                        column: x => x.CustomerCode,
+                        principalTable: "Customers",
+                        principalColumn: "CustomerCode",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ShippingSchedules",
+                columns: table => new
+                {
+                    CustomerCode = table.Column<string>(type: "nvarchar(5)", maxLength: 5, nullable: false),
+                    TransCd = table.Column<string>(type: "nvarchar(5)", maxLength: 5, nullable: false),
+                    Weekday = table.Column<int>(type: "int", nullable: false),
+                    CutOffTime = table.Column<TimeSpan>(type: "time", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
+                    CreatedBy = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: false),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: true),
+                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ShippingSchedules", x => new { x.CustomerCode, x.TransCd, x.Weekday });
+                    table.ForeignKey(
+                        name: "FK_ShippingSchedules_Customers_CustomerCode",
+                        column: x => x.CustomerCode,
+                        principalTable: "Customers",
+                        principalColumn: "CustomerCode",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "DelayHistory",
                 columns: table => new
                 {
@@ -335,6 +367,7 @@ namespace ASP.Migrations
                     TotalPallet = table.Column<int>(type: "int", nullable: false),
                     Warehouse = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: false),
                     BookContStatus = table.Column<short>(type: "smallint", nullable: false),
+                    Status = table.Column<short>(type: "smallint", nullable: false),
                     CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
@@ -358,8 +391,8 @@ namespace ASP.Migrations
                     CollectionId = table.Column<long>(type: "bigint", nullable: false),
                     PalletId = table.Column<long>(type: "bigint", nullable: false),
                     PalletNo = table.Column<int>(type: "int", nullable: false),
-                    CollectionStatus = table.Column<short>(type: "smallint", nullable: false),
-                    CollectedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    PLStatus = table.Column<short>(type: "smallint", nullable: false),
+                    CollectedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
@@ -455,7 +488,8 @@ namespace ASP.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_ThreePointChecks_SPId",
                 table: "ThreePointChecks",
-                column: "SPId");
+                column: "SPId",
+                unique: true);
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
@@ -476,9 +510,6 @@ namespace ASP.Migrations
                 name: "AspNetUserTokens");
 
             migrationBuilder.DropTable(
-                name: "Customers");
-
-            migrationBuilder.DropTable(
                 name: "DelayHistory");
 
             migrationBuilder.DropTable(
@@ -491,6 +522,9 @@ namespace ASP.Migrations
                 name: "Menus");
 
             migrationBuilder.DropTable(
+                name: "ShippingSchedules");
+
+            migrationBuilder.DropTable(
                 name: "ThemeOptions");
 
             migrationBuilder.DropTable(
@@ -501,6 +535,9 @@ namespace ASP.Migrations
 
             migrationBuilder.DropTable(
                 name: "AspNetUsers");
+
+            migrationBuilder.DropTable(
+                name: "Customers");
 
             migrationBuilder.DropTable(
                 name: "ShoppingLists");

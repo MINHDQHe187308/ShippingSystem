@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ASP.Migrations
 {
     [DbContext(typeof(ASPDbContext))]
-    [Migration("20251015035805_AddDelayFieldsToOrder")]
-    partial class AddDelayFieldsToOrder
+    [Migration("20251028053720_InitDatabase")]
+    partial class InitDatabase
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -303,7 +303,14 @@ namespace ASP.Migrations
             modelBuilder.Entity("ASP.Models.Front.LeadtimeMaster", b =>
                 {
                     b.Property<string>("CustomerCode")
-                        .HasColumnType("nvarchar(450)");
+                        .HasMaxLength(5)
+                        .HasColumnType("nvarchar(5)")
+                        .HasColumnOrder(0);
+
+                    b.Property<string>("TransCd")
+                        .HasMaxLength(5)
+                        .HasColumnType("nvarchar(5)")
+                        .HasColumnOrder(1);
 
                     b.Property<double>("CollectTimePerPallet")
                         .HasColumnType("float");
@@ -321,18 +328,13 @@ namespace ASP.Migrations
                     b.Property<double>("PrepareTimePerPallet")
                         .HasColumnType("float");
 
-                    b.Property<string>("TransCd")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("UpdateBy")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("UpdatedDate")
                         .HasColumnType("datetime2");
 
-                    b.HasKey("CustomerCode");
+                    b.HasKey("CustomerCode", "TransCd");
 
                     b.ToTable("LeadtimeMasters");
                 });
@@ -348,6 +350,9 @@ namespace ASP.Migrations
 
                     b.Property<DateTime?>("AcStartTime")
                         .HasColumnType("datetime2");
+
+                    b.Property<short>("ApiOrderStatus")
+                        .HasColumnType("smallint");
 
                     b.Property<short>("ContSize")
                         .HasColumnType("smallint");
@@ -381,7 +386,6 @@ namespace ASP.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("PartList")
-                        .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
@@ -447,6 +451,9 @@ namespace ASP.Migrations
 
                     b.Property<long>("ShippingId")
                         .HasColumnType("bigint");
+
+                    b.Property<short>("Status")
+                        .HasColumnType("smallint");
 
                     b.Property<int>("TotalPallet")
                         .HasColumnType("int");
@@ -765,6 +772,17 @@ namespace ASP.Migrations
                     b.Navigation("Order");
                 });
 
+            modelBuilder.Entity("ASP.Models.Front.LeadtimeMaster", b =>
+                {
+                    b.HasOne("ASP.Models.Front.Customer", "Customer")
+                        .WithMany("LeadtimeMasters")
+                        .HasForeignKey("CustomerCode")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Customer");
+                });
+
             modelBuilder.Entity("ASP.Models.Front.OrderDetail", b =>
                 {
                     b.HasOne("ASP.Models.Front.Order", "Order")
@@ -774,6 +792,17 @@ namespace ASP.Migrations
                         .IsRequired();
 
                     b.Navigation("Order");
+                });
+
+            modelBuilder.Entity("ASP.Models.Front.ShippingSchedule", b =>
+                {
+                    b.HasOne("ASP.Models.Front.Customer", "Customer")
+                        .WithMany("ShippingSchedules")
+                        .HasForeignKey("CustomerCode")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Customer");
                 });
 
             modelBuilder.Entity("ASP.Models.Front.ShoppingList", b =>
@@ -846,6 +875,13 @@ namespace ASP.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("ASP.Models.Front.Customer", b =>
+                {
+                    b.Navigation("LeadtimeMasters");
+
+                    b.Navigation("ShippingSchedules");
                 });
 
             modelBuilder.Entity("ASP.Models.Front.Order", b =>
