@@ -1,5 +1,5 @@
 ﻿using ASP.Models.Front;
-using ASP.Services; 
+using ASP.Services;
 using Microsoft.Extensions.Options;
 using System.Net.Http.Headers;
 using System.Text;
@@ -13,7 +13,7 @@ namespace ASP.Service.Implentations
         private readonly HttpClient _httpClient;
         private string? _accessToken;
         private DateTime _tokenExpiry = DateTime.MinValue;
-        private readonly ILogger<EmailApiService> _logger; 
+        private readonly ILogger<EmailApiService> _logger;
 
         public EmailApiService(IOptions<EmailApiSettings> settings, HttpClient httpClient, ILogger<EmailApiService> logger)
         {
@@ -22,7 +22,7 @@ namespace ASP.Service.Implentations
             _logger = logger;
         }
 
-  
+
         private async Task<string?> GetAccessTokenAsync()
         {
             if (!string.IsNullOrEmpty(_accessToken) && DateTime.UtcNow < _tokenExpiry)
@@ -98,7 +98,7 @@ namespace ASP.Service.Implentations
             }
         }
 
-       
+
         public async Task SendEmailAsync(string to, string cc, string subject, string body, bool isHtml = true)
         {
             // Convert single to/cc sang List để match old (delay dùng list từ config)

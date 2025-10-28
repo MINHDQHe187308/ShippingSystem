@@ -93,8 +93,7 @@ namespace ASP.Service.Implentations
                     _logger.LogInformation("Upserting Order {Id}: {Details} details, {SL} shopping lists (full hierarchy sync)",
                         orderDto.PcOrderId, orderDetailsCount, orderSLCount);
 
-                    await _orderRepository.UpsertOrderAsync(orderDto);
-                    await ((OrderRepository)_orderRepository).UpdateOrderStatusIfNeeded(orderDto.PcOrderId);
+                    await _orderRepository.UpsertOrderAsync(orderDto);                 
                 }
 
                 await _orderRepository.SaveChangesAsync();
