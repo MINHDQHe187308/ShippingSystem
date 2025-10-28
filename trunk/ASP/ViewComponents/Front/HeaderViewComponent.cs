@@ -33,7 +33,7 @@ namespace ASP.ViewComponents.Front
             ViewBag.strLogo = (find != null) ? find.Value : "";
             
             // get header menu
-            var findMenu = _context.Menus.FirstOrDefault(w => w.Id == 8);
+            var findMenu = _context.Menus.FirstOrDefault(w => w.Id == 1);
 
             List<MenuDetail> objMenu = new List<MenuDetail>();
             if (findMenu != null)
