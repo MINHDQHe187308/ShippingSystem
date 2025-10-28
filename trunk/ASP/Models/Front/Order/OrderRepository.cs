@@ -314,6 +314,7 @@ namespace ASP.Models.Front
             }
             short oldStatus = order.OrderStatus;  // Sử dụng short để nhất quán
             var allShoppingLists = order.OrderDetails.SelectMany(od => od.ShoppingLists ?? new List<ShoppingList>()).ToList();
+            
             // Cumulative: Đã Collected (status >=1, loại trừ Canceled)
             var collectedPallets = allShoppingLists
                 .Where(sl => sl.PLStatus >= (short)CollectionStatusEnumDTO.Collected &&
@@ -321,20 +322,34 @@ namespace ASP.Models.Front
                 .Select(sl => sl.PalletNo)
                 .Distinct()
                 .Count();
+            
+            // Tất cả pallets đã LOADED lên cont (status >= Delivered, tức là đã qua Collected + ThreePointCheck + Loaded)
+            var loadedPallets = allShoppingLists
+                .Where(sl => sl.PLStatus >= (short)CollectionStatusEnumDTO.Delivered &&
+                             sl.PLStatus != (short)CollectionStatusEnumDTO.Canceled)
+                .Select(sl => sl.PalletNo)
+                .Distinct()
+                .Count();
+
+            // ... (phần load order và tính collectedPallets, loadedPallets giữ nguyên)
+
             var totalOrderPallet = order.TotalPallet;
-            bool isCompleted = totalOrderPallet > 0 && collectedPallets >= totalOrderPallet;
-            // Shipped: Tất cả completed VÀ BookContStatus >= Exported (cumulative cho BookCont nếu cần)
+            bool isCompleted = totalOrderPallet > 0 && loadedPallets >= totalOrderPallet;
+
+            // Shipped: Tất cả completed VÀ BookContStatus >= Exported
             bool isShipped = isCompleted &&
-                             order.OrderDetails.All(od => od.BookContStatus >= (short)BookingStatusEnumDTO.Exported); // Sử dụng All thay vì Any để đảm bảo full
+                             order.OrderDetails.All(od => od.BookContStatus >= (short)BookingStatusEnumDTO.Exported);
+
             if (isShipped)
                 order.OrderStatus = 3; // Shipped
             else if (isCompleted)
-                order.OrderStatus = 2; // Completed
-            else if (collectedPallets > 0 && collectedPallets < totalOrderPallet)
-                order.OrderStatus = 1; // Pending
+                order.OrderStatus = 2; // Completed (Tất cả pallets đã load lên cont)
+            else if (collectedPallets > 0 || loadedPallets > 0)  // FIX: Bao quát cả collected và loaded partial
+                order.OrderStatus = 1; // Pending (Đang thu thập hoặc loading, nhưng chưa đủ)
             else
-                order.OrderStatus = 0;  // Planned (default nếu không match)
+                order.OrderStatus = 0; // Planned
 
+            // ... (phần actualTimesChanged giữ nguyên)
             bool actualTimesChanged = false;
             var today = DateTime.Now.Date;
             // Detect nếu order "sang ngày mới" (điều kiện reset: ShipDate hoặc StartTime trong today, ví dụ delay/reschedule)
