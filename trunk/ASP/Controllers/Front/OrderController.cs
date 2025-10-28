@@ -7,6 +7,7 @@ using System.Linq;
 using System.Collections.Generic;
 using OfficeOpenXml;  // EPPlus package
 using System.IO;
+using ASP.DTO.DensoDTO;  // THÊM: Import để sử dụng CollectionStatusEnumDTO
 
 namespace ASP.Controllers.Front
 {
@@ -40,7 +41,7 @@ namespace ASP.Controllers.Front
             {
                 if (Enum.TryParse<DayOfWeek>(dayOfWeek, true, out var day))
                 {
-                    orders = orders.Where(o => o.ShipDate.DayOfWeek == day); 
+                    orders = orders.Where(o => o.ShipDate.DayOfWeek == day);
                 }
             }
             ViewData["WeekStart"] = weekStart;
@@ -129,6 +130,17 @@ namespace ASP.Controllers.Front
                     {
                         foreach (var sl in shoppingLists)
                         {
+                            // Map PLStatus từ enum
+                            string plStatusText = sl.PLStatus switch
+                            {
+                                (short)CollectionStatusEnumDTO.None => "None",
+                                (short)CollectionStatusEnumDTO.Collected => "Đã Thu Thập",
+                                (short)CollectionStatusEnumDTO.Exported => "Đã Check 3 điểm",
+                                (short)CollectionStatusEnumDTO.Delivered => "Đã Load lên Cont",
+                                (short)CollectionStatusEnumDTO.Canceled => "Bị Huỷ",
+                                _ => $"Unknown ({sl.PLStatus})"
+                            };
+
                             // Data row: Exactly 8 columns, aligned properly (repeat OrderDetail fields)
                             var dataRow = new object[] {
                                 od.PartNo,                    // Col 1: Part No
@@ -137,12 +149,12 @@ namespace ASP.Controllers.Front
                                 od.TotalPallet,               // Col 4: Total Pallets
                                 od.Warehouse,                 // Col 5: Warehouse
                                 sl.PalletNo,                  // Col 6: Pallet No
-                                sl.PLStatus == 1 ? "Collected" : "Pending",  // Col 7: PL Status
+                                plStatusText,                 // Col 7: PL Status (mapped từ enum)
                                 sl.CollectedDate?.ToString("yyyy-MM-dd HH:mm") ?? "N/A"  // Col 8: Collected Date
                             };
                             worksheet.Cells[currentRow, 1, currentRow, dataHeaders.Length].LoadFromArrays(new[] { dataRow });
-                            // Conditional formatting: Green nếu Collected (chỉ cột PL Status và Collected Date)
-                            if (sl.PLStatus == 1)
+                            // Conditional formatting: Green nếu Collected hoặc cao hơn (Exported, Delivered)
+                            if (sl.PLStatus >= (short)CollectionStatusEnumDTO.Collected && sl.PLStatus != (short)CollectionStatusEnumDTO.Canceled)
                             {
                                 var statusRange = worksheet.Cells[currentRow, 7];  // Col G: PL Status
                                 statusRange.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
@@ -150,6 +162,13 @@ namespace ASP.Controllers.Front
                                 var dateRange = worksheet.Cells[currentRow, 8];  // Col H: Collected Date
                                 dateRange.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
                                 dateRange.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(144, 238, 144));  // Light green
+                            }
+                            // Red nếu Canceled
+                            else if (sl.PLStatus == (short)CollectionStatusEnumDTO.Canceled)
+                            {
+                                var statusRange = worksheet.Cells[currentRow, 7];  // Col G: PL Status
+                                statusRange.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                                statusRange.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(255, 182, 193));  // Light red
                             }
                             worksheet.Cells[currentRow, 1, currentRow, dataHeaders.Length].Style.Border.BorderAround(OfficeOpenXml.Style.ExcelBorderStyle.Thin);
                             currentRow++;
