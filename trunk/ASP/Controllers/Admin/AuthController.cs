@@ -1,18 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Transactions;
+﻿using ASP.BaseCommon;
+using ASP.ConfigCommon;
+using ASP.Models.Admin.Accounts;
+using ASP.Models.Admin.Auths;
+using ASP.Models.ASPModel;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
-using ASP.BaseCommon;
-using ASP.ConfigCommon;
-using ASP.Models.Admin.Auths;
-using Microsoft.AspNetCore.Authentication;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
-using ASP.Models.Admin.Accounts;
-using ASP.Models.ASPModel;
+using System.Threading.Tasks;
+using System.Transactions;
 
 namespace ASP.Controllers.Admin
 {
@@ -37,6 +38,7 @@ namespace ASP.Controllers.Admin
         [Route("Auth")]
         [Route("Auth/Index")]
         [Route("Auth/Login", Name = "admin.auths.login")]
+        [AllowAnonymous]
         public IActionResult Login(string returnUrl)
         {
             Login login = new Login();
@@ -60,6 +62,7 @@ namespace ASP.Controllers.Admin
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Route("Login", Name = "admin.auth.login")]
+        [AllowAnonymous]
         public async Task<IActionResult> Login(Login login)
         {
             //var serviceEz = new ServiceReferencePPS.ServiceManPowerEzClient();
@@ -370,5 +373,7 @@ namespace ASP.Controllers.Admin
             TempData["mess-detail"] = BaseController.BaseMessage("create_fails");
             return View("../Admin/Auth/Register", user);
         }
+   
     }
+
 }

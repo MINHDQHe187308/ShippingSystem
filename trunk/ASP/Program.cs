@@ -1,21 +1,26 @@
-﻿using ASP.Hubs;
+﻿using ASP.BaseCommon;
+using ASP.Hubs;
+using ASP.Models.Admin.Accounts;
 using ASP.Models.Admin.Auths;
 using ASP.Models.Admin.Logs;
 using ASP.Models.Admin.Menus;
 using ASP.Models.Admin.Roles;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using ReflectionIT.Mvc.Paging;
-using Serilog;
-using ASP.BaseCommon;
-using ASP.Models.Admin.Accounts;
 using ASP.Models.Admin.ThemeOptions;
+using ASP.Models.ASPModel;
+using ASP.Models.Front;
 using ASP.Policies;
 using ASP.SeedData;
-using Microsoft.Extensions.Options;
+using ASP.Service.Implentations;
+using ASP.Services;
+using ASP.Utilss;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
-using ASP.Models.ASPModel;
+using Microsoft.Extensions.Options;
+using ReflectionIT.Mvc.Paging;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 #region signalR
@@ -46,13 +51,24 @@ builder.Services.AddPaging(options =>
 #endregion
 #region dependency injection 
 builder.Services.AddScoped<BaseController>();
-// backend
+//backend  
 builder.Services.AddTransient<LogRepositoryInterface, LogRepository>();
 builder.Services.AddScoped<AccountRepositoryInterface, AccountRepository>();
 builder.Services.AddScoped<RoleRepositoryInterface, RoleRepository>();
 builder.Services.AddScoped<ThemeOptionRepositoryInterface, ThemeOptionRepository>();
 builder.Services.AddScoped<AuthRepositoryInterface, AuthRepository>();
 builder.Services.AddScoped<MenuRepositoryInterface, MenuRepository>();
+builder.Services.AddScoped<CustomerRepositoryInterface, CustomerRepository>();
+builder.Services.AddScoped<OrderRepositoryInterface, OrderRepository>();
+builder.Services.AddScoped<OrderDetailRepositoryInterface, OrderDetailRepository>();
+builder.Services.AddScoped<ShippingScheduleRepositoryInterface, ShippingScheduleRepository>();
+builder.Services.AddScoped<DelayHistoryRepositoryInterface, DelayHistoryRepository>();
+builder.Services.AddScoped<EmailServiceInterface, EmailApiService>();
+builder.Services.AddScoped<LeadtimeMasterRepositoryInterface, LeadtimeMasterRepository>();
+builder.Services.AddScoped<ShippingScheduleRepositoryInterface, ShippingScheduleRepository>();
+builder.Services.AddHttpClient<EmailApiService>();  // Với HttpClient factory
+builder.Services.Configure<EmailApiSettings>(builder.Configuration.GetSection("EmailAPI"));
+//builder.Services.AddTransient<EmailServiceInterface, GmailSmtpService>();
 // frontend
 //policies
 builder.Services.AddSingleton<IAuthorizationHandler, UserPolicyAuthorizationHandler>();
@@ -115,7 +131,7 @@ builder.Services.Configure<RequestLocalizationOptions>(options => {
 
 var app = builder.Build();
 
-#region seed data
+//#region seed data
 //using (var scope = app.Services.CreateScope())
 //{
 //    var services = scope.ServiceProvider;
@@ -124,7 +140,7 @@ var app = builder.Build();
 //    await dbContext.Database.MigrateAsync();
 //    await ApplicationUsersSeeder.SeedRolesAndAdminAsyn(services);
 //}
-#endregion
+//#endregion
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -138,7 +154,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapRazorPages();
 app.UseRequestLocalization();
-
+ResourceValidator.ValidateResourceKeys(typeof(Register));
 #region route config
 app.UseEndpoints(endpoints =>
 {
@@ -148,8 +164,8 @@ app.UseEndpoints(endpoints =>
     endpoints.MapControllerRoute(
         name: "Admin",
         pattern: "admin/{controller=Auth}/{action=Index}/{id?}");
+     endpoints.MapHub<OrderHub>("/orderHub");
 });
 #endregion
 
-app.MapHub<PrivacyHub>("/privacyHub");
 app.Run();

@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace ASP.Models.Admin.Auths
 {
-    public class Register
+    public class Register   
     {       
         [Required(ErrorMessageResourceName = "msg_err_string_required", ErrorMessageResourceType = typeof(Resources.Message_Shared))]
         [Display(Name = "lbl_account", ResourceType = typeof(Resources.Message_Shared))]

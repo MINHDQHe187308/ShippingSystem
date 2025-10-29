@@ -99,87 +99,6 @@
 	  <Compile Remove="Controllers\Front\InventoryInfoController.cs" />
 	  <Compile Remove="Controllers\Front\ReportController.cs" />
 	  <Compile Remove="Controllers\Front\StockVisualizationController.cs" />
-	  <Compile Remove="Migrations\20220510025408_InitDatabase.cs" />
-	  <Compile Remove="Migrations\20220510025408_InitDatabase.Designer.cs" />
-	  <Compile Remove="Migrations\20220510071647_InstallIdentity.cs" />
-	  <Compile Remove="Migrations\20220510071647_InstallIdentity.Designer.cs" />
-	  <Compile Remove="Migrations\20220510072617_AddIdentityIntoDbContext.cs" />
-	  <Compile Remove="Migrations\20220510072617_AddIdentityIntoDbContext.Designer.cs" />
-	  <Compile Remove="Migrations\20220510082852_AddTableBasic.cs" />
-	  <Compile Remove="Migrations\20220510082852_AddTableBasic.Designer.cs" />
-	  <Compile Remove="Migrations\20220512030906_edit_ColAvatar_Table_Users.cs" />
-	  <Compile Remove="Migrations\20220512030906_edit_ColAvatar_Table_Users.Designer.cs" />
-	  <Compile Remove="Migrations\20220512031613_edit2_ColAvatar_Table_Users.cs" />
-	  <Compile Remove="Migrations\20220512031613_edit2_ColAvatar_Table_Users.Designer.cs" />
-	  <Compile Remove="Migrations\20220512070945_edit_ColPhoneNumber_Table_Users.cs" />
-	  <Compile Remove="Migrations\20220512070945_edit_ColPhoneNumber_Table_Users.Designer.cs" />
-	  <Compile Remove="Migrations\20220512081131_edit_col_Description_table_Menus.cs" />
-	  <Compile Remove="Migrations\20220512081131_edit_col_Description_table_Menus.Designer.cs" />
-	  <Compile Remove="Migrations\20220513101138_edit_ColName_Table_Roles.cs" />
-	  <Compile Remove="Migrations\20220513101138_edit_ColName_Table_Roles.Designer.cs" />
-	  <Compile Remove="Migrations\20220620065221_create_Table_Categories.cs" />
-	  <Compile Remove="Migrations\20220620065221_create_Table_Categories.Designer.cs" />
-	  <Compile Remove="Migrations\20220620085457_add_col_created_updated_Table_Categories.cs" />
-	  <Compile Remove="Migrations\20220620085457_add_col_created_updated_Table_Categories.Designer.cs" />
-	  <Compile Remove="Migrations\20220623041516_create_Table_Product.cs" />
-	  <Compile Remove="Migrations\20220623041516_create_Table_Product.Designer.cs" />
-	  <Compile Remove="Migrations\20220624065530_add_col_Min_Max_table_Product.cs" />
-	  <Compile Remove="Migrations\20220624065530_add_col_Min_Max_table_Product.Designer.cs" />
-	  <Compile Remove="Migrations\20220628050746_edit_col_PartNo_in_table_Product.cs" />
-	  <Compile Remove="Migrations\20220628050746_edit_col_PartNo_in_table_Product.Designer.cs" />
-	  <Compile Remove="Migrations\20220705040100_create_Stocks_table.cs" />
-	  <Compile Remove="Migrations\20220705040100_create_Stocks_table.Designer.cs" />
-	  <Compile Remove="Migrations\20220707044658_add_col_Product_Stock_table.cs" />
-	  <Compile Remove="Migrations\20220707044658_add_col_Product_Stock_table.Designer.cs" />
-	  <Compile Remove="Migrations\20220712014756_create_Inventories_table.cs" />
-	  <Compile Remove="Migrations\20220712014756_create_Inventories_table.Designer.cs" />
-	  <Compile Remove="Migrations\20220727035407_add_col_StockBegin_to_Inventory_table.cs" />
-	  <Compile Remove="Migrations\20220727035407_add_col_StockBegin_to_Inventory_table.Designer.cs" />
-	  <Compile Remove="Migrations\20220727062610_add_col_InOut_to_Inventory_table.cs" />
-	  <Compile Remove="Migrations\20220727062610_add_col_InOut_to_Inventory_table.Designer.cs" />
-	  <Compile Remove="Migrations\20220728043411_edit_col_Inventory_table.cs" />
-	  <Compile Remove="Migrations\20220728043411_edit_col_Inventory_table.Designer.cs" />
-	  <Compile Remove="Migrations\20220728044702_edit2_col_Inventory_table.cs" />
-	  <Compile Remove="Migrations\20220728044702_edit2_col_Inventory_table.Designer.cs" />
-	  <Compile Remove="Migrations\20220802064411_add_col_ProductPlanQty_into_Inventories_table.cs" />
-	  <Compile Remove="Migrations\20220802064411_add_col_ProductPlanQty_into_Inventories_table.Designer.cs" />
-	  <Compile Remove="Migrations\20220802091128_edit_col_into_Inventories_table.cs" />
-	  <Compile Remove="Migrations\20220802091128_edit_col_into_Inventories_table.Designer.cs" />
-	  <Compile Remove="Migrations\20220804054752_add_col_Min_Max_into_Inventories_table.cs" />
-	  <Compile Remove="Migrations\20220804054752_add_col_Min_Max_into_Inventories_table.Designer.cs" />
-	  <Compile Remove="Migrations\20220804081537_add_col_into_Product_table.cs" />
-	  <Compile Remove="Migrations\20220804081537_add_col_into_Product_table.Designer.cs" />
-	  <Compile Remove="Migrations\20220804081754_add_col_into_Inventories_table.cs" />
-	  <Compile Remove="Migrations\20220804081754_add_col_into_Inventories_table.Designer.cs" />
-	  <Compile Remove="Migrations\20220811071511_add_col_LineName_Inventory_table.cs" />
-	  <Compile Remove="Migrations\20220811071511_add_col_LineName_Inventory_table.Designer.cs" />
-	  <Compile Remove="Migrations\20220812023922_add_col_Total_Inventory_table.cs" />
-	  <Compile Remove="Migrations\20220812023922_add_col_Total_Inventory_table.Designer.cs" />
-	  <Compile Remove="Migrations\20220824083158_edit_ThemeOption_table.cs" />
-	  <Compile Remove="Migrations\20220824083158_edit_ThemeOption_table.Designer.cs" />
-	  <Compile Remove="Migrations\20221011034128_add_col_NextProductR_into_table_Inventories.cs" />
-	  <Compile Remove="Migrations\20221011034128_add_col_NextProductR_into_table_Inventories.Designer.cs" />
-	  <Compile Remove="Migrations\20221012080956_add_col_Currency_into_table_Product.cs" />
-	  <Compile Remove="Migrations\20221012080956_add_col_Currency_into_table_Product.Designer.cs" />
-	  <Compile Remove="Migrations\20221013025919_add_table_ExchangeRate.cs" />
-	  <Compile Remove="Migrations\20221013025919_add_table_ExchangeRate.Designer.cs" />
-	  <Compile Remove="Migrations\20221013031445_add_ExchangeRate_table.cs" />
-	  <Compile Remove="Migrations\20221013031445_add_ExchangeRate_table.Designer.cs" />
-	  <Compile Remove="Migrations\20221014020809_add_Statisticals_table.cs" />
-	  <Compile Remove="Migrations\20221014020809_add_Statisticals_table.Designer.cs" />
-	  <Compile Remove="Migrations\20221014100957_edit_col_ExRateUSD_into_ExchangeRates_table.cs" />
-	  <Compile Remove="Migrations\20221014100957_edit_col_ExRateUSD_into_ExchangeRates_table.Designer.cs" />
-	  <Compile Remove="Migrations\20221014101616_edit2_col_ExRateUSD_into_ExchangeRates_table.cs" />
-	  <Compile Remove="Migrations\20221014101616_edit2_col_ExRateUSD_into_ExchangeRates_table.Designer.cs" />
-	  <Compile Remove="Migrations\20221103031649_add_col_Fixing_to_Inventory_table.cs" />
-	  <Compile Remove="Migrations\20221103031649_add_col_Fixing_to_Inventory_table.Designer.cs" />
-	  <Compile Remove="Migrations\20221104025601_add_col_ProductPlanQtyCat_into_Inventory_table.cs" />
-	  <Compile Remove="Migrations\20221104025601_add_col_ProductPlanQtyCat_into_Inventory_table.Designer.cs" />
-	  <Compile Remove="Migrations\20221104050735_add_col_NextReceivingQty_into_Inventory_table.cs" />
-	  <Compile Remove="Migrations\20221104050735_add_col_NextReceivingQty_into_Inventory_table.Designer.cs" />
-	  <Compile Remove="Migrations\20221104074400_add_col_NotKpi_into_Product_table.cs" />
-	  <Compile Remove="Migrations\20221104074400_add_col_NotKpi_into_Product_table.Designer.cs" />
-	  <Compile Remove="Migrations\MaterialsStockVisualizationContextModelSnapshot.cs" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -280,7 +199,6 @@
 
 	<ItemGroup>
 		<Folder Include="Logs\" />
-		<Folder Include="Migrations\" />
 		<Folder Include="Models\ViewModel\" />
 		<Folder Include="wwwroot\assets\categories\" />
 		<Folder Include="wwwroot\assets\ckgallery\" />
@@ -322,6 +240,7 @@
 	  <EmbeddedResource Update="Resources\Message.Shared.resx">
 	    <Generator>PublicResXFileCodeGenerator</Generator>
 	    <LastGenOutput>Message.Shared.Designer.cs</LastGenOutput>
+	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
 	  </EmbeddedResource>
 	  <EmbeddedResource Update="Resources\SharedResource.resx">
 	    <Generator>PublicResXFileCodeGenerator</Generator>

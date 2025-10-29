@@ -1,0 +1,363 @@
+﻿@model List<ASP.Models.Front.Customer>
+
+@{
+    ViewData["Title"] = "Customer List";
+    Layout = "../Shared/Layout/Front/_Layout";
+    bool isAdmin = User.IsInRole("Admin");
+}
+
+<div class="container-fluid px-4 py-3">
+    <!-- Header Section -->
+    <div class="text-center mb-5 pt-3">
+        <h1 class="fw-bold text-primary mb-2">
+            <i class="bi bi-people-fill me-2"></i>@ViewData["Title"]
+        </h1>
+    </div>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Add Button Card -->
+    <div class="d-flex justify-content-end mb-4">
+        <button type="button" class="btn btn-primary btn-lg px-4 rounded-pill shadow-sm" data-bs-toggle="modal" data-bs-target="#addSupplierModal">
+            <i class="bi bi-plus-circle me-2"></i>Add New Customer
+        </button>
+    </div>
+
+    @if (Model == null || Model.Count == 0)
+    {
+        <div class="text-center py-5">
+            <i class="bi bi-people display-1 text-muted mb-3"></i>
+            <h4 class="text-muted">No customers found.</h4>
+            <p class="text-muted">Get started by adding your first customer.</p>
+        </div>
+    }
+    else
+    {
+        <!-- Customers Table Card -->
+        <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+            <div class="card-header bg-primary text-white p-4">
+                <h5 class="fw-bold mb-0 d-flex align-items-center">
+                    <i class="bi bi-table me-2"></i>Customer List
+                </h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="table-dark">
+                        <tr>
+                            <th class="border-0 fw-semibold"><i class="bi bi-hash me-1"></i>Customer Code</th>
+                            <th class="border-0 fw-semibold"><i class="bi bi-person me-1"></i>Customer Name</th>
+                            <th class="border-0 fw-semibold"><i class="bi bi-card-text me-1"></i>Description</th>
+                            <th class="border-0 fw-semibold text-center"><i class="bi bi-gear me-1"></i>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="table-group-divider">
+                        @foreach (var customer in Model)
+                        {
+                            <tr class="align-middle">
+                                <td class="fw-medium text-primary">@customer.CustomerCode</td>
+                                <td class="fw-semibold">@customer.CustomerName</td>
+                                <td class="text-muted">@customer.Descriptions</td>
+                                <td class="text-center">
+                                    <div class="btn-group" role="group">
+                                        <button type="button" class="btn btn-warning btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#updateSupplierModal"
+                                                onclick="populateUpdateForm('@customer.CustomerCode', '@customer.CustomerName', '@customer.Descriptions')">
+                                            <i class="bi bi-pencil me-1"></i>Update
+                                        </button>
+                                        @if (isAdmin)
+                                        {
+                                            <button type="button" class="btn btn-danger btn-sm rounded-pill px-3 ms-1" onclick="deleteSupplier('@customer.CustomerCode')">
+                                                <i class="bi bi-trash me-1"></i>Delete
+                                            </button>
+                                        }
+                                        <button type="button" class="btn btn-info btn-sm rounded-pill px-3 ms-1" data-bs-toggle="modal" data-bs-target="#manageLeadtimeModal"
+                                                onclick="loadLeadtimes('@customer.CustomerCode')">
+                                            <i class="bi bi-clock-history me-1"></i>Leadtime
+                                        </button>
+                                        <button type="button" class="btn btn-success btn-sm rounded-pill px-3 ms-1" data-bs-toggle="modal" data-bs-target="#manageShippingModal"
+                                                onclick="loadShippingSchedules('@customer.CustomerCode')">
+                                            <i class="bi bi-truck me-1"></i>Shipping
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+
+    <!-- Add Customer Modal -->
+    <div class="modal fade" id="addSupplierModal" tabindex="-1" aria-labelledby="addSupplierModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header bg-primary text-white border-0 rounded-top-4">
+                    <h5 class="modal-title fw-bold mb-0 d-flex align-items-center" id="addSupplierModalLabel">
+                        <i class="bi bi-plus-circle me-2"></i>Add New Customer
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form id="addSupplierForm">
+                        <div class="mb-3">
+                            <label for="customerCode" class="form-label fw-semibold">Customer Code <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="customerCode" name="CustomerCode" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="customerName" class="form-label fw-semibold">Customer Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="customerName" name="CustomerName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label fw-semibold">Description</label>
+                            <textarea class="form-control" id="description" name="Descriptions" rows="3"></textarea>
+                        </div>
+                    </form>
+                    <div id="addSupplierMessage" class="mt-2"></div>
+                </div>
+                <div class="modal-footer bg-light border-0 rounded-bottom-4 justify-content-center">
+                    <button type="button" class="btn btn-secondary px-4 rounded-pill" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-primary px-4 rounded-pill" id="btnAddSupplier">
+                        <i class="bi bi-check-circle me-1"></i>Add Customer
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Update Customer Modal -->
+    <div class="modal fade" id="updateSupplierModal" tabindex="-1" aria-labelledby="updateSupplierModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header bg-warning text-dark border-0 rounded-top-4">
+                    <h5 class="modal-title fw-bold mb-0 d-flex align-items-center" id="updateSupplierModalLabel">
+                        <i class="bi bi-pencil-square me-2"></i>Update Customer
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form id="updateSupplierForm">
+                        <div class="mb-3">
+                            <label for="updateCustomerCode" class="form-label fw-semibold">Customer Code</label>
+                            <input type="text" class="form-control" id="updateCustomerCode" name="CustomerCode" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label for="updateCustomerName" class="form-label fw-semibold">Customer Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="updateCustomerName" name="CustomerName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="updateDescription" class="form-label fw-semibold">Description</label>
+                            <textarea class="form-control" id="updateDescription" name="Descriptions" rows="3"></textarea>
+                        </div>
+                    </form>
+                    <div id="updateSupplierMessage" class="mt-2"></div>
+                </div>
+                <div class="modal-footer bg-light border-0 rounded-bottom-4 justify-content-center">
+                    <button type="button" class="btn btn-secondary px-4 rounded-pill" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-warning px-4 rounded-pill" id="btnUpdateSupplier">
+                        <i class="bi bi-check-circle me-1"></i>Update Customer
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manage Leadtime Modal -->
+    <div class="modal fade" id="manageLeadtimeModal" tabindex="-1" aria-labelledby="manageLeadtimeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header bg-info text-white border-0 rounded-top-4">
+                    <h5 class="modal-title fw-bold mb-0 d-flex align-items-center" id="manageLeadtimeModalLabel">
+                        <i class="bi bi-clock-history me-2"></i>Manage Leadtime
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <input type="hidden" id="currentCustomerCodeLeadtime">
+                    <div class="d-flex justify-content-between mb-3">
+                        <h6 id="leadtimeCustomerName"></h6>
+                        <button type="button" class="btn btn-primary btn-sm rounded-pill" data-bs-toggle="modal" data-bs-target="#addLeadtimeModal" data-bs-dismiss="modal">
+                            <i class="bi bi-plus-circle me-1"></i>Add Leadtime
+                        </button>
+                    </div>
+                    <div id="leadtimeTableContainer">
+                        <div class="text-center py-3">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="leadtimeMessage" class="mt-2"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Leadtime Modal -->
+    <div class="modal fade" id="addLeadtimeModal" tabindex="-1" aria-labelledby="addLeadtimeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header bg-success text-white border-0 rounded-top-4">
+                    <h5 class="modal-title fw-bold mb-0 d-flex align-items-center" id="addLeadtimeModalLabel">
+                        <i class="bi bi-plus-circle me-2"></i>Add Leadtime
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <input type="hidden" id="editLeadtimeId">
+                    <input type="hidden" id="currentCustomerCodeLeadtimeEdit">
+                    <form id="leadtimeForm">
+                        <div class="mb-3">
+                            <label for="transCd" class="form-label fw-semibold">Trans Code <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="transCd" name="TransCd" required maxlength="5">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label for="collectTime" class="form-label fw-semibold">Collect Time Per Pallet <span class="text-danger">*</span></label>
+                                <input type="number" step="0.01" class="form-control" id="collectTime" name="CollectTimePerPallet" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="prepareTime" class="form-label fw-semibold">Prepare Time Per Pallet <span class="text-danger">*</span></label>
+                                <input type="number" step="0.01" class="form-control" id="prepareTime" name="PrepareTimePerPallet" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="loadingTime" class="form-label fw-semibold">Loading Time Per Column <span class="text-danger">*</span></label>
+                                <input type="number" step="0.01" class="form-control" id="loadingTime" name="LoadingTimePerColumn" required>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="leadtimeFormMessage" class="mt-2"></div>
+                </div>
+                <div class="modal-footer bg-light border-0 rounded-bottom-4 justify-content-center">
+                    <button type="button" class="btn btn-secondary px-4 rounded-pill" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-success px-4 rounded-pill" id="btnSaveLeadtime">
+                        <i class="bi bi-check-circle me-1"></i>Save
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manage Shipping Schedule Modal -->
+    <div class="modal fade" id="manageShippingModal" tabindex="-1" aria-labelledby="manageShippingModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header bg-success text-white border-0 rounded-top-4">
+                    <h5 class="modal-title fw-bold mb-0 d-flex align-items-center" id="manageShippingModalLabel">
+                        <i class="bi bi-truck me-2"></i>Manage Shipping Schedule
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <input type="hidden" id="currentCustomerCodeShipping">
+                    <div class="d-flex justify-content-between mb-3">
+                        <h6 id="shippingCustomerName"></h6>
+                        <button type="button" class="btn btn-primary btn-sm rounded-pill" data-bs-toggle="modal" data-bs-target="#addShippingModal" data-bs-dismiss="modal">
+                            <i class="bi bi-plus-circle me-1"></i>Add Schedule
+                        </button>
+                    </div>
+                    <div id="shippingTableContainer">
+                        <div class="text-center py-3">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="shippingMessage" class="mt-2"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Shipping Schedule Modal -->
+    <div class="modal fade" id="addShippingModal" tabindex="-1" aria-labelledby="addShippingModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header bg-primary text-white border-0 rounded-top-4">
+                    <h5 class="modal-title fw-bold mb-0 d-flex align-items-center" id="addShippingModalLabel">
+                        <i class="bi bi-plus-circle me-2"></i>Add Shipping Schedule
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <input type="hidden" id="editShippingId">
+                    <input type="hidden" id="currentCustomerCodeShippingEdit">
+                    <input type="hidden" id="currentWeekday">
+                    <form id="shippingForm">
+                        <div class="mb-3">
+                            <label for="shippingTransCd" class="form-label fw-semibold">Trans Code <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="shippingTransCd" name="TransCd" required maxlength="5">
+                        </div>
+                        <div class="mb-3">
+                            <label for="weekday" class="form-label fw-semibold">Weekday <span class="text-danger">*</span></label>
+                            <select class="form-select" id="weekday" name="Weekday" required>
+                                <option value="">Select Weekday</option>
+                                <option value="0">Sunday</option>
+                                <option value="1">Monday</option>
+                                <option value="2">Tuesday</option>
+                                <option value="3">Wednesday</option>
+                                <option value="4">Thursday</option>
+                                <option value="5">Friday</option>
+                                <option value="6">Saturday</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="cutOffTime" class="form-label fw-semibold">Cut Off Time <span class="text-danger">*</span></label>
+                            <input type="time" class="form-control" id="cutOffTime" name="CutOffTime" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="shippingDescription" class="form-label fw-semibold">Description</label>
+                            <textarea class="form-control" id="shippingDescription" name="Description" rows="2" maxlength="255"></textarea>
+                        </div>
+                    </form>
+                    <div id="shippingFormMessage" class="mt-2"></div>
+                </div>
+                <div class="modal-footer bg-light border-0 rounded-bottom-4 justify-content-center">
+                    <button type="button" class="btn btn-secondary px-4 rounded-pill" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-primary px-4 rounded-pill" id="btnSaveShipping">
+                        <i class="bi bi-check-circle me-1"></i>Save
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/Customer.css" />
+}
+
+@section Scripts {
+    <script>
+        // URLs for Customer actions
+        var addSupplierUrl = '@Url.Action("AddSupplier", "Customer")';
+        var updateSupplierUrl = '@Url.Action("UpdateSupplier", "Customer")';
+        var deleteSupplierUrl = '@Url.Action("DeleteSupplier", "Customer")';
+
+        // URLs for Leadtime actions
+        var getLeadtimesUrl = '@Url.Action("GetLeadtimesByCustomer", "Customer")';
+        var addLeadtimeUrl = '@Url.Action("AddLeadtime", "Customer")';
+        var updateLeadtimeUrl = '@Url.Action("UpdateLeadtime", "Customer")';
+        var deleteLeadtimeUrl = '@Url.Action("DeleteLeadtime", "Customer")';
+
+        // URLs for ShippingSchedule actions
+        var getShippingSchedulesUrl = '@Url.Action("GetShippingSchedulesByCustomer", "Customer")';
+        var addShippingScheduleUrl = '@Url.Action("AddShippingSchedule", "Customer")';
+        var updateShippingScheduleUrl = '@Url.Action("UpdateShippingSchedule", "Customer")';
+        var deleteShippingScheduleUrl = '@Url.Action("DeleteShippingSchedule", "Customer")';
+    </script>
+    <script src="~/js/customer.js"></script>
+}

@@ -1,18 +1,28 @@
 ﻿using System;
 using System.Collections.Generic;
-
-namespace ASP.Models.Front.DelayHistory
-{
-    public partial class DelayHistory
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using ASP.Models.Admin;
+namespace ASP.Models.Front
+{  
+    public partial class DelayHistory: BaseEntity
     {
-        public Guid Uid { get; set; }
-        public Guid Old { get; set; }
+        [Key]
+        public Guid UId { get; set; }
+        public Guid OId { get; set; }
+
+        [ForeignKey(nameof(OId))]
+        public Order Order { get; set; } = null!;
         public short DelayType { get; set; }
+     
+        [MaxLength(255)]
         public string Reason { get; set; } = null!;
+      
         public DateTime StartTime { get; set; }
+       
         public DateTime ChangeTime { get; set; }
+      
         public double DelayTime { get; set; }
-        public DateTime CreatedDate { get; set; }
-        public DateTime UpdatedDate { get; set; }
+       
     }
 }

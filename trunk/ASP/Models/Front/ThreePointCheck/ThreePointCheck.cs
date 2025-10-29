@@ -1,17 +1,28 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using ASP.Models.Admin;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
-namespace ASP.Models.Front.ThreePointCheck
+namespace ASP.Models.Front
 {
-    public partial class ThreePointCheck
+    public partial class ThreePointCheck : BaseEntity
     {
-        public Guid Uid { get; set; }
-        public Guid Spid { get; set; }
-        public string PalletMarkQrContent { get; set; } = null!;
-        public string PalletNoQrContent { get; set; } = null!;
-        public string CasemarkQrContent { get; set; } = null!;
+        [Key]
+        public Guid UId { get; set; }
+
+        public Guid SPId { get; set; }
+
+        [ForeignKey(nameof(SPId))]
+        public ShoppingList ShoppingList { get; set; } = null!;
+
+        [MaxLength(125)]
+        public string PalletMarkQrContent { get; set; } = string.Empty;
+
+        [MaxLength(50)]
+        public string PalletNoQrContent { get; set; } = string.Empty;
+
+        [MaxLength(255)]
+        public string CasemarkQrContent { get; set; } = string.Empty;
+
         public DateTime IssuedDate { get; set; }
-        public DateTime CreatedDate { get; set; }
-        public DateTime UpdatedDate { get; set; }
     }
 }

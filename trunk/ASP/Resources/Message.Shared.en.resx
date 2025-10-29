@@ -198,4 +198,13 @@
   <data name="msg_err_description_max_length" xml:space="preserve">
     <value>Description must be no more than 100 characters</value>
   </data>
+  <data name="\" xml:space="preserve">
+    <value />
+  </data>
+  <data name="lbl_account" xml:space="preserve">
+    <value>Account</value>
+  </data>
+  <data name="lbl_re_password" xml:space="preserve">
+    <value>Re-enter Password</value>
+  </data>
 </root>

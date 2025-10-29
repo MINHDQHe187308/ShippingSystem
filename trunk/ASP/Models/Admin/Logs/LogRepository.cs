@@ -50,11 +50,11 @@ namespace ASP.Models.Admin.Logs
         {
             var qry = _context.Logs.Select(s => new Log()
             {
-                ID = s.Id,
+                ID = s.ID,
                 LogType = s.LogType,
                 Content = s.Content,
                 Author = s.Author,
-                IP = s.Ip,
+                IP = s.IP,
                 CreatedDate = s.CreatedDate
             }).OrderByDescending(f => f.ID).AsQueryable();
             if (!string.IsNullOrWhiteSpace(filter))

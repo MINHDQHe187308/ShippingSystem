@@ -19,7 +19,7 @@ namespace ASP.Models.Admin.Roles
         [Display(Name = "lbl_status", ResourceType = typeof(Resources.SharedResource))]
         public short Status { get; set; }
 
-        [Display(Name = "lbl_role_default", ResourceType = typeof(Resources.SharedResource))]
+        [Display(Name = "lbl_role_default", ResourceType = typeof(Resources.SharedResource))]   
         public bool DefaultRole { get; set; }
 
         [NotMapped]

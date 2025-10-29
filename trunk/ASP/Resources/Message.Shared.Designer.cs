@@ -63,6 +63,24 @@ namespace ASP.Resources {
         /// <summary>
         ///   Looks up a localized string similar to .
         /// </summary>
+        public static string _ {
+            get {
+                return ResourceManager.GetString("\\", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Tài khoản.
+        /// </summary>
+        public static string lbl_account {
+            get {
+                return ResourceManager.GetString("lbl_account", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to .
+        /// </summary>
         public static string lbl_enum_location_mix {
             get {
                 return ResourceManager.GetString("lbl_enum_location_mix", resourceCulture);
@@ -111,6 +129,15 @@ namespace ASP.Resources {
         public static string lbl_enum_status_user_pending {
             get {
                 return ResourceManager.GetString("lbl_enum_status_user_pending", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to .
+        /// </summary>
+        public static string lbl_re_password {
+            get {
+                return ResourceManager.GetString("lbl_re_password", resourceCulture);
             }
         }
         

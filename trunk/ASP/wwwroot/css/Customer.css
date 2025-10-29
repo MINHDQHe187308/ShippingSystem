@@ -1,0 +1,32 @@
+﻿.card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(13, 110, 253, 0.05);
+}
+
+#addSupplierMessage.success, #updateSupplierMessage.success {
+    color: #198754;
+    font-weight: 500;
+}
+
+#addSupplierMessage.error, #updateSupplierMessage.error {
+    color: #dc3545;
+    font-weight: 500;
+}
+
+.btn-group .btn {
+    transition: all 0.2s ease;
+}
+
+    .btn-group .btn:hover {
+        transform: scale(1.05);
+    }
+
+
