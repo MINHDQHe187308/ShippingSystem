@@ -15,6 +15,7 @@
 	  <Compile Remove="Models\Front\InventoriesInfo\**" />
 	  <Compile Remove="Models\Front\Reports\**" />
 	  <Compile Remove="Models\Front\StockVisualizations\**" />
+	  <Compile Remove="Models\ViewModel\**" />
 	  <Compile Remove="Views\Admin\Categories\**" />
 	  <Compile Remove="Views\Admin\ExchangeRates\**" />
 	  <Compile Remove="Views\Admin\Inventories\**" />
@@ -26,6 +27,8 @@
 	  <Compile Remove="Views\Front\Reports\**" />
 	  <Compile Remove="Views\Front\StockVisualizations\**" />
 	  <Compile Remove="WorkerService\**" />
+	  <Compile Remove="wwwroot\Output\**" />
+	  <Compile Remove="wwwroot\UploadExcel\**" />
 	  <Content Remove="Models\Admin\Categories\**" />
 	  <Content Remove="Models\Admin\ExchangeRates\**" />
 	  <Content Remove="Models\Admin\Inventories\**" />
@@ -34,6 +37,7 @@
 	  <Content Remove="Models\Front\InventoriesInfo\**" />
 	  <Content Remove="Models\Front\Reports\**" />
 	  <Content Remove="Models\Front\StockVisualizations\**" />
+	  <Content Remove="Models\ViewModel\**" />
 	  <Content Remove="Views\Admin\Categories\**" />
 	  <Content Remove="Views\Admin\ExchangeRates\**" />
 	  <Content Remove="Views\Admin\Inventories\**" />
@@ -45,6 +49,8 @@
 	  <Content Remove="Views\Front\Reports\**" />
 	  <Content Remove="Views\Front\StockVisualizations\**" />
 	  <Content Remove="WorkerService\**" />
+	  <Content Remove="wwwroot\Output\**" />
+	  <Content Remove="wwwroot\UploadExcel\**" />
 	  <EmbeddedResource Remove="Models\Admin\Categories\**" />
 	  <EmbeddedResource Remove="Models\Admin\ExchangeRates\**" />
 	  <EmbeddedResource Remove="Models\Admin\Inventories\**" />
@@ -53,6 +59,7 @@
 	  <EmbeddedResource Remove="Models\Front\InventoriesInfo\**" />
 	  <EmbeddedResource Remove="Models\Front\Reports\**" />
 	  <EmbeddedResource Remove="Models\Front\StockVisualizations\**" />
+	  <EmbeddedResource Remove="Models\ViewModel\**" />
 	  <EmbeddedResource Remove="Views\Admin\Categories\**" />
 	  <EmbeddedResource Remove="Views\Admin\ExchangeRates\**" />
 	  <EmbeddedResource Remove="Views\Admin\Inventories\**" />
@@ -64,6 +71,8 @@
 	  <EmbeddedResource Remove="Views\Front\Reports\**" />
 	  <EmbeddedResource Remove="Views\Front\StockVisualizations\**" />
 	  <EmbeddedResource Remove="WorkerService\**" />
+	  <EmbeddedResource Remove="wwwroot\Output\**" />
+	  <EmbeddedResource Remove="wwwroot\UploadExcel\**" />
 	  <None Remove="Models\Admin\Categories\**" />
 	  <None Remove="Models\Admin\ExchangeRates\**" />
 	  <None Remove="Models\Admin\Inventories\**" />
@@ -72,6 +81,7 @@
 	  <None Remove="Models\Front\InventoriesInfo\**" />
 	  <None Remove="Models\Front\Reports\**" />
 	  <None Remove="Models\Front\StockVisualizations\**" />
+	  <None Remove="Models\ViewModel\**" />
 	  <None Remove="Views\Admin\Categories\**" />
 	  <None Remove="Views\Admin\ExchangeRates\**" />
 	  <None Remove="Views\Admin\Inventories\**" />
@@ -83,6 +93,8 @@
 	  <None Remove="Views\Front\Reports\**" />
 	  <None Remove="Views\Front\StockVisualizations\**" />
 	  <None Remove="WorkerService\**" />
+	  <None Remove="wwwroot\Output\**" />
+	  <None Remove="wwwroot\UploadExcel\**" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -109,20 +121,6 @@
 	  <Content Remove="wwwroot\templates\export_excel\Excel_20230215111814.xlsx" />
 	  <Content Remove="wwwroot\templates\export_excel\Excel_20230215111903.xlsx" />
 	  <Content Remove="wwwroot\templates\export_excel\Excel_20240828151157.xlsx" />
-	  <Content Remove="wwwroot\UploadExcel\637918401571828558_Master data.xlsx" />
-	  <Content Remove="wwwroot\UploadExcel\637918415305708499_Master data2.xlsx" />
-	  <Content Remove="wwwroot\UploadExcel\637952234457186056_Master data 1.xlsx" />
-	  <Content Remove="wwwroot\UploadExcel\638016029023898995_import_statistical.xlsx" />
-	  <Content Remove="wwwroot\UploadExcel\638016045160256931_import_statistical.xlsx" />
-	  <Content Remove="wwwroot\UploadExcel\638016054003282252_import_statistical.xlsx" />
-	  <Content Remove="wwwroot\UploadExcel\638016169576941668_import_statistical_cat.xlsx" />
-	  <Content Remove="wwwroot\UploadExcel\638016170758459450_import_statistical_cat.xlsx" />
-	  <Content Remove="wwwroot\UploadExcel\638016171227280977_import_statistical%281%29.xlsx" />
-	  <Content Remove="wwwroot\UploadExcel\638016172230937981_import_statistical.xlsx" />
-	  <Content Remove="wwwroot\UploadExcel\638016172685678599_import_statistical_cat.xlsx" />
-	  <Content Remove="wwwroot\UploadExcel\638016172738353225_import_statistical_cat.xlsx" />
-	  <Content Remove="wwwroot\UploadExcel\638034115740517906_Excel_20221107095107.xlsx" />
-	  <Content Remove="wwwroot\UploadExcel\638034123683310254_Excel_20221107100527.xlsx" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -201,14 +199,11 @@
 
 	<ItemGroup>
 		<Folder Include="Logs\" />
-		<Folder Include="Models\ViewModel\" />
 		<Folder Include="wwwroot\assets\categories\" />
 		<Folder Include="wwwroot\assets\ckgallery\" />
 		<Folder Include="wwwroot\assets\summernote\" />
 		<Folder Include="wwwroot\assets\users\" />
 		<Folder Include="wwwroot\ExportExcel\" />
-		<Folder Include="wwwroot\Output\" />
-		<Folder Include="wwwroot\UploadExcel\" />
 		<Folder Include="wwwroot\FileDownload\" />
 	</ItemGroup>
 
