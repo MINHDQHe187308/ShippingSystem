@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-
 namespace ASP.Controllers.Front
 {
     public class DensoWareHouseController : Controller
@@ -16,7 +15,6 @@ namespace ASP.Controllers.Front
         private readonly CustomerRepositoryInterface _customerRepository;
         private readonly OrderDetailRepositoryInterface _orderDetailRepository;
         private readonly DelayHistoryRepositoryInterface _delayHistoryRepository;
-
         public DensoWareHouseController(
             OrderRepositoryInterface orderRepository,
             CustomerRepositoryInterface customerRepository,
@@ -28,7 +26,6 @@ namespace ASP.Controllers.Front
             _orderDetailRepository = orderDetailRepository;
             _delayHistoryRepository = delayHistoryRepository;
         }
-
         public async Task<IActionResult> Calendar()
         {
             var today = DateTime.Today;
@@ -51,11 +48,12 @@ namespace ASP.Controllers.Front
                 int loadCount = o.OrderDetails?.Sum(od => od.ShoppingLists?.Count(sl =>
                     sl.PLStatus >= (short)CollectionStatusEnumDTO.Delivered &&
                     sl.PLStatus != (short)CollectionStatusEnumDTO.Canceled) ?? 0) ?? 0;
-                string delayStartTime = null;
+                string? delayStartTime = null;
                 double delayTime = 0;
                 if (o.OrderStatus == 4)
                 {
-                    delayStartTime = o.DelayStartTime?.ToString("yyyy-MM-ddTHH:mm:ss");
+                    // Use round-trip ISO format so client parses time with timezone offset correctly
+                    delayStartTime = o.DelayStartTime?.ToString("o");
                     delayTime = o.DelayTime ?? 0;
                 }
                 return new
@@ -63,12 +61,13 @@ namespace ASP.Controllers.Front
                     UId = o.UId.ToString(),
                     Resource = o.CustomerCode ?? "Unknown",
                     ShipDate = o.ShipDate.ToString("yyyy-MM-dd"),
-                    StartTime = o.StartTime.ToString("yyyy-MM-ddTHH:mm:ss"),
-                    EndTime = o.EndTime.ToString("yyyy-MM-ddTHH:mm:ss"),
-                    AcStartTime = o.AcStartTime?.ToString("yyyy-MM-ddTHH:mm:ss") ?? "",
-                    AcEndTime = o.AcEndTime?.ToString("yyyy-MM-ddTHH:mm:ss") ?? "",
-                    Status = o.OrderStatus,  // ProgressStatus cho UI
-                    ApiStatus = o.ApiOrderStatus,  // Thêm để expose nếu cần (optional cho debug/admin)
+                    // Emit full ISO 8601 with offset so browser Date parsing is unambiguous
+                    StartTime = o.StartTime.ToString("o"),
+                    EndTime = o.EndTime.ToString("o"),
+                    AcStartTime = o.AcStartTime?.ToString("o") ?? "",
+                    AcEndTime = o.AcEndTime?.ToString("o") ?? "",
+                    Status = o.OrderStatus, // ProgressStatus cho UI
+                    ApiStatus = o.ApiOrderStatus, // Thêm để expose nếu cần (optional cho debug/admin)
                     TotalPallet = o.TotalPallet,
                     CollectPallet = $"{collectCount} / {o.TotalPallet}",
                     ThreePointScan = $"{prepareCount} / {o.TotalPallet}",
@@ -93,7 +92,6 @@ namespace ASP.Controllers.Front
             };
             return View("~/Views/Front/DensoWareHouse/Calendar.cshtml", modelForView);
         }
-
         [HttpGet]
         public async Task<JsonResult> GetOrderDetails(string orderId)
         {
@@ -126,10 +124,10 @@ namespace ASP.Controllers.Front
                         preparePercent = progress.PreparePercent,
                         loadingPercent = progress.LoadingPercent,
                         currentStage = progress.CurrentStage,
-                        status = progress.Status  // Progress status từ local
+                        status = progress.Status // Progress status từ local
                     };
                 }).ToList();
-                object orderSummary = null;
+                object? orderSummary = null;
                 if (order != null && order.OrderStatus == 4)
                 {
                     DateTime? delayStart = order.DelayStartTime;
@@ -144,7 +142,7 @@ namespace ASP.Controllers.Front
                         {
                             newTimeRange = newTimeRange,
                             delayTime = delayTime,
-                            apiStatus = order.ApiOrderStatus  // Thêm ApiStatus nếu cần trace delay với API
+                            apiStatus = order.ApiOrderStatus // Thêm ApiStatus nếu cần trace delay với API
                         };
                     }
                 }
@@ -155,7 +153,6 @@ namespace ASP.Controllers.Front
                 return Json(new { success = false, message = ex.Message });
             }
         }
-
         [HttpGet]
         public async Task<JsonResult> GetCalendarData()
         {
@@ -175,11 +172,11 @@ namespace ASP.Controllers.Front
                 int loadCount = o.OrderDetails?.Sum(od => od.ShoppingLists?.Count(sl =>
                     sl.PLStatus >= (short)CollectionStatusEnumDTO.Delivered &&
                     sl.PLStatus != (short)CollectionStatusEnumDTO.Canceled) ?? 0) ?? 0;
-                string delayStartTime = null;
+                string? delayStartTime = null;
                 double delayTime = 0;
                 if (o.OrderStatus == 4)
                 {
-                    delayStartTime = o.DelayStartTime?.ToString("yyyy-MM-ddTHH:mm:ss");
+                    delayStartTime = o.DelayStartTime?.ToString("o");
                     delayTime = o.DelayTime ?? 0;
                 }
                 return new
@@ -187,12 +184,12 @@ namespace ASP.Controllers.Front
                     UId = o.UId.ToString(),
                     Resource = o.CustomerCode ?? "Unknown",
                     ShipDate = o.ShipDate.ToString("yyyy-MM-dd"),
-                    StartTime = o.StartTime.ToString("yyyy-MM-ddTHH:mm:ss"),
-                    EndTime = o.EndTime.ToString("yyyy-MM-ddTHH:mm:ss"),
-                    AcStartTime = o.AcStartTime?.ToString("yyyy-MM-ddTHH:mm:ss") ?? "",
-                    AcEndTime = o.AcEndTime?.ToString("yyyy-MM-ddTHH:mm:ss") ?? "",
-                    Status = o.OrderStatus, 
-                    ApiStatus = o.ApiOrderStatus, 
+                    StartTime = o.StartTime.ToString("o"),
+                    EndTime = o.EndTime.ToString("o"),
+                    AcStartTime = o.AcStartTime?.ToString("o") ?? "",
+                    AcEndTime = o.AcEndTime?.ToString("o") ?? "",
+                    Status = o.OrderStatus,
+                    ApiStatus = o.ApiOrderStatus,
                     TotalPallet = o.TotalPallet,
                     CollectPallet = $"{collectCount} / {o.TotalPallet}",
                     ThreePointScan = $"{prepareCount} / {o.TotalPallet}",
@@ -212,7 +209,6 @@ namespace ASP.Controllers.Front
             }).ToArray();
             return Json(new { orders = ordersForView, customers = customersForView });
         }
-
         private string MapOrderStatusToString(short orderStatus)
         {
             return orderStatus switch

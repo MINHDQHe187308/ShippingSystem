@@ -8,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-
 namespace ASP.Models.Front
 {
     public class OrderRepository : OrderRepositoryInterface
@@ -16,14 +15,12 @@ namespace ASP.Models.Front
         private readonly ASPDbContext _context;
         private readonly IHubContext<OrderHub> _hubContext;
         private readonly ILogger<OrderRepository> _logger;
-
         public OrderRepository(ASPDbContext context, IHubContext<OrderHub> hubContext, ILogger<OrderRepository> logger)
         {
             _context = context;
             _hubContext = hubContext;
             _logger = logger;
         }
-
         public async Task<Order?> GetOrderByPCOrderIdAsync(string pcOrderId)
         {
             if (string.IsNullOrEmpty(pcOrderId))
@@ -31,12 +28,10 @@ namespace ASP.Models.Front
             return await _context.Orders
                 .FirstOrDefaultAsync(o => o.PCOrderId == pcOrderId);
         }
-
         public async Task UpsertOrderAsync(OrderDTO orderDto)
         {
             if (orderDto == null || orderDto.PcOrderId == Guid.Empty)
                 throw new ArgumentException("OrderDTO or PcOrderId cannot be null");
-
             var trackedOrder = _context.ChangeTracker.Entries<Order>()
                 .FirstOrDefault(e => e.Entity.UId == orderDto.PcOrderId);
             Order orderToUpdate;
@@ -66,8 +61,8 @@ namespace ASP.Models.Front
                         TransCd = orderDto.TranCd,
                         TotalPallet = orderDto.TotalPallet,
                         OrderCreateDate = orderDto.OrderCreatedDate,
-                        ApiOrderStatus = (short)orderDto.OrderStatus,                 
-                        OrderStatus = 0,  
+                        ApiOrderStatus = (short)orderDto.OrderStatus,
+                        OrderStatus = 0,
                         StartTime = orderDto.OrderCreatedDate,
                         EndTime = orderDto.OrderCreatedDate.AddHours(3),
                         AcStartTime = null,
@@ -81,18 +76,15 @@ namespace ASP.Models.Front
                     isNewOrder = true;
                 }
             }
-
             // Map ApiOrderStatus cho cả update case (nếu existing)
             orderToUpdate.ApiOrderStatus = (short)orderDto.OrderStatus;
-            
             // Update ShipDate nếu thay đổi từ API
             if (orderToUpdate.ShipDate != orderDto.ShippingDate)
             {
-                _logger.LogInformation("Order {OrderId}: ShipDate changed from {OldDate} to {NewDate}", 
+                _logger.LogInformation("Order {OrderId}: ShipDate changed from {OldDate} to {NewDate}",
                     orderDto.PcOrderId, orderToUpdate.ShipDate, orderDto.ShippingDate);
                 orderToUpdate.ShipDate = orderDto.ShippingDate;
             }
-
             var shippingSchedule = await _context.ShippingSchedules
                 .FirstOrDefaultAsync(s => s.CustomerCode == orderDto.CustomerCode &&
                                          s.TransCd == orderDto.TranCd &&
@@ -160,9 +152,8 @@ namespace ASP.Models.Front
             }
             if (isNewOrder)
             {
-                orderToUpdate.OrderStatus = (short)OrderStatusEnumDTO.Available;  // Default cho progress local (có thể là 0 nếu Planned)
+                orderToUpdate.OrderStatus = (short)OrderStatusEnumDTO.Available; // Default cho progress local (có thể là 0 nếu Planned)
             }
-
             // Upsert OrderDetails (giữ nguyên phần này)
             foreach (var detailDto in orderDto.OrderDetails)
             {
@@ -270,18 +261,16 @@ namespace ASP.Models.Front
             // Trigger status update sau khi upsert để recalculate cumulative counts và push SignalR
             await UpdateOrderStatusIfNeeded(orderToUpdate.UId);
         }
-
         public async Task<List<Order>> GetOrdersByDate(DateTime date)
         {
             return await _context.Orders
                 .Where(o => o.ShipDate.Date == date.Date
-                            && o.ApiOrderStatus != (short)OrderStatusEnumDTO.Cancel)  // Thêm filter: Bỏ qua Cancel từ API
+                            && o.ApiOrderStatus != (short)OrderStatusEnumDTO.Cancel) // Thêm filter: Bỏ qua Cancel từ API
                 .Include(o => o.OrderDetails)
                 .ThenInclude(od => od.ShoppingLists)
                 .ThenInclude(sl => sl.ThreePointCheck)
                 .ToListAsync();
         }
-
         public async Task<List<Order>> GetOrdersForWeek(DateTime weekStart)
         {
             var weekEnd = weekStart.AddDays(7);
@@ -293,12 +282,10 @@ namespace ASP.Models.Front
                 .OrderBy(o => o.ShipDate)
                 .ToListAsync();
         }
-
         public async Task SaveChangesAsync()
         {
             await _context.SaveChangesAsync();
         }
-
         // Cập nhật: Sử dụng cumulative count với >= cho status logic
         public async Task<bool> UpdateOrderStatusIfNeeded(Guid orderId)
         {
@@ -312,9 +299,8 @@ namespace ASP.Models.Front
                 _logger.LogWarning("Order {OrderId} not found for status update", orderId);
                 return false;
             }
-            short oldStatus = order.OrderStatus;  // Sử dụng short để nhất quán
+            short oldStatus = order.OrderStatus; // Sử dụng short để nhất quán
             var allShoppingLists = order.OrderDetails.SelectMany(od => od.ShoppingLists ?? new List<ShoppingList>()).ToList();
-            
             // Cumulative: Đã Collected (status >=1, loại trừ Canceled)
             var collectedPallets = allShoppingLists
                 .Where(sl => sl.PLStatus >= (short)CollectionStatusEnumDTO.Collected &&
@@ -322,7 +308,6 @@ namespace ASP.Models.Front
                 .Select(sl => sl.PalletNo)
                 .Distinct()
                 .Count();
-            
             // Tất cả pallets đã LOADED lên cont (status >= Delivered, tức là đã qua Collected + ThreePointCheck + Loaded)
             var loadedPallets = allShoppingLists
                 .Where(sl => sl.PLStatus >= (short)CollectionStatusEnumDTO.Delivered &&
@@ -330,71 +315,46 @@ namespace ASP.Models.Front
                 .Select(sl => sl.PalletNo)
                 .Distinct()
                 .Count();
-
             // ... (phần load order và tính collectedPallets, loadedPallets giữ nguyên)
-
             var totalOrderPallet = order.TotalPallet;
             bool isCompleted = totalOrderPallet > 0 && loadedPallets >= totalOrderPallet;
-
             // Shipped: Tất cả completed VÀ BookContStatus >= Exported
             bool isShipped = isCompleted &&
                              order.OrderDetails.All(od => od.BookContStatus >= (short)BookingStatusEnumDTO.Exported);
-
             if (isShipped)
                 order.OrderStatus = 3; // Shipped
             else if (isCompleted)
                 order.OrderStatus = 2; // Completed (Tất cả pallets đã load lên cont)
-            else if (collectedPallets > 0 || loadedPallets > 0)  // FIX: Bao quát cả collected và loaded partial
+            else if (collectedPallets > 0 || loadedPallets > 0) // FIX: Bao quát cả collected và loaded partial
                 order.OrderStatus = 1; // Pending (Đang thu thập hoặc loading, nhưng chưa đủ)
             else
                 order.OrderStatus = 0; // Planned
-
             // ... (phần actualTimesChanged giữ nguyên)
             bool actualTimesChanged = false;
-            var today = DateTime.Now.Date;
-            // Detect nếu order "sang ngày mới" (điều kiện reset: ShipDate hoặc StartTime trong today, ví dụ delay/reschedule)
-            bool isNewDayOrder = order.ShipDate.Date == today || order.StartTime.Date == today;
-            // Filter CollectedDate: Chỉ lấy trong today
+            // SỬA: Loại bỏ filter today, lấy tất cả collectedDates từ quá khứ
             var validCollectedDates = allShoppingLists
-                .Where(sl => sl.CollectedDate.HasValue && sl.CollectedDate.Value.Date == today)
+                .Where(sl => sl.CollectedDate.HasValue)
                 .Select(sl => sl.CollectedDate.Value)
                 .ToList();
             if (validCollectedDates.Any())
             {
                 var earliestCollectedDate = validCollectedDates.Min();
-                if (!order.AcStartTime.HasValue || order.AcStartTime.Value.Date != earliestCollectedDate.Date ||
-                    order.AcStartTime.Value.TimeOfDay != earliestCollectedDate.TimeOfDay) // Check full time nếu cần precise
+                if (!order.AcStartTime.HasValue || order.AcStartTime.Value != earliestCollectedDate)
                 {
                     order.AcStartTime = earliestCollectedDate;
                     actualTimesChanged = true;
-                    _logger.LogInformation("Order {OrderId}: AcStartTime updated to {AcStartTime} ({Count} dates in today {Today})",
-                        orderId, earliestCollectedDate, validCollectedDates.Count, today);
+                    _logger.LogInformation("Order {OrderId}: AcStartTime updated to {AcStartTime} (from all historical dates, {Count} total)",
+                        orderId, earliestCollectedDate, validCollectedDates.Count);
                 }
             }
-            else
-            {
-                // Reset nếu không có data fresh VÀ là ngày mới (delay/reschedule case)
-                if (isNewDayOrder && order.AcStartTime.HasValue)
-                {
-                    order.AcStartTime = null;
-                    actualTimesChanged = true;
-                    _logger.LogInformation("Order {OrderId}: Reset AcStartTime to null (no fresh data in today {Today}, new day order)",
-                        orderId, today);
-                }
-                else
-                {
-                    _logger.LogDebug("Order {OrderId}: No CollectedDates in today {Today}, keeping existing AcStartTime",
-                        orderId, today);
-                }
-            }
+            // SỬA: Loại bỏ reset logic cho new day. Giữ AcStartTime từ quá khứ
             if (order.AcStartTime.HasValue)
             {
-                // Tương tự cho IssuedDate: Chỉ trong today và >= AcStartTime
+                // SỬA: Lấy tất cả ThreePointChecks từ quá khứ, không filter today
                 var validThreePointChecks = allShoppingLists
                     .Where(sl => sl.ThreePointCheck != null)
                     .Select(sl => sl.ThreePointCheck)
-                    .Where(tpc => tpc.IssuedDate.Date == today && // Chỉ today
-                                  tpc.IssuedDate >= order.AcStartTime.Value)
+                    .Where(tpc => tpc.IssuedDate >= order.AcStartTime.Value) // Chỉ >= AcStartTime, không filter date
                     .Select(tpc => tpc.IssuedDate)
                     .ToList();
                 if (validThreePointChecks.Any())
@@ -404,8 +364,8 @@ namespace ASP.Models.Front
                     {
                         order.AcEndTime = latestIssuedDate;
                         actualTimesChanged = true;
-                        _logger.LogInformation("Order {OrderId}: AcEndTime updated to {AcEndTime} ({Count} dates in today {Today})",
-                            orderId, latestIssuedDate, validThreePointChecks.Count, today);
+                        _logger.LogInformation("Order {OrderId}: AcEndTime updated to {AcEndTime} (from all historical dates, {Count} total)",
+                            orderId, latestIssuedDate, validThreePointChecks.Count);
                     }
                 }
                 else if (isShipped)
@@ -415,32 +375,15 @@ namespace ASP.Models.Front
                     {
                         order.AcEndTime = fallbackEnd;
                         actualTimesChanged = true;
-                        _logger.LogInformation("Order {OrderId}: Shipped but no TPC in today, fallback AcEndTime to {FallbackEnd}",
+                        _logger.LogInformation("Order {OrderId}: Shipped but no TPC available, fallback AcEndTime to {FallbackEnd}",
                             orderId, fallbackEnd);
                     }
                 }
-                else
-                {
-                    // Reset AcEndTime nếu không có data fresh, AcStartTime có (và là ngày mới)
-                    if (isNewDayOrder && order.AcEndTime.HasValue)
-                    {
-                        order.AcEndTime = null;
-                        actualTimesChanged = true;
-                        _logger.LogInformation("Order {OrderId}: Reset AcEndTime to null (no fresh data in today {Today}, new day order)",
-                            orderId, today);
-                    }
-                }
+                // SỬA: Loại bỏ reset AcEndTime nếu không có data fresh
             }
             else
             {
-                // Nếu AcStartTime null (sau reset hoặc chưa có), cũng reset AcEndTime nếu cần
-                if (isNewDayOrder && order.AcEndTime.HasValue)
-                {
-                    order.AcEndTime = null;
-                    actualTimesChanged = true;
-                    _logger.LogInformation("Order {OrderId}: Reset AcEndTime to null (AcStartTime null, new day order)",
-                        orderId);
-                }
+                // Nếu AcStartTime null, cũng không reset AcEndTime nữa
             }
             bool statusChanged = order.OrderStatus != oldStatus;
             if (statusChanged || actualTimesChanged)
@@ -453,7 +396,6 @@ namespace ASP.Models.Front
             }
             return statusChanged || actualTimesChanged;
         }
-
         public async Task<Order?> GetOrderById(Guid orderId)
         {
             return await _context.Orders
@@ -463,7 +405,6 @@ namespace ASP.Models.Front
                 .Include(o => o.DelayHistories)
                 .FirstOrDefaultAsync(o => o.UId == orderId);
         }
-
         public async Task<List<Order>> GetOrdersWithDelayByDate(DateTime date)
         {
             return await _context.Orders
@@ -476,7 +417,6 @@ namespace ASP.Models.Front
                 .Include(o => o.DelayHistories)
                 .ToListAsync();
         }
-
         public async Task UpdateOrderStatusToDelay(Guid orderId, DateTime delayStartTime, double delayTime)
         {
             var order = await _context.Orders.FirstOrDefaultAsync(o => o.UId == orderId);
