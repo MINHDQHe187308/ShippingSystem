@@ -1,7 +1,7 @@
-﻿@{
-    ViewData["Title"] = "Denso Warehouse Calendar";
-    Layout = "../Shared/Layout/Front/_Layout";
-    var modelJson = Newtonsoft.Json.JsonConvert.SerializeObject(Model);
+﻿﻿@{
+ViewData["Title"] = "Denso Warehouse Calendar";
+Layout = "../Shared/Layout/Front/_Layout";
+var modelJson = Newtonsoft.Json.JsonConvert.SerializeObject(Model);
 }
 
 <h1 class="text-center mt-3">Denso Warehouse Calendar</h1>
@@ -35,18 +35,21 @@
 
     <!-- 🧮 Giải thích Progress Metrics -->
     <div class="legend-container">
-        <h5 class="text-center mb-3">Progress Order</h5>
-        <div class="legend-item">
-            <span class="legend-icon" style="background-color: #FFF2CC;"></span>
-            <span class="legend-text">Collect Pallet</span>
-        </div>
-        <div class="legend-item">
-            <span class="legend-icon" style="background-color: #FFCE9F;"></span>
-            <span class="legend-text">Three Point Scan</span>
-        </div>
         <div class="legend-item">
             <span class="legend-icon" style="background-color: #F19C99;"></span>
-            <span class="legend-text">Load Container</span>
+            <span class="legend-text fw-bold" style="color: #000000;">Progress Order</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-text fw-bold" style="color: #000000;">Customer Code (Total Pallet)</span>
+        </div>
+        <div class="legend-item">        
+            <span class="legend-text fw-bold" style="color: #000000;">Collect Pallet</span>
+        </div>
+        <div class="legend-item">       
+            <span class="legend-text fw-bold" style="color: #000000;">Three Point Scan</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-text fw-bold" style="color: #000000;">Load Container</span>
         </div>
     </div>
 </div>
@@ -137,7 +140,7 @@
                             <small class="form-text text-muted">Set delay start time (future for planned events).</small>
                         </div>
 
-                       
+
 
                         <!-- Reason -->
                         <div class="col-12 mb-3">

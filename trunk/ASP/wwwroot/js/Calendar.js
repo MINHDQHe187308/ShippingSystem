@@ -122,22 +122,22 @@
             border-color: #ff0000 !important;
             color: #fff !important;
         }
-        /* Custom Tooltip Styles - ĐẸP MẮT VÀ DỄ NHÌN */
+        /* Custom Tooltip Styles - ĐẸP MẮT VÀ DỄ NHÌN - TĂNG KÍCH THƯỚC */
         #custom-tooltip {
             position: absolute;
             background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
             border: 1px solid #e0e0e0;
             border-radius: 8px;
-            padding: 16px; /* Tăng padding từ 12px lên 16px */
+            padding: 20px; /* Tăng padding từ 16px lên 20px */
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
             z-index: 10001;
             pointer-events: none;
-            min-width: 250px; /* Tối thiểu 250px */
-            max-width: 400px; /* Tăng từ 300px lên 400px cho responsive */
+            min-width: 300px; /* Tăng từ 250px lên 300px */
+            max-width: 500px; /* Tăng từ 400px lên 500px cho responsive */
             width: auto; /* Tự động điều chỉnh */
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            font-size: 15px; /* Tăng font-size tổng thể từ 14px lên 15px */
-            line-height: 1.5; /* Tăng line-height từ 1.4 lên 1.5 cho dễ đọc hơn */
+            font-size: 16px; /* Tăng font-size tổng thể từ 15px lên 16px */
+            line-height: 1.6; /* Tăng line-height từ 1.5 lên 1.6 cho dễ đọc hơn */
             display: none;
             transition: opacity 0.1s ease-out, transform 0.1s ease-out; /* Transition mượt mà nhưng nhanh */
             word-wrap: break-word; /* Tự động xuống dòng nếu text quá dài */
@@ -149,37 +149,43 @@
             transform: translateY(0);
         }
         #custom-tooltip h4 {
-            margin: 0 0 12px 0; /* Tăng margin-bottom từ 8px lên 12px */
+            margin: 0 0 16px 0; /* Tăng margin-bottom từ 12px lên 16px */
             color: #333;
-            font-size: 17px; /* Tăng font-size từ 15px lên 17px */
+            font-size: 18px; /* Tăng font-size từ 17px lên 18px */
             font-weight: 600;
             border-bottom: 1px solid #eee;
-            padding-bottom: 6px; /* Tăng padding-bottom từ 4px lên 6px */
+            padding-bottom: 8px; /* Tăng padding-bottom từ 6px lên 8px */
         }
         #custom-tooltip dl {
             margin: 0;
             display: grid;
             grid-template-columns: auto 1fr;
-            gap: 6px 10px; /* Tăng gap từ 4px 8px lên 6px 10px */
+            gap: 8px 12px; /* Tăng gap từ 6px 10px lên 8px 12px */
             align-items: center;
         }
         #custom-tooltip dt {
             font-weight: 700; /* Tăng font-weight từ 600 lên 700 để đậm hơn */
             color: #000; /* Đổi màu từ #555 sang #000 (đen) */
             text-align: right;
-            min-width: 120px; /* Tăng min-width từ 100px lên 120px để thẳng hàng tốt hơn */
-            font-size: 15px; /* Thêm font-size để tăng kích thước cho dt */
+            min-width: 140px; /* Tăng min-width từ 120px lên 140px để thẳng hàng tốt hơn */
+            font-size: 16px; /* Tăng font-size từ 15px lên 16px cho dt */
         }
         #custom-tooltip dd {
             margin: 0;
             color: #333;
             font-weight: 400;
-            font-size: 15px; /* Tăng font-size từ 14px lên 15px cho dd */
+            font-size: 16px; /* Tăng font-size từ 15px lên 16px cho dd */
+        }
+        /* THÊM MỚI: Style cho dd của Plan Time và Actual Time - chữ đen đậm */
+        #custom-tooltip dd.plan-time-dd,
+        #custom-tooltip dd.actual-time-dd {
+            color: #000 !important;
+            font-weight: 700 !important;
         }
         #custom-tooltip .status {
-            padding: 4px 8px; /* Tăng padding từ 2px 6px lên 4px 8px */
+            padding: 6px 10px; /* Tăng padding từ 4px 8px lên 6px 10px */
             border-radius: 4px;
-            font-size: 12px; /* Tăng font-size từ 11px lên 12px */
+            font-size: 13px; /* Tăng font-size từ 12px lên 13px */
             font-weight: 600;
             text-transform: uppercase;
         }
@@ -224,10 +230,39 @@
         const ss = String(d.getSeconds()).padStart(2, '0');
         return `${hh}:${mm}:${ss}`;
     }
-    // --- Helper: Format time range (local BKK)
-    function formatTimeRange(start, end) {
+    // --- THÊM MỚI: Helper format full date-time nếu trong quá khứ (local BKK)
+    function formatFullTimeRange(start, end, now = new Date()) {
         if (!start || !end) return 'N/A';
-        return `${hhmmss(start)} - ${hhmmss(end)}`;
+        const isPast = start < now; // Nếu start < now, coi là past
+        if (isPast) {
+            // Full date: YYYY-MM-DD HH:MM:SS
+            const fullStart = start.toLocaleString('sv-SE', { timeZone: 'Asia/Bangkok' }).replace(' ', 'T').slice(0, 19).replace('T', ' ');
+            const fullEnd = end.toLocaleString('sv-SE', { timeZone: 'Asia/Bangkok' }).replace(' ', 'T').slice(0, 19).replace('T', ' ');
+            return `${fullStart} - ${fullEnd}`;
+        } else {
+            // Chỉ time nếu future/current
+            return `${hhmmss(start)} - ${hhmmss(end)}`;
+        }
+    }
+    // --- Helper: Format time range (local BKK)
+    // If dateOnlyIfPast is true and the start is in the past, show only the date (dd/mm/yyyy)
+    function formatTimeRange(start, end, now = new Date(), dateOnlyIfPast = false) {
+        if (!start || !end) return 'N/A';
+        // If caller requests date-only (but we want date+hour:minute) when start is past (used for Actual time)
+        // show localized date plus hour:minute (no seconds). Example: "03/11/2025 08:30 - 10:15" or
+        // if different days: "03/11/2025 22:00 - 04/11/2025 01:30"
+        if (dateOnlyIfPast && start < now) {
+            const startDate = start.toLocaleDateString('vi-VN', { timeZone: 'Asia/Bangkok' });
+            const endDate = end.toLocaleDateString('vi-VN', { timeZone: 'Asia/Bangkok' });
+            const startTime = start.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Bangkok' });
+            const endTime = end.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Bangkok' });
+            if (startDate === endDate) {
+                return `${startDate} ${startTime} - ${endTime}`;
+            }
+            return `${startDate} ${startTime} - ${endDate} ${endTime}`;
+        }
+        // Fallback: preserve existing behavior (full datetime for past, short time for future/current)
+        return formatFullTimeRange(start, end, now);
     }
     // --- SỬA: getTimeRange() - Thêm param 'midnightMode' để xử lý mode đặc biệt lúc 00:00, TÍNH THEO LOCAL BKK + THÊM viewEnd
     function getTimeRange(midnightMode = false) {
@@ -268,7 +303,7 @@
             endHour,
             currentShort: hhmmss(now).slice(0, 5),
             start,
-            end,  // ← THÊM: viewEnd Date object
+            end, // ← THÊM: viewEnd Date object
             viewStart: start,
             viewEnd: end
         };
@@ -617,7 +652,7 @@
                                             <div class="progress" style="height: 8px;">
                                                 <div class="progress-bar bg-primary" style="width: ${collectPercent}%"></div>
                                             </div>
-                                        
+                                       
                                             <!-- Prepare Stage -->
                                             <div class="d-flex align-items-center mb-2 mt-2">
                                                 <i class="bi bi-tools text-success me-2"></i>
@@ -697,8 +732,8 @@
             const viewEnd = new Date(viewDate);
             viewEnd.setHours(maxH, maxM, maxS, 0);
             // THÊM: Tính relative đến event span (clipped)
-            const eventDuration = eventEnd - eventStart;  // ms của event trong view
-            if (eventDuration <= 0) return { html: '<div>Invalid duration</div>' };  // Safety
+            const eventDuration = eventEnd - eventStart; // ms của event trong view
+            if (eventDuration <= 0) return { html: '<div>Invalid duration</div>' }; // Safety
             let actualPercent = 0, actualWidth = 0;
             let planPercent = 0, planWidth = 0;
             // FIX: Tính % so với EVENT DURATION local, clip nếu ngoài range
@@ -996,20 +1031,22 @@
                                 // Optional: Play sound nhẹ khi hover (giảm volume tạm thời)
                                 playBeep(0.2, 600, 100); // Beep nhẹ hơn cho hover
                             }
-                            // Cập nhật nội dung tooltip với tất cả thông tin - SỬA SANG LOCAL BKK
-                            const planTime = formatTimeRange(pStart, pEnd);
-                            const actualTime = formatTimeRange(aStart, aEnd);
-                            const delayTimeRange = formatTimeRange(dStart, dEnd);
+                            // Cập nhật nội dung tooltip với tất cả thông tin - SỬA SANG LOCAL BKK + THÊM: Tách riêng PlanTime và ActualTime + Full date nếu actual past + Chữ đen đậm
+                            const now = new Date(); // Giờ local BKK hiện tại để check past
+                            // For plan and actual time: if start is in the past, show date + hour:minute (no seconds)
+                            const planTime = formatTimeRange(pStart, pEnd, now, true);
+                            const actualTime = formatTimeRange(aStart, aEnd, now, true);
+                            const delayTimeRange = formatTimeRange(dStart, dEnd, now);
                             const tooltip = createTooltip();
                             tooltip.innerHTML = `
                                 <h4>Order Information</h4>
                                 <dl>
                                     <dt>ShipDate:</dt>
-                                    <dd>${extendedProps.shipDate}</dd>
-                                    <dt>Plan Time (BKK):</dt>
-                                    <dd>${planTime}</dd>
-                                    <dt>Actual Time (BKK):</dt>
-                                    <dd>${actualTime}</dd>
+                                    <dd>${extendedProps.shipDate}</dd>                                
+                                  <dt>Plan Time:</dt>
+                                    <dd class="plan-time-dd">${planTime}</dd>
+                                    <dt>Actual Time:</dt>
+                                    <dd class="actual-time-dd">${actualTime}</dd>
                                     ${status === 'Delay' ? `<dt>Delay Time (BKK):</dt><dd>${delayTimeRange}</dd>` : ''}
                                     <dt>TransCD:</dt>
                                     <dd>${extendedProps.transCd}</dd>
