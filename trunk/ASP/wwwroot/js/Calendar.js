@@ -206,7 +206,7 @@
     overflow: visible !important;
     position: relative;
 }
-        #custom-tooltip .status.planned { background: #000; color: #fff; }
+        #custom-tooltip .status.planned { background: #808080; color: #fff; }
         #custom-tooltip .status.pending { background: #007bff; color: #fff; }
         #custom-tooltip .status.shipped { background: #ffc107; color: #000; }
         #custom-tooltip .status.completed { background: #28a745; color: #fff; }
@@ -252,12 +252,13 @@
         // show localized date plus hour:minute (no seconds). Example: "03/11/2025 08:30 - 10:15" or
         // if different days: "03/11/2025 22:00 - 04/11/2025 01:30"
         if (dateOnlyIfPast && start < now) {
-            // Always show full date + time for both start and end when the start is in the past.
-            // This ensures the tooltip displays the day/month/year for the past and for the (current) end.
             const startDate = start.toLocaleDateString('vi-VN', { timeZone: 'Asia/Bangkok' });
             const endDate = end.toLocaleDateString('vi-VN', { timeZone: 'Asia/Bangkok' });
             const startTime = start.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Bangkok' });
             const endTime = end.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Bangkok' });
+            if (startDate === endDate) {
+                return `${startDate} ${startTime} - ${endTime}`;
+            }
             return `${startDate} ${startTime} - ${endDate} ${endTime}`;
         }
         // Fallback: preserve existing behavior (full datetime for past, short time for future/current)
@@ -515,6 +516,7 @@
         schedulerLicenseKey: 'GPL-My-Project-Is-Open-Source',
         initialView: 'resourceTimelineDay',
         nowIndicator: false,
+        width: '85%',
         height: 'auto',
         // timeZone: 'UTC', // ← XÓA: Render theo local BKK (mặc định)
         headerToolbar: {
@@ -795,24 +797,26 @@
                             if (aStart && aEnd) {
                                 // Nếu có both: vẽ plan overlay (top 15%, height 70%)
                                 const planBar = document.createElement('div');
+                                planBar.classList.add('custom-gradient-box');
                                 planBar.style.position = 'absolute';
                                 planBar.style.left = Math.max(0, planPercent) + '%'; // FIX: Dùng planPercent mới
                                 planBar.style.top = '15%'; // Giữ nguyên như ban đầu
                                 planBar.style.height = '70%'; // Giữ nguyên như ban đầu
                                 planBar.style.width = planWidth + '%'; // FIX: Dùng planWidth mới
-                                planBar.style.background = getColorByStatus('Planned'); // Đen cho plan overlay
+                                //planBar.style.background = getColorByStatus('Planned'); // Đen cho plan overlay
                                 planBar.style.borderRadius = '2px';
                                 planBar.title = `Full Plan BKK: ${hhmmss(pStart)} - ${hhmmss(pEnd)}`; // SỬA: Local BKK
                                 wrapper.appendChild(planBar);
                             } else {
                                 // Nếu chỉ plan: vẽ full plan bar
                                 const planBarFull = document.createElement('div');
+                                planBarFull.classList.add('custom-gradient-box');
                                 planBarFull.style.position = 'absolute';
                                 planBarFull.style.left = Math.max(0, planPercent) + '%'; // FIX: Dùng planPercent mới
                                 planBarFull.style.top = '0';
                                 planBarFull.style.height = '100%';
                                 planBarFull.style.width = planWidth + '%'; // FIX: Dùng planWidth mới
-                                planBarFull.style.background = fallbackColor; // SỬA: Dùng fallback cho plan full
+                                //planBarFull.style.background = fallbackColor; // SỬA: Dùng fallback cho plan full
                                 planBarFull.style.borderRadius = '4px';
                                 wrapper.appendChild(planBarFull);
                             }
@@ -920,70 +924,80 @@
                                 combined.style.width = '100%';
                                 combined.style.flex = '0 0 100%';
                             }
+
+                            const txtContent = document.createElement('label');
+                            txtContent.style.width = '100%';
+                            txtContent.style.textAlign = 'center';
+                            txtContent.style.alignSelf = 'end';
+                            txtContent.style.fontSize = '1.1rem';
+                            txtContent.style.color = 'darkblue';
+                            txtContent.textContent = extendedProps.customerCode + " " + `(${extendedProps.totalPallet || 0})` + " - " + extractFirstNumber(extendedProps.collectPallet) +
+                                " | " + extractFirstNumber(extendedProps.threePointScan) + " | " + extractFirstNumber(extendedProps.loadCont);
                             // Left: CustomerCode + TotalPallet
-                            const left = document.createElement('div');
-                            left.style.display = 'flex';
-                            left.style.flex = '0 0 auto';
-                            left.style.alignItems = 'center';
-                            left.style.gap = '8px';
-                            left.style.padding = '2px 4px';
-                            const cust = document.createElement('div');
-                            cust.textContent = extendedProps.customerCode || 'N/A';
-                            cust.style.fontWeight = '700';
-                            cust.style.color = '#111';
-                            cust.style.whiteSpace = 'nowrap';
-                            const totalP = document.createElement('div');
-                            totalP.textContent = `(${extendedProps.totalPallet || 0})`;
-                            totalP.style.fontWeight = '600';
-                            totalP.style.color = '#333';
-                            totalP.style.whiteSpace = 'nowrap';
-                            left.appendChild(cust);
-                            left.appendChild(totalP);
-                            // Right: progress items in a single group; each shows only the actual numeric value
-                            const progressGroup = document.createElement('div');
-                            progressGroup.style.display = 'flex';
-                            progressGroup.style.flex = '1 1 auto';
-                            progressGroup.style.alignItems = 'center';
-                            progressGroup.style.justifyContent = 'space-between';
-                            progressGroup.style.gap = '6px';
-                            progressGroup.style.overflow = 'hidden';
-                            // Create a small helper to create simple progress badge
-                            function makeBadge(text) {
-                                const b = document.createElement('div');
-                                b.textContent = text;
-                                b.style.flex = '0 1 auto';
-                                b.style.padding = '2px 6px';
-                                b.style.borderRadius = '4px';
-                                b.style.background = 'transparent';
-                                b.style.color = '#111';
-                                b.style.fontWeight = '700';
-                                b.style.whiteSpace = 'nowrap';
-                                b.style.textAlign = 'center';
-                                b.style.overflow = 'hidden';
-                                b.style.textOverflow = 'ellipsis';
-                                return b;
-                            }
-                            const collectNum = extractFirstNumber(extendedProps.collectPallet);
-                            const threeNum = extractFirstNumber(extendedProps.threePointScan);
-                            const loadNum = extractFirstNumber(extendedProps.loadCont);
-                            const collectBadge = makeBadge(collectNum);
-                            const threeBadge = makeBadge(threeNum);
-                            const loadBadge = makeBadge(loadNum);
-                            progressGroup.appendChild(collectBadge);
-                            progressGroup.appendChild(threeBadge);
-                            progressGroup.appendChild(loadBadge);
-                            combined.appendChild(left);
-                            combined.appendChild(progressGroup);
+                            //const left = document.createElement('div');
+                            //left.style.display = 'flex';
+                            //left.style.flex = '0 0 auto';
+                            //left.style.alignItems = 'center';
+                            //left.style.gap = '8px';
+                            //left.style.padding = '2px 4px';
+                            //const cust = document.createElement('div');
+                            //cust.textContent = extendedProps.customerCode || 'N/A';
+                            //cust.style.fontWeight = '700';
+                            //cust.style.color = '#111';
+                            //cust.style.whiteSpace = 'nowrap';
+                            //const totalP = document.createElement('div');
+                            //totalP.textContent = `(${extendedProps.totalPallet || 0})`;
+                            //totalP.style.fontWeight = '600';
+                            //totalP.style.color = '#333';
+                            //totalP.style.whiteSpace = 'nowrap';
+                            //left.appendChild(cust);
+                            //left.appendChild(totalP);
+                            //// Right: progress items in a single group; each shows only the actual numeric value
+                            //const progressGroup = document.createElement('div');
+                            //progressGroup.style.display = 'flex';
+                            //progressGroup.style.flex = '1 1 auto';
+                            //progressGroup.style.alignItems = 'center';
+                            //progressGroup.style.justifyContent = 'space-between';
+                            //progressGroup.style.gap = '6px';
+                            //progressGroup.style.overflow = 'hidden';
+                            //// Create a small helper to create simple progress badge
+                            //function makeBadge(text) {
+                            //    const b = document.createElement('div');
+                            //    b.textContent = text;
+                            //    b.style.flex = '0 1 auto';
+                            //    b.style.padding = '2px 6px';
+                            //    b.style.borderRadius = '4px';
+                            //    b.style.background = 'transparent';
+                            //    b.style.color = '#111';
+                            //    b.style.fontWeight = '700';
+                            //    b.style.whiteSpace = 'nowrap';
+                            //    b.style.textAlign = 'center';
+                            //    b.style.overflow = 'hidden';
+                            //    b.style.textOverflow = 'ellipsis';
+                            //    return b;
+                            //}
+                            //const collectNum = extractFirstNumber(extendedProps.collectPallet);
+                            //const threeNum = extractFirstNumber(extendedProps.threePointScan);
+                            //const loadNum = extractFirstNumber(extendedProps.loadCont);
+                            //const collectBadge = makeBadge(collectNum);
+                            //const threeBadge = makeBadge(threeNum);
+                            //const loadBadge = makeBadge(loadNum);
+                            //progressGroup.appendChild(collectBadge);
+                            //progressGroup.appendChild(threeBadge);
+                            //progressGroup.appendChild(loadBadge);
+                            //combined.appendChild(left);
+                            //combined.appendChild(progressGroup);
+                            combined.appendChild(txtContent);
                             // Set initial font sizes (large but not excessive) so text appears prominent
                             try {
                                 const initialH = Math.max(1, wrapper.getBoundingClientRect().height);
                                 // Reduce font sizes: smaller multiplier and lower max to make text less dominant
                                 const fsInit = Math.max(12, Math.min(22, Math.floor(initialH * 0.28)));
-                                cust.style.fontSize = fsInit + 'px';
-                                totalP.style.fontSize = Math.max(12, fsInit - 2) + 'px';
-                                collectBadge.style.fontSize = fsInit + 'px';
-                                threeBadge.style.fontSize = fsInit + 'px';
-                                loadBadge.style.fontSize = fsInit + 'px';
+                                //cust.style.fontSize = fsInit + 'px';
+                                //totalP.style.fontSize = Math.max(12, fsInit - 2) + 'px';
+                                //collectBadge.style.fontSize = fsInit + 'px';
+                                //threeBadge.style.fontSize = fsInit + 'px';
+                                //loadBadge.style.fontSize = fsInit + 'px';
                             } catch (e) {
                                 // ignore
                             }
@@ -994,11 +1008,11 @@
                                     const h = Math.max(1, wrapper.getBoundingClientRect().height);
                                     // Reduced responsive font sizing: smaller multiplier and caps
                                     const fs = Math.max(12, Math.min(22, Math.floor(h * 0.28)));
-                                    cust.style.fontSize = fs + 'px';
-                                    totalP.style.fontSize = Math.max(12, fs - 2) + 'px';
-                                    collectBadge.style.fontSize = fs + 'px';
-                                    threeBadge.style.fontSize = fs + 'px';
-                                    loadBadge.style.fontSize = fs + 'px';
+                                    //cust.style.fontSize = fs + 'px';
+                                    //totalP.style.fontSize = Math.max(12, fs - 2) + 'px';
+                                    //collectBadge.style.fontSize = fs + 'px';
+                                    //threeBadge.style.fontSize = fs + 'px';
+                                    //loadBadge.style.fontSize = fs + 'px';
                                     // Recompute desiredPx in case the timeline/responsive layout changed
                                     const newDesired = computeDesiredPx();
                                     const wrapperW = wrapper.getBoundingClientRect().width || 0;
@@ -1017,8 +1031,8 @@
                             }
                             // Push progress badges to the right edge of the combined block while CustomerCode stays left
                             try {
-                                progressGroup.style.marginLeft = 'auto';
-                                progressGroup.style.justifyContent = 'flex-end';
+                                //progressGroup.style.marginLeft = 'auto';
+                                //progressGroup.style.justifyContent = 'flex-end';
                             } catch (err) {
                                 // ignore
                             }

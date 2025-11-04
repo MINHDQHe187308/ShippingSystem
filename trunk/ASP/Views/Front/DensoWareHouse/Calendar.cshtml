@@ -1,13 +1,152 @@
-﻿﻿@{
-ViewData["Title"] = "Denso Warehouse Calendar";
-Layout = "../Shared/Layout/Front/_Layout";
-var modelJson = Newtonsoft.Json.JsonConvert.SerializeObject(Model);
+﻿@{
+    ViewData["Title"] = "Denso Warehouse Calendar";
+    Layout = "../Shared/Layout/Front/_Layout";
+    var modelJson = Newtonsoft.Json.JsonConvert.SerializeObject(Model);
 }
 
-<h1 class="text-center mt-3">Denso Warehouse Calendar</h1>
+<link type="text/css" href="~/css/Calendar.css" asp-append-version="true" />
+<style>
+    fieldset {
+        min-width: 0;
+        padding: 0 5px;
+        margin-bottom: 2px;
+        border: 0;
+        border-radius: 10px;
+        background: #f8f9fa;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        height: 99px;
+        gap: 10px;
+    }
+
+    legend {
+        display: block;
+        width: inherit;
+        max-width: 100%;
+        padding: 0 10px;
+        margin-bottom: .5rem;
+        font-size: 1.1rem;
+        line-height: inherit;
+        color: inherit;
+        white-space: normal;
+        margin-left: 18px;
+    }
+
+    .fc-scroller{
+        max-height: 60vh;
+        overflow-y: auto;
+    }
+
+    .fc-timeline-event-harness{
+        align-self: anchor-center;
+    }
+
+    .fc-timeline-slot-cushion{
+        width: 100%;
+        font-size: 1.1rem;
+    }
+
+    .fc-datagrid-cell-cushion{
+        height: 100%;
+        width: 100%;
+        text-align: center;
+        align-content: center;
+        font-size: 1.1rem;
+        font-weight: bold;
+    }
+
+    .custom-gradient-box {
+        opacity: 0.4;
+        -webkit-box-sizing: content-box;
+        -moz-box-sizing: content-box;
+        box-sizing: content-box;
+        width: 320px;
+        height: 320px;
+        border: none;
+        font: normal 100%/normal Arial, Helvetica, sans-serif;
+        color: rgb(255, 255, 255);
+        -o-text-overflow: clip;
+        text-overflow: clip;
+        background: -webkit-linear-gradient(-45deg, rgba(84,84,84,0) 0, rgba(84,84,84,0) 40%, rgba(29,29,29,1) 40%, rgba(0,0,0,1) 59%, rgba(58,58,58,0) 59%, rgba(63,63,63,0) 100%), -webkit-linear-gradient(-45deg, rgba(0,0,0,1) 0, rgba(0,0,0,1) 7%, rgba(79,79,79,0) 7%, rgba(63,63,63,0) 100%), -webkit-linear-gradient(-225deg, rgba(0,0,0,1) 0, rgba(0,0,0,1) 7%, rgba(79,79,79,0) 7%, rgba(63,63,63,0) 100%), rgba(33,29,29,1);
+        background: -moz-linear-gradient(135deg, rgba(84,84,84,0) 0, rgba(84,84,84,0) 40%, rgba(29,29,29,1) 40%, rgba(0,0,0,1) 59%, rgba(58,58,58,0) 59%, rgba(63,63,63,0) 100%), -moz-linear-gradient(135deg, rgba(0,0,0,1) 0, rgba(0,0,0,1) 7%, rgba(79,79,79,0) 7%, rgba(63,63,63,0) 100%), -moz-linear-gradient(315deg, rgba(0,0,0,1) 0, rgba(0,0,0,1) 7%, rgba(79,79,79,0) 7%, rgba(63,63,63,0) 100%), rgba(33,29,29,1);
+        background: linear-gradient(135deg, rgba(84,84,84,0) 0, rgba(84,84,84,0) 40%, rgba(29,29,29,1) 40%, rgba(0,0,0,1) 59%, rgba(58,58,58,0) 59%, rgba(63,63,63,0) 100%), linear-gradient(135deg, rgba(0,0,0,1) 0, rgba(0,0,0,1) 7%, rgba(79,79,79,0) 7%, rgba(63,63,63,0) 100%), linear-gradient(315deg, rgba(0,0,0,1) 0, rgba(0,0,0,1) 7%, rgba(79,79,79,0) 7%, rgba(63,63,63,0) 100%), rgba(33,29,29,1);
+        -webkit-background-origin: padding-box;
+        background-origin: padding-box;
+        -webkit-background-clip: border-box;
+        background-clip: border-box;
+        -webkit-background-size: 10px 10px;
+        background-size: 10px 10px;
+    }
+
+    #calendar{
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .fc-h-event{
+        background: #808080;
+    }
+</style>
+
+<h1 class="text-center mt-3">DENSO Warehouse Calendar</h1>
+
+<div id="legend" class="row">
+    <div class="col-xl-12 table-responsive" style="display: inline-flex">
+        <div class="col-xl-7">
+            <fieldset>
+                <legend><label>Order preparation</label></legend>
+                <div class="row">
+                    <div class="col-sm-9" style="display: inline-flex">
+                        <div class="col-sm-3">
+                            <span class="legend-icon custom-gradient-box"></span>
+                            <span class="legend-text"><label>Plan</label></span>
+                        </div>
+                        <div class="col-sm-3">
+                            <span class="legend-icon" style="background-color: #007bff;"></span>
+                            <span class="legend-text"><label>Waiting</label></span>
+                        </div>
+                        <div class="col-sm-3">
+                            <span class="legend-icon" style="background-color: #28a745;"></span>
+                            <span class="legend-text"><label>Finish</label></span>
+                        </div>
+                        <div class="col-sm-3">
+                            <span class="legend-icon" style="background-color: #ffc107;"></span>
+                            <span class="legend-text"><label>Shipped</label></span>
+                        </div>
+                        <div class="col-sm-3">
+                            <span class="legend-icon" style="background-color: #ff0000;"></span>
+                            <span class="legend-text"><label>Delay</label></span>
+                        </div>
+                    </div>
+                </div>
+            </fieldset>
+        </div>
+        <div class="col-xl-5">
+            <fieldset>
+                <legend><label>Progress indicator</label></legend>
+                <div class="row">
+                    <table style="width: 100%">
+                        <tr class="text-center">
+                            <th width="10%">TMV</th>
+                            <th width="22%">(40)</th>
+                            <th width="22%" style="border-right: 2px solid">40</th>
+                            <th width="22%" style="border-right: 2px solid">30</th>
+                            <th width="22%">20</th>
+                        </tr>
+                        <tr class="text-center">
+                            <td></td>
+                            <td>Tổng số PL</td>
+                            <td style="border-right: 2px solid">Thu thập</td>
+                            <td style="border-right: 2px solid">3 điểm check</td>
+                            <td>Cont. loading</td>
+                        </tr>
+                    </table>
+                </div>
+            </fieldset>
+        </div>
+    </div>
+</div>
 
 <!-- 🧭 Legend khu vực giải thích -->
-<div id="legend" style="margin: 20px auto; max-width: 100%; text-align: center;">
+@* <div id="legend" style="margin: 20px auto; max-width: 100%; text-align: center;">
     <!-- 🎨 Giải thích màu status -->
     <div class="legend-container mb-4">
         <h5 class="text-center mb-3">Order Status</h5>
@@ -52,7 +191,7 @@ var modelJson = Newtonsoft.Json.JsonConvert.SerializeObject(Model);
             <span class="legend-text fw-bold" style="color: #000000;">Load Container</span>
         </div>
     </div>
-</div>
+</div> *@
 
 <!-- 📅 Calendar -->
 <div id="calendar" style="max-width: 100%; height: 700px; margin: 20px auto;"></div>

@@ -25,7 +25,7 @@ namespace ASP.Models.Front
         {
             if (string.IsNullOrEmpty(pcOrderId))
                 throw new ArgumentException("PCOrderId cannot be null or empty");
-            return await _context.Orders
+            return await _context.Orders.AsNoTracking()
                 .FirstOrDefaultAsync(o => o.PCOrderId == pcOrderId);
         }
         public async Task UpsertOrderAsync(OrderDTO orderDto)
@@ -263,23 +263,25 @@ namespace ASP.Models.Front
         }
         public async Task<List<Order>> GetOrdersByDate(DateTime date)
         {
-            return await _context.Orders
+            return await _context.Orders.AsNoTracking()
                 .Where(o => o.ShipDate.Date == date.Date
                             && o.ApiOrderStatus != (short)OrderStatusEnumDTO.Cancel) // Thêm filter: Bỏ qua Cancel từ API
                 .Include(o => o.OrderDetails)
                 .ThenInclude(od => od.ShoppingLists)
                 .ThenInclude(sl => sl.ThreePointCheck)
+                .AsSplitQuery()
                 .ToListAsync();
         }
         public async Task<List<Order>> GetOrdersForWeek(DateTime weekStart)
         {
             var weekEnd = weekStart.AddDays(7);
-            return await _context.Orders
+            return await _context.Orders.AsNoTracking()
                 .Where(o => o.ShipDate >= weekStart && o.ShipDate < weekEnd)
                 .Include(o => o.OrderDetails)
                 .ThenInclude(od => od.ShoppingLists)
                 .ThenInclude(sl => sl.ThreePointCheck)
                 .OrderBy(o => o.ShipDate)
+                .AsSplitQuery()
                 .ToListAsync();
         }
         public async Task SaveChangesAsync()
@@ -398,16 +400,17 @@ namespace ASP.Models.Front
         }
         public async Task<Order?> GetOrderById(Guid orderId)
         {
-            return await _context.Orders
+            return await _context.Orders.AsNoTracking()
                 .Include(o => o.OrderDetails)
                 .ThenInclude(od => od.ShoppingLists)
                 .ThenInclude(sl => sl.ThreePointCheck)
                 .Include(o => o.DelayHistories)
+                .AsSplitQuery()
                 .FirstOrDefaultAsync(o => o.UId == orderId);
         }
         public async Task<List<Order>> GetOrdersWithDelayByDate(DateTime date)
         {
-            return await _context.Orders
+            return await _context.Orders.AsNoTracking()
                 .Where(o =>
                     (o.StartTime >= date.Date && o.StartTime < date.Date.AddDays(1)) ||
                     (o.EndTime >= date.Date && o.EndTime < date.Date.AddDays(1))
@@ -415,6 +418,7 @@ namespace ASP.Models.Front
                 .Include(o => o.OrderDetails)
                 .ThenInclude(od => od.ShoppingLists)
                 .Include(o => o.DelayHistories)
+                .AsSplitQuery()
                 .ToListAsync();
         }
         public async Task UpdateOrderStatusToDelay(Guid orderId, DateTime delayStartTime, double delayTime)
