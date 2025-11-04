@@ -353,7 +353,8 @@
             }
         }
         const colors = {
-            'Planned': '#000000',
+            // Use a light neutral for Planned so planned-only events render softly
+            'Planned': '#e9ecef',
             'Pending': '#007bff',
             'Completed': '#28a745',
             'Shipped': '#ffc107',
@@ -805,19 +806,21 @@
                                 planBar.style.width = planWidth + '%'; // FIX: Dùng planWidth mới
                                 //planBar.style.background = getColorByStatus('Planned'); // Đen cho plan overlay
                                 planBar.style.borderRadius = '2px';
-                                planBar.title = `Full Plan BKK: ${hhmmss(pStart)} - ${hhmmss(pEnd)}`; // SỬA: Local BKK
+                               // planBar.title = `Full Plan BKK: ${hhmmss(pStart)} - ${hhmmss(pEnd)}`; // SỬA: Local BKK
                                 wrapper.appendChild(planBar);
                             } else {
-                                // Nếu chỉ plan: vẽ full plan bar
+                                // Nếu chỉ plan: vẽ plan bar with same visual sizing as the overlay used when both plan+actual exist
                                 const planBarFull = document.createElement('div');
                                 planBarFull.classList.add('custom-gradient-box');
                                 planBarFull.style.position = 'absolute';
                                 planBarFull.style.left = Math.max(0, planPercent) + '%'; // FIX: Dùng planPercent mới
-                                planBarFull.style.top = '0';
-                                planBarFull.style.height = '100%';
+                                // Match the overlay sizing used above (top 15%, height 70%) so visual size is consistent
+                                planBarFull.style.top = '15%';
+                                planBarFull.style.height = '70%';
                                 planBarFull.style.width = planWidth + '%'; // FIX: Dùng planWidth mới
-                                //planBarFull.style.background = fallbackColor; // SỬA: Dùng fallback cho plan full
-                                planBarFull.style.borderRadius = '4px';
+                                // Use planned color (fallback) for bar to keep consistency
+                                planBarFull.style.borderRadius = '2px';
+                                //planBarFull.title = `Full Plan BKK: ${hhmmss(pStart)} - ${hhmmss(pEnd)}`;
                                 wrapper.appendChild(planBarFull);
                             }
                         }
