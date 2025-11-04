@@ -252,13 +252,12 @@
         // show localized date plus hour:minute (no seconds). Example: "03/11/2025 08:30 - 10:15" or
         // if different days: "03/11/2025 22:00 - 04/11/2025 01:30"
         if (dateOnlyIfPast && start < now) {
+            // Always show full date + time for both start and end when the start is in the past.
+            // This ensures the tooltip displays the day/month/year for the past and for the (current) end.
             const startDate = start.toLocaleDateString('vi-VN', { timeZone: 'Asia/Bangkok' });
             const endDate = end.toLocaleDateString('vi-VN', { timeZone: 'Asia/Bangkok' });
             const startTime = start.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Bangkok' });
             const endTime = end.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Bangkok' });
-            if (startDate === endDate) {
-                return `${startDate} ${startTime} - ${endTime}`;
-            }
             return `${startDate} ${startTime} - ${endDate} ${endTime}`;
         }
         // Fallback: preserve existing behavior (full datetime for past, short time for future/current)
