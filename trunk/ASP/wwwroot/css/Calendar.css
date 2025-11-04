@@ -1,4 +1,9 @@
 ﻿/* --- LEGEND --- */
+/* Set global font to Meiryo UI with fallbacks */
+html, body, #calendar {
+    font-family: 'Meiryo UI', Meiryo, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
 .legend-container {
     display: inline-flex;
     flex-wrap: wrap;
@@ -42,9 +47,12 @@
 
 /* --- TITLE --- */
 h1 {
-    font-size: 28px;
+    font-size: 40px; /* Increased to be very large */
     color: #343a40;
-    font-weight: 700;
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.5px;
+    padding-bottom: 20px;
 }
 
 /* --- Border Legend --- */
