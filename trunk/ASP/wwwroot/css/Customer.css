@@ -1,4 +1,23 @@
-﻿.card {
+﻿/* Customer.css: set Meiryo as primary font for this page and enlarge customer-list table text */
+html, body, .container-fluid, .card, .modal, .modal-content, .btn, .table, .form-control, .form-select {
+    font-family: "Meiryo", Meiryo, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+}
+
+/* Double font-size for customer list tables (tables inside cards and the leadtime/shipping containers) */
+.card .table,
+.card .table th,
+.card .table td,
+#leadtimeTableContainer .table,
+#leadtimeTableContainer .table th,
+#leadtimeTableContainer .table td,
+#shippingTableContainer .table,
+#shippingTableContainer .table th,
+#shippingTableContainer .table td {
+    font-size: 1.5rem; /* double the typical 1rem base */
+    line-height: 1.2;
+}
+
+.card {
     transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
 

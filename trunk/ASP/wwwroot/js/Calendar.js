@@ -530,7 +530,7 @@
         slotMinTime: timeRange.startHour,
         slotMaxTime: timeRange.endHour,
         scrollTime: timeRange.currentShort,
-        resourceAreaHeaderContent: 'Suppliers',
+        resourceAreaHeaderContent: 'Customer',
         resourceAreaWidth: '120px',
         resources: resources,
         events: eventsData.map(e => {
