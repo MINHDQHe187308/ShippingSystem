@@ -2,29 +2,28 @@
 html, body, .container-fluid, .card, .modal, .modal-content, .btn, .table, .form-control, .form-select {
     font-family: "Meiryo", Meiryo, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
 }
-
-/* Double font-size for customer list tables (tables inside cards and the leadtime/shipping containers) */
-.card .table,
-.card .table th,
-.card .table td,
-#leadtimeTableContainer .table,
-#leadtimeTableContainer .table th,
-#leadtimeTableContainer .table td,
-#shippingTableContainer .table,
-#shippingTableContainer .table th,
-#shippingTableContainer .table td {
-    font-size: 1.5rem; /* double the typical 1rem base */
-    line-height: 1.2;
-}
+    /* Double font-size for customer list tables (tables inside cards and the leadtime/shipping containers) */
+    .card .table,
+    .card .table th,
+    .card .table td,
+    #leadtimeTableContainer .table,
+    #leadtimeTableContainer .table th,
+    #leadtimeTableContainer .table td,
+    #shippingTableContainer .table,
+    #shippingTableContainer .table th,
+    #shippingTableContainer .table td {
+        font-size: 1.5rem; /* double the typical 1rem base */
+        line-height: 1.2;
+    }
 
 .card {
     transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
 
-.card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
-}
+    .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
+    }
 
 .table-hover tbody tr:hover {
     background-color: rgba(13, 110, 253, 0.05);
@@ -47,5 +46,6 @@ html, body, .container-fluid, .card, .modal, .modal-content, .btn, .table, .form
     .btn-group .btn:hover {
         transform: scale(1.05);
     }
-
-
+/* Background image for the entire page - giữ nguyên ảnh gốc rõ nét */
+/* Use banner approach on pages that include .warehouse-banner; do not set a global body background here */
+/* body { background-image: url('/images/warehouse.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat; background-attachment: fixed; } */

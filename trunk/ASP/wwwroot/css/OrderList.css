@@ -94,7 +94,6 @@ html, body, .container-fluid, .card, .modal, .modal-content, .btn, .table, .form
 .modal-xl {
     max-width: 95%;
 }
-
 /* Specific sizing for Delay History modal: make it smaller and scrollable while keeping responsiveness */
 #delayModal .modal-dialog {
     /* smaller fixed maximum width for desktop */
@@ -103,10 +102,10 @@ html, body, .container-fluid, .card, .modal, .modal-content, .btn, .table, .form
     margin: 1.2rem auto;
 }
 
-#delayModal .modal-dialog.modal-xl {
-    /* ensure modal-xl variant used in markup is constrained here */
-    max-width: 900px;
-}
+    #delayModal .modal-dialog.modal-xl {
+        /* ensure modal-xl variant used in markup is constrained here */
+        max-width: 900px;
+    }
 
 #delayModal .modal-content {
     border-radius: 12px;
@@ -200,22 +199,25 @@ html, body, .container-fluid, .card, .modal, .modal-content, .btn, .table, .form
         transform: translateX(2px) rotate(2deg);
     }
 }
-
 /* Truck drive: more pronounced forward motion to simulate driving on a road.
    This is layered with truck-sway for a natural roll/bob while moving. */
 @keyframes truck-drive {
     0% {
         transform: translateX(0) rotate(0deg) translateY(0);
     }
+
     10% {
         transform: translateX(6px) rotate(2deg) translateY(-1px);
     }
+
     40% {
         transform: translateX(14px) rotate(0deg) translateY(0);
     }
+
     70% {
         transform: translateX(24px) rotate(-1deg) translateY(1px);
     }
+
     100% {
         transform: translateX(0) rotate(0deg) translateY(0);
     }
@@ -584,48 +586,71 @@ html, body, .container-fluid, .card, .modal, .modal-content, .btn, .table, .form
     will-change: transform, opacity;
     animation: breathe 3s ease-in-out infinite !important;
 }
-
 /* Header-specific rules: make header icons slightly staggered and independent so they don't move in perfect sync */
 .table thead th i {
     display: inline-block;
     transform-origin: center center;
     will-change: transform, opacity;
 }
-
 /* Stagger delays for header icons for more natural motion */
-.table thead th:nth-child(1) i { animation-delay: 0s; }
-.table thead th:nth-child(2) i { animation-delay: 0.12s; }
-.table thead th:nth-child(3) i { animation-delay: 0.22s; }
-.table thead th:nth-child(4) i { animation-delay: 0.08s; }
-.table thead th:nth-child(5) i { animation-delay: 0.18s; }
-.table thead th:nth-child(6) i { animation-delay: 0.04s; }
-.table thead th:nth-child(7) i { animation-delay: 0.16s; }
-.table thead th:nth-child(8) i { animation-delay: 0.26s; }
+.table thead th:nth-child(1) i {
+    animation-delay: 0s;
+}
 
+.table thead th:nth-child(2) i {
+    animation-delay: 0.12s;
+}
+
+.table thead th:nth-child(3) i {
+    animation-delay: 0.22s;
+}
+
+.table thead th:nth-child(4) i {
+    animation-delay: 0.08s;
+}
+
+.table thead th:nth-child(5) i {
+    animation-delay: 0.18s;
+}
+
+.table thead th:nth-child(6) i {
+    animation-delay: 0.04s;
+}
+
+.table thead th:nth-child(7) i {
+    animation-delay: 0.16s;
+}
+
+.table thead th:nth-child(8) i {
+    animation-delay: 0.26s;
+}
 /* Slight alternation for body rows to avoid robotic uniformity */
-.table tbody tr:nth-child(odd) i { animation-delay: 0.06s; }
-.table tbody tr:nth-child(even) i { animation-delay: 0.2s; }
+.table tbody tr:nth-child(odd) i {
+    animation-delay: 0.06s;
+}
 
+.table tbody tr:nth-child(even) i {
+    animation-delay: 0.2s;
+}
 /* -- Header style override: white background and black icons/text -- */
 /* Target only table headers to avoid changing card headers or modal headers */
 .table thead, .table thead th {
     background: #ffffff !important;
 }
 
-.table thead th {
-    color: #000000 !important; /* text color for header cells */
-    border-bottom: 2px solid rgba(0,0,0,0.06);
-}
+    .table thead th {
+        color: #000000 !important; /* text color for header cells */
+        border-bottom: 2px solid rgba(0,0,0,0.06);
+    }
 
-.table thead th i {
-    color: #000000 !important; /* make header icons black */
-    filter: none !important; /* ensure no color filters applied */
-}
-
-/* bump icon contrast while keeping animations */
-.table thead th i[class*="animate-"] {
-    opacity: 0.95;
-}
+        .table thead th i {
+            color: #000000 !important; /* make header icons black */
+            filter: none !important; /* ensure no color filters applied */
+        }
+            /* bump icon contrast while keeping animations */
+            .table thead th i[class*="animate-"] {
+                opacity: 0.95;
+            }
 /* Specific realistic animations for table icons - Áp dụng cho cả header (th) và body (td) để icons chuyển động tự nhiên như ngoài đời thực */
 /* Thêm !important để override animate-pulse-slow */
 .table i.bi-person-badge {
@@ -708,9 +733,7 @@ html, body, .container-fluid, .card, .modal, .modal-content, .btn, .table, .form
     /* Speed up the driving animation on hover for engagement */
     animation: truck-drive 1.1s linear infinite, truck-sway 1.1s ease-in-out infinite !important;
 }
-
 /* LED marquee style: constrain the truck icon inside a small box and make it run continuously across that box */
-
 .truck-box {
     display: inline-flex;
     align-items: center;
@@ -723,50 +746,49 @@ html, body, .container-fluid, .card, .modal, .modal-content, .btn, .table, .form
     line-height: 1;
     padding-left: 0.1rem; /* small offset so icon isn't flush to edge */
 }
-
-/* Ensure .truck-led overrides any global .bi-truck animations and is not clipped */
-.truck-box .truck-led {
-    display: inline-block;
-    position: relative; /* relative so transform moves it inside the box */
-    top: 0;
-    left: 0;
-    transform: translateX(-220%); /* start far left */
-    font-size: 1.3rem; /* visible and not too large */
-    line-height: 1;
-    color: #000 !important; /* ensure black on white header */
-    filter: drop-shadow(0 2px 6px rgba(0,0,0,0.15));
-    will-change: transform, opacity;
-    /* override other animations applied to .bi-truck */
-    animation: truck-led-run 2s linear infinite !important;
-}
+    /* Ensure .truck-led overrides any global .bi-truck animations and is not clipped */
+    .truck-box .truck-led {
+        display: inline-block;
+        position: relative; /* relative so transform moves it inside the box */
+        top: 0;
+        left: 0;
+        transform: translateX(-220%); /* start far left */
+        font-size: 1.3rem; /* visible and not too large */
+        line-height: 1;
+        color: #000 !important; /* ensure black on white header */
+        filter: drop-shadow(0 2px 6px rgba(0,0,0,0.15));
+        will-change: transform, opacity;
+        /* override other animations applied to .bi-truck */
+        animation: truck-led-run 2s linear infinite !important;
+    }
 
 @keyframes truck-led-run {
     0% {
         transform: translateX(-220%) scale(0.92);
         opacity: 0.9;
     }
+
     40% {
         transform: translateX(-20%) scale(1.05);
         opacity: 1;
     }
+
     70% {
         transform: translateX(60%) scale(1.0);
         opacity: 1;
     }
+
     100% {
         transform: translateX(220%) scale(0.92);
         opacity: 0.9;
     }
 }
-
 /* Speed up LED run when header row is hovered */
 .table thead th:hover .truck-box .truck-led {
     animation-duration: 1s !important; /* faster when user hovers */
 }
-
 /* If you want the body row truck icons (status) to keep previous behavior, do not override them here.
    But if you want the same LED effect in other places, you can add the .truck-box wrapper there too. */
-
 .table tr:hover i.bi-eye {
     animation: eye-blink 1s ease-in-out infinite !important;
 }
@@ -860,4 +882,21 @@ html, body, .container-fluid, .card, .modal, .modal-content, .btn, .table, .form
 /* Ensure no horizontal scroll on body */
 body {
     overflow-x: hidden;
+    /* Background image for the entire page */
+    background-image: url('/images/warehouse.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
 }
+    /* Optional: Add a subtle overlay to improve text readability over the background image */
+    body::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(255, 255, 255, 0); /* Reduced opacity from 0.85 to 0.6 for clearer image visibility */
+        z-index: -1;
+    }
