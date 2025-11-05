@@ -10,6 +10,79 @@
 @using Microsoft.AspNetCore.Mvc.Localization
 @using Microsoft.Extensions.Options
 <header>
+    <style>
+        /* Header menu: increase menu font size and make text bold black */
+        #head-menu .navbar-nav .nav-link {
+            font-size: 1.15rem !important; /* slightly larger */
+            font-weight: 700 !important;   /* bold */
+            color: #000 !important;        /* black */
+        }
+        /* Dropdown items (some are rendered as .nav-link inside dropdown-menu in this project) */
+        #head-menu .dropdown-menu .nav-link,
+        #head-menu .dropdown-menu .dropdown-item {
+            font-size: 1.15rem !important;
+            font-weight: 700 !important;
+            color: #000 !important;
+        }
+        /* Ensure hover/active states remain readable */
+        #head-menu .navbar-nav .nav-link:hover,
+        #head-menu .dropdown-menu .nav-link:hover,
+        #head-menu .dropdown-menu .dropdown-item:hover {
+            color: #000 !important;
+            text-decoration: none;
+        }
+        /* Toggler (mobile) menu links keep same style when collapsed */
+        #head-menu .navbar-collapse .nav-link {
+            font-size: 1.15rem !important;
+            font-weight: 700 !important;
+            color: #000 !important;
+        }
+        /* Hover animation / interaction: subtle lift, shadow and animated underline */
+        #head-menu .navbar-nav .nav-link {
+            display: inline-block; /* allow transform */
+            position: relative;
+            transition: transform 180ms cubic-bezier(.2,.8,.2,1),
+                        color 150ms ease, background-color 150ms ease, box-shadow 180ms ease;
+            will-change: transform, box-shadow;
+            -webkit-font-smoothing: antialiased;
+        }
+        #head-menu .navbar-nav .nav-link::after {
+            content: '';
+            position: absolute;
+            left: 8px;
+            right: 8px;
+            bottom: 6px;
+            height: 2px;
+            background: #000;
+            width: 0%;
+            transition: width 200ms ease;
+            border-radius: 2px;
+            opacity: 0.9;
+        }
+        #head-menu .navbar-nav .nav-link:hover,
+        #head-menu .navbar-nav .nav-link:focus {
+            transform: translateY(-3px) scale(1.02);
+            background-color: rgba(0,0,0,0.04) !important;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.06) !important;
+            color: #000 !important;
+            text-decoration: none !important;
+        }
+        #head-menu .navbar-nav .nav-link:hover::after,
+        #head-menu .navbar-nav .nav-link:focus::after {
+            width: calc(100% - 16px);
+        }
+        /* Dropdown items animation (block-level) */
+        #head-menu .dropdown-menu .dropdown-item,
+        #head-menu .dropdown-menu .nav-link {
+            transition: background-color 150ms ease, color 150ms ease, padding-left 180ms ease;
+        }
+        #head-menu .dropdown-menu .dropdown-item:hover,
+        #head-menu .dropdown-menu .nav-link:hover {
+            background-color: rgba(0,0,0,0.03);
+            color: #000 !important;
+            padding-left: 10px;
+        }
+    </style>
     <nav id="head-menu" class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
         <div class="container-fluid">
             <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">

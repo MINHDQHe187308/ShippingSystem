@@ -1,21 +1,62 @@
-﻿.bg-gradient-primary {
-    background: linear-gradient(135deg, #0d6efd 0%, #6610f2 100%);
-}
-
-/* OrderList.css: use Meiryo UI and enlarge table text for order list pages */
+﻿/* OrderList.css: use Meiryo UI and enlarge table text for order list pages */
 html, body, .container-fluid, .card, .modal, .modal-content, .btn, .table, .form-control, .form-select {
     font-family: "Meiryo UI", Meiryo, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
 }
+    /* Increase table text size by 1.5x for order-related tables (tables inside cards and the delay table) */
+    .card .table,
+    .card .table th,
+    .card .table td,
+    #delayTable,
+    #delayTable th,
+    #delayTable td {
+        font-size: 1.5rem; /* 1.5x base */
+        line-height: 1.25;
+    }
+/* Remove horizontal scroll: Fit table to container width */
+.table-wrapper {
+    /* Prevent horizontal scrollbar; allow content to wrap inside cells */
+    overflow-x: hidden; /* removed horizontal scroll */
+    max-width: 100%;
+}
 
-/* Increase table text size by 1.5x for order-related tables (tables inside cards and the delay table) */
-.card .table,
-.card .table th,
-.card .table td,
-#delayTable,
-#delayTable th,
-#delayTable td {
-    font-size: 1.5rem; /* 1.5x base */
-    line-height: 1.25;
+.fit-width-table {
+    width: 100% !important;
+    table-layout: fixed; /* Fixed layout to keep predictable column widths */
+}
+
+    .fit-width-table th,
+    .fit-width-table td {
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        white-space: normal; /* allow wrapping to avoid horizontal overflow */
+    }
+/* Override Bootstrap responsive table horizontal scroll in modal/table-responsive when not desired */
+.table-responsive {
+    overflow-x: hidden !important;
+}
+/* Column width classes for fixed layout (percentages add up to 100%) */
+.w-10 {
+    width: 10%;
+}
+
+.w-12 {
+    width: 12%;
+}
+
+.w-8 {
+    width: 8%;
+}
+
+.w-20 {
+    width: 20%;
+}
+
+.w-25 {
+    width: 25%;
+}
+
+.w-30 {
+    width: 30%;
 }
 
 .table-hover tbody tr:hover {
@@ -27,21 +68,796 @@ html, body, .container-fluid, .card, .modal, .modal-content, .btn, .table, .form
 }
 
     .card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1) !important;
+        transform: translateY(-4px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
     }
 
 .badge {
     transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .btn-outline-info:hover {
-    background-color: #0dcaf0;
-    border-color: #0dcaf0;
+    background: linear-gradient(135deg, #0dcaf0 0%, #20c997 100%);
+    border-color: transparent;
+    color: white;
+    transform: scale(1.05);
+}
+
+.btn-outline-success:hover {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    border-color: transparent;
     color: white;
     transform: scale(1.05);
 }
 
 .modal-xl {
-    max-width: 90%;
+    max-width: 95%;
+}
+
+/* Specific sizing for Delay History modal: make it smaller and scrollable while keeping responsiveness */
+#delayModal .modal-dialog {
+    /* smaller fixed maximum width for desktop */
+    max-width: 900px;
+    width: 100%;
+    margin: 1.2rem auto;
+}
+
+#delayModal .modal-dialog.modal-xl {
+    /* ensure modal-xl variant used in markup is constrained here */
+    max-width: 900px;
+}
+
+#delayModal .modal-content {
+    border-radius: 12px;
+    max-height: 78vh; /* limit height so modal doesn't overflow viewport */
+    overflow: hidden; /* container hides overflow, inner body will scroll */
+}
+
+#delayModal .modal-body {
+    overflow-y: auto; /* scroll the body only */
+    max-height: calc(78vh - 140px); /* leave space for header/footer (approx) */
+}
+
+@media (max-width: 991px) {
+    /* keep it responsive on tablet/mobile */
+    #delayModal .modal-dialog,
+    #delayModal .modal-dialog.modal-xl {
+        max-width: 95%;
+        margin: 0.5rem;
+    }
+
+    #delayModal .modal-body {
+        max-height: calc(80vh - 120px);
+    }
+}
+
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #0d6efd 0%, #6610f2 100%);
+}
+
+.bg-gradient-light {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+}
+
+.shadow-xl {
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1) !important;
+}
+
+.table th {
+    position: relative;
+}
+
+    .table th::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 3px;
+        /* make underline subtle and neutral so it works on white headers */
+        background: linear-gradient(90deg, #000, #444);
+        transform: scaleX(0);
+        transition: transform 0.3s ease;
+    }
+
+    .table th:hover::after {
+        transform: scaleX(1);
+    }
+/* Professional and Realistic Animations: Icons, Status Badges, Buttons */
+/* Base subtle breathing for all icons to mimic "life" - gentle scale in/out like natural movement */
+@keyframes breathe {
+    0%, 100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.02);
+    }
+}
+/* Realistic clock tick: subtle rotation like second hand - Tăng độ rõ ràng */
+@keyframes clock-tick {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(12deg);
+    }
+    /* Tăng từ 6deg lên 12deg để rõ hơn */
+}
+/* Truck sway: gentle left-right like driving on road - Tăng biên độ */
+@keyframes truck-sway {
+    0%, 100% {
+        transform: translateX(0) rotate(0deg);
+    }
+
+    25% {
+        transform: translateX(-2px) rotate(-2deg);
+    }
+    /* Tăng từ -1px/-1deg */
+    75% {
+        transform: translateX(2px) rotate(2deg);
+    }
+}
+
+/* Truck drive: more pronounced forward motion to simulate driving on a road.
+   This is layered with truck-sway for a natural roll/bob while moving. */
+@keyframes truck-drive {
+    0% {
+        transform: translateX(0) rotate(0deg) translateY(0);
+    }
+    10% {
+        transform: translateX(6px) rotate(2deg) translateY(-1px);
+    }
+    40% {
+        transform: translateX(14px) rotate(0deg) translateY(0);
+    }
+    70% {
+        transform: translateX(24px) rotate(-1deg) translateY(1px);
+    }
+    100% {
+        transform: translateX(0) rotate(0deg) translateY(0);
+    }
+}
+/* Person badge nod: subtle up-down like breathing - Tăng biên độ */
+@keyframes person-nod {
+    0%, 100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-2px);
+    }
+    /* Tăng từ -1px */
+}
+/* Arrow right pulse: forward-back like motion - Tăng biên độ */
+@keyframes arrow-forward {
+    0%, 100% {
+        transform: translateX(0);
+    }
+
+    50% {
+        transform: translateX(4px);
+    }
+    /* Tăng từ 2px */
+}
+/* Boxes stack: subtle lift like stacking - Tăng biên độ */
+@keyframes boxes-lift {
+    0%, 100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-4px);
+    }
+    /* Tăng từ -2px */
+}
+/* Grid gap expand: gentle scale like organizing - Tăng scale */
+@keyframes grid-expand {
+    0%, 100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.06);
+    }
+    /* Tăng từ 1.03 */
+}
+/* Circle fill pulse: like heartbeat or active status - Tăng opacity change */
+@keyframes circle-heartbeat {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: scale(1.15);
+        opacity: 0.6;
+    }
+    /* Tăng scale và giảm opacity hơn */
+}
+/* Alarm ring: subtle rotation like ringing - Tăng độ quay */
+@keyframes alarm-ring {
+    0%, 100% {
+        transform: rotate(0deg);
+    }
+
+    25% {
+        transform: rotate(10deg);
+    }
+    /* Tăng từ 5deg */
+    75% {
+        transform: rotate(-10deg);
+    }
+}
+/* Eye blink: scale Y for blink effect */
+@keyframes eye-blink {
+    0%, 90%, 100% {
+        transform: scaleY(1);
+    }
+
+    95% {
+        transform: scaleY(0.3);
+    }
+}
+/* File excel flip: subtle flip like opening file - Tăng độ flip */
+@keyframes file-flip {
+    0%, 100% {
+        transform: rotateY(0deg);
+    }
+
+    50% {
+        transform: rotateY(20deg);
+    }
+    /* Tăng từ 10deg */
+}
+/* Exclamation shake: quick shake for warning - Tăng biên độ */
+@keyframes exclamation-shake {
+    0%, 100% {
+        transform: translateX(0);
+    }
+
+    25% {
+        transform: translateX(-4px);
+    }
+    /* Tăng từ -2px */
+    75% {
+        transform: translateX(4px);
+    }
+}
+/* Chat text wave: like typing wave - Tăng biên độ */
+@keyframes chat-wave {
+    0%, 100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-2px);
+    }
+    /* Tăng từ -1px */
+}
+/* Stopwatch tick: similar to clock - Tăng độ quay */
+@keyframes stopwatch-tick {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(-12deg);
+    }
+    /* Tăng từ -6deg */
+}
+/* Info circle spin: gentle info reveal */
+@keyframes info-spin {
+    0%, 100% {
+        transform: rotate(0deg);
+    }
+
+    50% {
+        transform: rotate(180deg);
+    }
+}
+/* Check circle bob: like confirmation nod - Tăng biên độ */
+@keyframes check-bob {
+    0%, 100% {
+        transform: translateY(0) rotate(0deg);
+    }
+
+    50% {
+        transform: translateY(-6px) rotate(10deg);
+    }
+    /* Tăng từ -3px/5deg */
+}
+/* Hourglass flip: like sand falling */
+@keyframes hourglass-flip {
+    0%, 100% {
+        transform: rotateX(0deg);
+    }
+
+    50% {
+        transform: rotateX(180deg);
+    }
+}
+/* Funnel spin: like filtering */
+@keyframes funnel-spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+/* Inherit previous animations for consistency */
+@keyframes pulse-slow {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: scale(1.05);
+        opacity: 0.7;
+    }
+}
+
+@keyframes pulse-fast {
+    0%, 100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+@keyframes pulse-glow {
+    0%, 100% {
+        box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    }
+
+    50% {
+        box-shadow: 0 0 20px rgba(13, 110, 253, 0.5);
+    }
+}
+
+@keyframes bounce-slow {
+    0%, 100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-5px);
+    }
+}
+
+@keyframes rotate-slow {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes spin-slow {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes spin-on-hover {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fade-in-delay {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slide-in-up {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slide-in-down {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slide-in-right {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes scale-in {
+    from {
+        transform: scale(0.8);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes scale-out {
+    from {
+        transform: scale(1);
+    }
+
+    to {
+        transform: scale(0.95);
+        opacity: 0.8;
+    }
+}
+
+@keyframes hover-lift {
+    0% {
+        transform: translateY(0);
+    }
+
+    100% {
+        transform: translateY(-2px);
+    }
+}
+
+@keyframes hover-scale {
+    0% {
+        transform: scale(1);
+    }
+
+    100% {
+        transform: scale(1.05);
+    }
+}
+
+@keyframes shake {
+    0%, 100% {
+        transform: translateX(0);
+    }
+
+    25% {
+        transform: translateX(-5px);
+    }
+
+    75% {
+        transform: translateX(5px);
+    }
+}
+/* Apply base breathing to all icons for "real life" feel - Nhưng sẽ bị override bởi specific */
+.table i.bi {
+    /* Ensure transforms apply correctly to the icon element */
+    display: inline-block; /* enable transform */
+    transform-origin: center center;
+    will-change: transform, opacity;
+    animation: breathe 3s ease-in-out infinite !important;
+}
+
+/* Header-specific rules: make header icons slightly staggered and independent so they don't move in perfect sync */
+.table thead th i {
+    display: inline-block;
+    transform-origin: center center;
+    will-change: transform, opacity;
+}
+
+/* Stagger delays for header icons for more natural motion */
+.table thead th:nth-child(1) i { animation-delay: 0s; }
+.table thead th:nth-child(2) i { animation-delay: 0.12s; }
+.table thead th:nth-child(3) i { animation-delay: 0.22s; }
+.table thead th:nth-child(4) i { animation-delay: 0.08s; }
+.table thead th:nth-child(5) i { animation-delay: 0.18s; }
+.table thead th:nth-child(6) i { animation-delay: 0.04s; }
+.table thead th:nth-child(7) i { animation-delay: 0.16s; }
+.table thead th:nth-child(8) i { animation-delay: 0.26s; }
+
+/* Slight alternation for body rows to avoid robotic uniformity */
+.table tbody tr:nth-child(odd) i { animation-delay: 0.06s; }
+.table tbody tr:nth-child(even) i { animation-delay: 0.2s; }
+
+/* -- Header style override: white background and black icons/text -- */
+/* Target only table headers to avoid changing card headers or modal headers */
+.table thead, .table thead th {
+    background: #ffffff !important;
+}
+
+.table thead th {
+    color: #000000 !important; /* text color for header cells */
+    border-bottom: 2px solid rgba(0,0,0,0.06);
+}
+
+.table thead th i {
+    color: #000000 !important; /* make header icons black */
+    filter: none !important; /* ensure no color filters applied */
+}
+
+/* bump icon contrast while keeping animations */
+.table thead th i[class*="animate-"] {
+    opacity: 0.95;
+}
+/* Specific realistic animations for table icons - Áp dụng cho cả header (th) và body (td) để icons chuyển động tự nhiên như ngoài đời thực */
+/* Thêm !important để override animate-pulse-slow */
+.table i.bi-person-badge {
+    animation: person-nod 2.5s ease-in-out infinite !important; /* Gật đầu nhẹ như người đang kiểm tra */
+}
+
+.table i.bi-truck {
+    /* Combine forward driving motion and a subtle sway for realism. */
+    animation: truck-drive 3s linear infinite, truck-sway 3s ease-in-out infinite !important;
+    will-change: transform, filter;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.12));
+}
+
+.table i.bi-arrow-right-circle {
+    animation: arrow-forward 2s ease-in-out infinite !important; /* Di chuyển tiến lùi như mũi tên chỉ hướng */
+}
+
+.table i.bi-boxes {
+    animation: boxes-lift 2.5s ease-in-out infinite !important; /* Nâng lên hạ xuống như xếp pallet */
+}
+
+.table i.bi-grid-3x3-gap {
+    animation: grid-expand 3s ease-in-out infinite !important; /* Mở rộng nhẹ như sắp xếp cột hàng */
+}
+
+.table i.bi-circle-fill {
+    animation: circle-heartbeat 2s ease-in-out infinite !important; /* Đập nhẹ như trạng thái đang hoạt động */
+}
+
+.table i.bi-clock,
+.table i.bi-clock-history {
+    animation: clock-tick 4s linear infinite !important; /* Kim giây quay chậm như đồng hồ thực */
+}
+
+.table i.bi-alarm {
+    animation: alarm-ring 2s ease-in-out infinite !important; /* Rung nhẹ như chuông báo */
+}
+/* Các animation khác nếu cần mở rộng */
+.table i.bi-eye {
+    animation: eye-blink 3s ease-in-out infinite !important; /* Nháy mắt như đang xem lịch sử */
+}
+
+.table i.bi-file-earmark-excel {
+    animation: file-flip 2s ease-in-out infinite !important; /* Lật nhẹ như mở file Excel */
+}
+
+.table i.bi-exclamation-triangle {
+    animation: exclamation-shake 1.5s ease-in-out infinite !important; /* Rung cảnh báo như delay */
+}
+
+.table i.bi-chat-text {
+    animation: chat-wave 2s ease-in-out infinite !important; /* Sóng nhẹ như gõ lý do */
+}
+
+.table i.bi-stopwatch {
+    animation: stopwatch-tick 4s linear infinite !important; /* Quay ngược như đếm giờ delay */
+}
+
+.table i.bi-info-circle {
+    animation: info-spin 5s linear infinite !important; /* Quay chậm như hiển thị info */
+}
+
+.table i.bi-check-circle-fill {
+    animation: check-bob 2s ease-in-out infinite !important; /* Gật xác nhận như hoàn thành */
+}
+
+.table i.bi-hourglass-split {
+    animation: hourglass-flip 4s ease-in-out infinite !important; /* Lật như cát rơi pending */
+}
+
+.table i.bi-funnel {
+    animation: funnel-spin 6s linear infinite !important; /* Quay như lọc dữ liệu */
+}
+/* Hover overrides for interactivity - enhance realism on hover */
+.table tr:hover i.bi-clock {
+    animation: clock-tick 1s linear infinite !important;
+}
+
+.table tr:hover i.bi-truck {
+    /* Speed up the driving animation on hover for engagement */
+    animation: truck-drive 1.1s linear infinite, truck-sway 1.1s ease-in-out infinite !important;
+}
+
+/* LED marquee style: constrain the truck icon inside a small box and make it run continuously across that box */
+
+.truck-box {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    position: relative;
+    width: 3.2rem; /* increase width so truck travels a larger visible distance */
+    height: 1.6rem; /* slightly taller to avoid vertical clipping */
+    overflow: hidden; /* constrain the animated icon inside */
+    vertical-align: middle;
+    line-height: 1;
+    padding-left: 0.1rem; /* small offset so icon isn't flush to edge */
+}
+
+/* Ensure .truck-led overrides any global .bi-truck animations and is not clipped */
+.truck-box .truck-led {
+    display: inline-block;
+    position: relative; /* relative so transform moves it inside the box */
+    top: 0;
+    left: 0;
+    transform: translateX(-220%); /* start far left */
+    font-size: 1.3rem; /* visible and not too large */
+    line-height: 1;
+    color: #000 !important; /* ensure black on white header */
+    filter: drop-shadow(0 2px 6px rgba(0,0,0,0.15));
+    will-change: transform, opacity;
+    /* override other animations applied to .bi-truck */
+    animation: truck-led-run 2s linear infinite !important;
+}
+
+@keyframes truck-led-run {
+    0% {
+        transform: translateX(-220%) scale(0.92);
+        opacity: 0.9;
+    }
+    40% {
+        transform: translateX(-20%) scale(1.05);
+        opacity: 1;
+    }
+    70% {
+        transform: translateX(60%) scale(1.0);
+        opacity: 1;
+    }
+    100% {
+        transform: translateX(220%) scale(0.92);
+        opacity: 0.9;
+    }
+}
+
+/* Speed up LED run when header row is hovered */
+.table thead th:hover .truck-box .truck-led {
+    animation-duration: 1s !important; /* faster when user hovers */
+}
+
+/* If you want the body row truck icons (status) to keep previous behavior, do not override them here.
+   But if you want the same LED effect in other places, you can add the .truck-box wrapper there too. */
+
+.table tr:hover i.bi-eye {
+    animation: eye-blink 1s ease-in-out infinite !important;
+}
+
+.table tr:hover i.bi {
+    animation-duration: 1s !important;
+}
+/* Speed up on hover for engagement */
+/* Apply animations */
+.animate-pulse-slow {
+    animation: pulse-slow 2s infinite;
+}
+
+.animate-pulse-fast {
+    animation: pulse-fast 0.5s infinite;
+}
+
+.animate-pulse-glow {
+    animation: pulse-glow 1.5s infinite;
+}
+
+.animate-bounce-slow {
+    animation: bounce-slow 2s infinite;
+}
+
+.animate-rotate-slow {
+    animation: rotate-slow 3s linear infinite;
+}
+
+.animate-spin-slow {
+    animation: spin-slow 4s linear infinite;
+}
+
+.animate-spin-on-hover:hover i {
+    animation: spin-on-hover 1s linear;
+}
+
+.animate-fade-in {
+    animation: fade-in 0.6s ease-out;
+}
+
+.animate-fade-in-delay {
+    animation: fade-in-delay 0.8s ease-out 0.2s both;
+}
+
+.animate-slide-in-up {
+    animation: slide-in-up 0.6s ease-out;
+}
+
+.animate-slide-in-down {
+    animation: slide-in-down 0.6s ease-out;
+}
+
+.animate-slide-in-right {
+    animation: slide-in-right 0.6s ease-out;
+}
+
+.animate-scale-in {
+    animation: scale-in 0.4s ease-out;
+}
+
+.animate-scale-out {
+    animation: scale-out 0.3s ease-out;
+}
+
+.animate-hover-lift:hover {
+    animation: hover-lift 0.3s ease-out;
+    transform: translateY(-2px);
+}
+
+.animate-hover-scale:hover {
+    animation: hover-scale 0.2s ease-out;
+}
+
+.animate-shake {
+    animation: shake 0.5s ease-in-out;
+}
+
+.table-hover tbody tr {
+    transition: all 0.3s ease;
+}
+
+    .table-hover tbody tr:hover {
+        background-color: rgba(13, 110, 253, 0.08) !important;
+        transform: scale(1.005);
+    }
+
+.modal.show .modal-content {
+    animation: fade-in 0.3s ease-out;
+}
+/* Ensure no horizontal scroll on body */
+body {
+    overflow-x: hidden;
 }

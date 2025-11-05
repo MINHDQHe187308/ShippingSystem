@@ -1,72 +1,75 @@
 ﻿$(document).ready(function () {
+    // Optional AOS - chỉ init nếu có, tránh lỗi
     if (typeof AOS !== 'undefined') {
         AOS.init({
-            duration: 800,
-            once: true
+            duration: 600,
+            once: true,
+            offset: 100
         });
     }
 });
 
+// Function loadDelayHistory
 function loadDelayHistory(uid) {
     if (!uid) {
-        console.error('UID is undefined or empty'); // Debug: Bắt lỗi UID undefined sớm
+        console.error('UID is undefined or empty');
         alert('ID đơn hàng không hợp lệ. Vui lòng làm mới và thử lại.');
         return;
     }
-    console.log('Function called with UID:', uid); // Debug: Xác nhận UID
-
-    // Hiển thị trạng thái loading
-    $('#delayTable tbody').html('<tr><td colspan="4" class="text-center py-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></td></tr>');
-
-    // Hiển thị modal ngay lập tức để UX tốt hơn
+    console.log('Function called with UID:', uid);
+    // Hiển thị trạng thái loading với animation
+    const loadingRow = '<tr><td colspan="8" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary mx-auto mb-2 animate-spin" role="status"><span class="visually-hidden">Loading...</span></div><p class="text-muted small animate-fade-in">Loading delay history...</p></td></tr>';
+    $('#delayTable tbody').html(loadingRow);
+    // Hiển thị modal với animation
     $('#delayModal').modal('show');
-    console.log('Modal shown'); // Debug: Kiểm tra modal
-
-    // Gọi AJAX với mã hóa URL để an toàn
+    console.log('Modal shown');
+    // Gọi AJAX
     $.get('/api/DelayHistory/' + encodeURIComponent(uid), function (data) {
-        console.log('AJAX success:', data); // Debug: Log phản hồi đầy đủ
+        console.log('AJAX success:', data);
         $('#delayTable tbody').empty();
         if (data && data.length > 0) {
             $.each(data, function (i, item) {
-                // Hàm hỗ trợ phân tích ngày tháng an toàn (xử lý định dạng khoảng trắng và vi giây)
                 function parseSafeDate(dateStr) {
                     if (!dateStr) return 'N/A';
-                    // Thay khoảng trắng bằng 'T' cho ISO, cắt vi giây nếu >3 chữ số thập phân
                     let isoStr = dateStr.toString().replace(' ', 'T');
                     if (isoStr.includes('.')) {
                         let parts = isoStr.split('.');
                         isoStr = parts[0] + (parts[1].length > 3 ? '.000Z' : '.' + parts[1] + 'Z');
                     } else {
-                        isoStr += 'Z'; // Giả sử UTC nếu không có múi giờ
+                        isoStr += 'Z';
                     }
                     let parsed = new Date(isoStr);
                     return isNaN(parsed.getTime()) ? 'Invalid Date' : parsed.toLocaleString();
                 }
-
-                $('#delayTable tbody').append(
-                    '<tr>' +
-                    '<td class="fw-semibold">' + (item.delayType || 'N/A') + '</td>' +
-                    '<td class="text-muted">' + (item.reason || 'N/A') + '</td>' +
-                    '<td><span class="badge bg-light text-dark px-2 py-1">' + parseSafeDate(item.startTime) + '</span></td>' +
-                    '<td class="fw-semibold text-warning">' + (item.delayTime || 'N/A') + '</td>' +
-                    '</tr>'
-                );
+                const rowHtml = '<tr class="animate-slide-in-up">' +
+                    '<td class="fw-semibold text-danger ps-4 py-3 animate-fade-in-delay">' + (item.delayType || 'N/A') + ' <i class="bi bi-exclamation-triangle text-danger animate-pulse-slow"></i></td>' +
+                    '<td class="text-muted ps-4 py-3 animate-fade-in-delay">' + (item.reason || 'N/A') + '</td>' +
+                    '<td class="ps-4 py-3 animate-fade-in-delay"><span class="badge bg-info text-dark px-3 py-2 rounded-pill animate-scale-in">' + parseSafeDate(item.startTime) + '</span></td>' +
+                    '<td class="fw-semibold text-warning ps-4 py-3 animate-fade-in-delay">' + (item.delayTime || 'N/A') + ' <i class="bi bi-stopwatch text-warning animate-pulse-slow"></i></td>' +
+                    '</tr>';
+                $('#delayTable tbody').append(rowHtml);
             });
         } else {
-            $('#delayTable tbody').append('<tr><td colspan="4" class="text-center py-4 text-muted"><i class="bi bi-info-circle fs-3 mb-2"></i><br>No delay history found.</td></tr>');
+            $('#delayTable tbody').append('<tr class="animate-slide-in-up"><td colspan="4" class="text-center py-4 text-muted animate-fade-in"><i class="bi bi-info-circle fs-1 mb-2 text-info animate-rotate-slow"></i><br>No delay history found.</td></tr>');
         }
     }).fail(function (xhr, status, error) {
-        console.error('AJAX Error:', status, error, xhr.responseText, xhr.status); // Debug: Chi tiết lỗi đầy đủ
-        $('#delayTable tbody').html('<tr><td colspan="4" class="text-center py-4 text-danger"><i class="bi bi-exclamation-triangle fs-3 mb-2"></i><br>Error loading data (' + status + '). Check console for details.</td></tr>');
+        console.error('AJAX Error:', status, error, xhr.responseText, xhr.status);
+        $('#delayTable tbody').html('<tr class="animate-slide-in-up"><td colspan="4" class="text-center py-4 text-danger animate-shake"><i class="bi bi-exclamation-triangle fs-1 mb-2 text-danger animate-pulse-fast"></i><br>Error loading data (' + status + '). Check console for details.</td></tr>');
     });
 }
 
-// THÊM MỚI: Function để export Excel
+// Function exportToExcel
 function exportToExcel(uid) {
     if (!uid) {
         alert('ID đơn hàng không hợp lệ. Vui lòng làm mới và thử lại.');
         return;
     }
-    // Redirect đến action export với orderId
-    window.location.href = '/Order/ExportExcel?orderId=' + encodeURIComponent(uid);
+    // Thêm animation cho button trước khi redirect
+    const btn = event.target.closest('button');
+    if (btn) {
+        $(btn).addClass('animate-scale-out').prop('disabled', true);
+    }
+    setTimeout(() => {
+        window.location.href = '/Order/ExportExcel?orderId=' + encodeURIComponent(uid);
+    }, 300);
 }
