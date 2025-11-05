@@ -211,7 +211,14 @@
         #custom-tooltip .status.shipped { background: #ffc107; color: #000; }
         #custom-tooltip .status.completed { background: #28a745; color: #fff; }
         #custom-tooltip .status.delay { background: #ff0000; color: #fff; } /* THÊM: Style cho Delay status trong tooltip */
-    `;
+   #calendar {
+    overflow-x: hidden !important;
+    width: 100% !important;
+    max-width: 100vw; 
+}
+body, .fc {
+    overflow-x: hidden; /* Áp dụng cho body nếu cần */
+} `;
     document.head.appendChild(style);
     // --- Tạo global tooltip element
     function createTooltip() {
@@ -806,7 +813,7 @@
                                 planBar.style.width = planWidth + '%'; // FIX: Dùng planWidth mới
                                 //planBar.style.background = getColorByStatus('Planned'); // Đen cho plan overlay
                                 planBar.style.borderRadius = '2px';
-                               // planBar.title = `Full Plan BKK: ${hhmmss(pStart)} - ${hhmmss(pEnd)}`; // SỬA: Local BKK
+                                // planBar.title = `Full Plan BKK: ${hhmmss(pStart)} - ${hhmmss(pEnd)}`; // SỬA: Local BKK
                                 wrapper.appendChild(planBar);
                             } else {
                                 // Nếu chỉ plan: vẽ plan bar with same visual sizing as the overlay used when both plan+actual exist
