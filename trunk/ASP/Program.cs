@@ -10,6 +10,8 @@ using ASP.Models.ASPModel;
 using ASP.Models.Front;
 using ASP.Policies;
 using ASP.SeedData;
+using ASP.Service;
+using ASP.Service.BackgroundWorkers;
 using ASP.Service.Implentations;
 using ASP.Services;
 using ASP.Utilss;
@@ -68,6 +70,15 @@ builder.Services.AddScoped<LeadtimeMasterRepositoryInterface, LeadtimeMasterRepo
 builder.Services.AddScoped<ShippingScheduleRepositoryInterface, ShippingScheduleRepository>();
 builder.Services.AddHttpClient<EmailApiService>();  // Với HttpClient factory
 builder.Services.Configure<EmailApiSettings>(builder.Configuration.GetSection("EmailAPI"));
+builder.Services.AddHttpClient<ExternalApiServiceInterface, ExternalApiService>();
+builder.Services.AddScoped<OrderServiceInterface, OrderService>();
+#region dependency injection
+builder.Services.AddHostedService<ApiDataWorker>();  
+builder.Services.Configure<HostOptions>(options =>
+{
+    options.ShutdownTimeout = TimeSpan.FromSeconds(120);
+});
+#endregion
 //builder.Services.AddTransient<EmailServiceInterface, GmailSmtpService>();
 // frontend
 //policies
