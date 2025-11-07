@@ -146,7 +146,7 @@
         #custom-tooltip.show {
             display: block;
             opacity: 1;
-            transform: translateY(0);
+            transform: translateY(0);zz
         }
         #custom-tooltip h4 {
             margin: 0 0 16px 0; /* Tăng margin-bottom từ 12px lên 16px */
@@ -542,6 +542,8 @@ body, .fc {
         resourceAreaHeaderContent: 'Customer',
         resourceAreaWidth: '120px',
         resources: resources,
+        eventOeverlap: false,
+        dayMaxEvents: true,
         events: eventsData.map(e => {
             const extendedProps = e.extendedProps;
             const status = extendedProps.status;
@@ -662,7 +664,7 @@ body, .fc {
                                             <div class="progress" style="height: 8px;">
                                                 <div class="progress-bar bg-primary" style="width: ${collectPercent}%"></div>
                                             </div>
-                                      
+                                     
                                             <!-- Prepare Stage -->
                                             <div class="d-flex align-items-center mb-2 mt-2">
                                                 <i class="bi bi-tools text-success me-2"></i>
@@ -935,14 +937,57 @@ body, .fc {
                                 combined.style.width = '100%';
                                 combined.style.flex = '0 0 100%';
                             }
-                            const txtContent = document.createElement('label');
+                            // Responsive label: scales font-size and uses ellipsis if event too narrow
+                            const txtContent = document.createElement('div');
+                            txtContent.className = 'combined-label';
+                            // Flexible so it will shrink when combined block is small
+                            txtContent.style.flex = '1 1 auto';
                             txtContent.style.width = '100%';
+                            txtContent.style.display = 'block';
                             txtContent.style.textAlign = 'center';
                             txtContent.style.alignSelf = 'end';
-                            txtContent.style.fontSize = '1.1rem';
+                            txtContent.style.overflow = 'hidden';
+                            txtContent.style.textOverflow = 'ellipsis';
+                            txtContent.style.whiteSpace = 'nowrap';
+                            txtContent.style.boxSizing = 'border-box';
+                            txtContent.style.padding = '0 6px';
+                            txtContent.style.fontSize = '1.1rem'; // initial; will be adjusted
+                            txtContent.style.fontWeight = '700';
                             txtContent.style.color = 'darkblue';
                             txtContent.textContent = extendedProps.customerCode + " " + `(${extendedProps.totalPallet || 0})` + " - " + extractFirstNumber(extendedProps.collectPallet) +
                                 " | " + extractFirstNumber(extendedProps.threePointScan) + " | " + extractFirstNumber(extendedProps.loadCont);
+                            // Helper: fit text to available width by decreasing font-size until it fits (simple, robust)
+                            function fitTextToWidth(el, container, minFontPx = 10, maxFontPx = 18) {
+                                try {
+                                    // Reset to max to compute natural width
+                                    el.style.fontSize = maxFontPx + 'px';
+                                    // small padding allowance
+                                    const avail = Math.max(8, container.getBoundingClientRect().width - 8);
+                                    let fs = parseFloat(getComputedStyle(el).fontSize) || maxFontPx;
+                                    // If scrollWidth fits, done
+                                    // Use a couple of iterations decreasing by 1px to avoid heavy layout thrash
+                                    let iterations = 0;
+                                    while (el.scrollWidth > avail && fs > minFontPx && iterations < 20) {
+                                        fs = Math.max(minFontPx, fs - 1);
+                                        el.style.fontSize = fs + 'px';
+                                        iterations++;
+                                    }
+                                } catch (e) {
+                                    // ignore measurement errors
+                                }
+                            }
+                            // Observe size changes on the combined block to adjust text responsively
+                            try {
+                                const ro = new ResizeObserver(() => {
+                                    fitTextToWidth(txtContent, combined, 10, 18);
+                                });
+                                ro.observe(combined);
+                                // Try initial fit after next paint
+                                setTimeout(() => fitTextToWidth(txtContent, combined, 10, 18), 0);
+                            } catch (err) {
+                                // ResizeObserver may not be available in very old browsers; fallback to a one-time fit
+                                setTimeout(() => fitTextToWidth(txtContent, combined, 10, 18), 0);
+                            }
                             // Left: CustomerCode + TotalPallet
                             //const left = document.createElement('div');
                             //left.style.display = 'flex';
@@ -1378,10 +1423,12 @@ body, .fc {
         padding: '3px 8px',
         fontSize: '16px',
         fontWeight: 'bold',
-        transform: 'translate(-50%, -120%)',
+        transform: 'translate(-50%, -100%)', // FIX: Đổi từ -120% sang -100% để di chuyển lên đúng chiều cao của chính nó
         zIndex: 11, // FIX: Giảm từ 10000 xuống 11 (vẫn trên vạch nhưng dưới modal)
         boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
-        left: '0px' // SỬA: Ban đầu set left=0 cho midnight mode
+        left: '0px', // SỬA: Ban đầu set left=0 cho midnight mode
+        display: 'block', // THÊM: Đảm bảo display block ban đầu
+        opacity: 1 // THÊM: Đảm bảo opacity đầy đủ
     });
     calendarEl.appendChild(clockLabel);
     const hideDefaultNowIndicator = () => {
@@ -1392,7 +1439,7 @@ body, .fc {
         const cells = Array.from(document.querySelectorAll('.fc-timeline-slot'));
         return cells.filter(el => /^\d{1,2}[:.]\d{2}/.test(el.textContent.trim()));
     }
-    // SỬA: positionCustomNowIndicator() - Adjust cho midnight mode (ban đầu ở 0), THEO LOCAL BKK
+    // SỬA: positionCustomNowIndicator() - Adjust cho midnight mode (ban đầu ở 0), THEO LOCAL BKK + FIX: Tính toán top động cho clockLabel
     function positionCustomNowIndicator() {
         const now = new Date(); // Giờ local BKK
         const nowHour = now.getHours();
@@ -1425,7 +1472,10 @@ body, .fc {
         }
         customNow.style.left = left + 'px';
         clockLabel.style.left = left + 'px';
-        clockLabel.style.top = '0px'; // Đặt clockLabel ở top của bảng
+        // FIX MỚI: Tính toán top động dựa trên chiều cao header toolbar để đặt clockLabel ngay trên khu vực timeline
+        const headerToolbar = document.querySelector('.fc-header-toolbar');
+        const headerHeight = headerToolbar ? headerToolbar.offsetHeight : 60; // Fallback 60px nếu không tìm thấy
+        clockLabel.style.top = headerHeight + 'px'; // Đặt ngay dưới header, trên timeline
     }
     // SỬA: updateClockLabel() - Hiển thị giờ local BKK
     function updateClockLabel() {
