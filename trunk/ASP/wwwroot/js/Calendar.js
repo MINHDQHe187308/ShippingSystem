@@ -237,6 +237,20 @@ body, .fc {
         const ss = String(d.getSeconds()).padStart(2, '0');
         return `${hh}:${mm}:${ss}`;
     }
+    // --- Helper: format date + hour:minute (dd/mm/yyyy HH:MM) local BKK
+    function formatDateTimeNoSeconds(d) {
+        if (!d) return 'N/A';
+        const date = d.toLocaleDateString('vi-VN', { timeZone: 'Asia/Bangkok' });
+        const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Bangkok' });
+        return `${date} ${time}`;
+    }
+    // --- Helper: format date without year + hour:minute (dd/mm HH:MM) local BKK
+    function formatDateTimeNoYear(d) {
+        if (!d) return 'N/A';
+        const date = d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', timeZone: 'Asia/Bangkok' });
+        const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Bangkok' });
+        return `${date} ${time}`;
+    }
     // --- THÊM MỚI: Helper format full date-time nếu trong quá khứ (local BKK)
     function formatFullTimeRange(start, end, now = new Date()) {
         if (!start || !end) return 'N/A';
@@ -1099,11 +1113,12 @@ body, .fc {
                                 // Optional: Play sound nhẹ khi hover (giảm volume tạm thời)
                                 playBeep(0.2, 600, 100); // Beep nhẹ hơn cho hover
                             }
-                            // Cập nhật nội dung tooltip với tất cả thông tin - SỬA SANG LOCAL BKK + THÊM: Tách riêng PlanTime và ActualTime + Full date nếu actual past + Chữ đen đậm
+                            // Cập nhật nội dung tooltip với tất cả thông tin - SỬA SANG LOCAL BKK + THÊM: Tách riêng PlanTime và ActualTime + luôn hiển thị ngày + giờ
                             const now = new Date(); // Giờ local BKK hiện tại để check past
-                            // For plan and actual time: if start is in the past, show date + hour:minute (no seconds)
-                            const planTime = formatTimeRange(pStart, pEnd, now, true);
-                            const actualTime = formatTimeRange(aStart, aEnd, now, true);
+                            // For plan and actual time: always show dd/mm/yyyy HH:MM to avoid ambiguity for late-night times (e.g., 20:00)
+                            // Use date without year per request (dd/mm HH:MM)
+                            const planTime = (pStart && pEnd) ? (formatDateTimeNoYear(pStart) + ' - ' + formatDateTimeNoYear(pEnd)) : 'N/A';
+                            const actualTime = (aStart && aEnd) ? (formatDateTimeNoYear(aStart) + ' - ' + formatDateTimeNoYear(aEnd)) : 'N/A';
                             const delayTimeRange = formatTimeRange(dStart, dEnd, now);
                             const tooltip = createTooltip();
                             tooltip.innerHTML = `
