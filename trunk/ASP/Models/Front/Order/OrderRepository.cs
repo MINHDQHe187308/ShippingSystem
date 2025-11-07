@@ -307,14 +307,14 @@ namespace ASP.Models.Front
             var collectedPallets = allShoppingLists
                 .Where(sl => sl.PLStatus >= (short)CollectionStatusEnumDTO.Collected &&
                              sl.PLStatus != (short)CollectionStatusEnumDTO.Canceled)
-                .Select(sl => sl.PalletNo)
+                .Select(sl => sl.PalletId)
                 .Distinct()
                 .Count();
             // Tất cả pallets đã LOADED lên cont (status >= Delivered, tức là đã qua Collected + ThreePointCheck + Loaded)
             var loadedPallets = allShoppingLists
                 .Where(sl => sl.PLStatus >= (short)CollectionStatusEnumDTO.Delivered &&
                              sl.PLStatus != (short)CollectionStatusEnumDTO.Canceled)
-                .Select(sl => sl.PalletNo)
+                .Select(sl => sl.PalletId)
                 .Distinct()
                 .Count();
             // ... (phần load order và tính collectedPallets, loadedPallets giữ nguyên)
