@@ -214,7 +214,7 @@
    #calendar {
     overflow-x: hidden !important;
     width: 100% !important;
-    max-width: 100vw; 
+    max-width: 100vw;
 }
 body, .fc {
     overflow-x: hidden; /* Áp dụng cho body nếu cần */
@@ -330,12 +330,12 @@ body, .fc {
     customers.forEach(c => {
         customerMap[c.CustomerCode] = c.CustomerName;
     });
-    // THÊM: Đảm bảo resourceId của mọi event đều có trong resources (cho initial load)
-    const allResourceIds = Array.from(new Set(orders.map(o => o.resource)));
+    // THÊM: Đảm bảo resourceId của mọi event đều có trong resources (cho initial load) - FIX: Lọc rid undefined/null/empty để tránh dòng "undefined"
+    const allResourceIds = Array.from(new Set(orders.map(o => o.resource).filter(rid => rid != null && rid !== '' && rid !== undefined)));
     if (customers) {
         const customerIds = customers.map(c => c.CustomerCode);
         allResourceIds.forEach(rid => {
-            if (!customerIds.includes(rid)) {
+            if (rid && !customerIds.includes(rid)) { // ← FIX: Thêm kiểm tra rid truthy
                 customers.push({ CustomerCode: rid, CustomerName: rid });
             }
         });
@@ -344,7 +344,7 @@ body, .fc {
     const resources = customers.map(c => ({
         id: c.CustomerCode,
         title: c.CustomerCode // SỬA: Hiển thị CustomerCode thay vì CustomerName
-    }));
+    })).filter(r => r.id != null && r.id !== '' && r.id !== undefined); // ← FIX: Lọc resources undefined
     // --- SỬA: Hàm lấy màu dựa trên status (fallback cho Delay để giữ màu cũ) + THÊM: Nếu Delay && delayTime >24 thì return #ff0000 (đỏ)
     function getColorByStatus(status, validActual = false, delayTime = 0) {
         // THÊM MỚI: Nếu Delay && delayTime >24h thì override toàn bộ thành đỏ
@@ -432,7 +432,7 @@ body, .fc {
         console.log(`Parsed "${timeStr}" (DB local) → Local BKK: ${d.toLocaleString('vi-VN', { timeZone: 'Asia/Bangkok' })}`);
         return d; // Date object với ms UTC đúng → Render local BKK
     }
-    // --- Tạo event data từ dữ liệu Order - THÊM UId VÀO EXTENDEDPROPS VÀ THÊM CÁC TRƯỜNG PROGRESS + THÊM DELAY INFO NẾU STATUS=4 + FIX: Cap eventEnd <= viewEnd
+    // --- Tạo event data từ dữ liệu Order - THÊM UId VÀO EXTENDEDPROPS VÀ THÊM CÁC TRƯỜNG PROGRESS + THÊM DELAY INFO NẾU STATUS=4 + FIX: Cap eventEnd <= viewEnd + FIX: Skip nếu customerCode undefined
     const eventsData = orders.map((order, index) => {
         const planStart = parseAndValidate(order.StartTime);
         const planEnd = parseAndValidate(order.EndTime);
@@ -475,6 +475,7 @@ body, .fc {
         eventEnd = new Date(Math.min(eventEnd, viewEnd)); // ← THÊM: Cap end <= viewEnd
         if (eventEnd <= eventStart) return null; // ← THÊM: Skip nếu không overlap view (sau fix cap)
         const customerCode = order.CustomerCode || order.Resource || 'Unknown';
+        if (!customerCode || customerCode === 'undefined') return null; // ← FIX: Skip event nếu customerCode undefined/null/empty
         // THÊM: Delay info nếu status=='Delay' (giả sử fetch từ API hoặc include trong data)
         let delayStart = null, delayEnd = null, delayTime = 0;
         if (status === 'Delay') {
@@ -661,7 +662,7 @@ body, .fc {
                                             <div class="progress" style="height: 8px;">
                                                 <div class="progress-bar bg-primary" style="width: ${collectPercent}%"></div>
                                             </div>
-                                       
+                                      
                                             <!-- Prepare Stage -->
                                             <div class="d-flex align-items-center mb-2 mt-2">
                                                 <i class="bi bi-tools text-success me-2"></i>
@@ -934,7 +935,6 @@ body, .fc {
                                 combined.style.width = '100%';
                                 combined.style.flex = '0 0 100%';
                             }
-
                             const txtContent = document.createElement('label');
                             txtContent.style.width = '100%';
                             txtContent.style.textAlign = 'center';
@@ -972,19 +972,19 @@ body, .fc {
                             //progressGroup.style.overflow = 'hidden';
                             //// Create a small helper to create simple progress badge
                             //function makeBadge(text) {
-                            //    const b = document.createElement('div');
-                            //    b.textContent = text;
-                            //    b.style.flex = '0 1 auto';
-                            //    b.style.padding = '2px 6px';
-                            //    b.style.borderRadius = '4px';
-                            //    b.style.background = 'transparent';
-                            //    b.style.color = '#111';
-                            //    b.style.fontWeight = '700';
-                            //    b.style.whiteSpace = 'nowrap';
-                            //    b.style.textAlign = 'center';
-                            //    b.style.overflow = 'hidden';
-                            //    b.style.textOverflow = 'ellipsis';
-                            //    return b;
+                            // const b = document.createElement('div');
+                            // b.textContent = text;
+                            // b.style.flex = '0 1 auto';
+                            // b.style.padding = '2px 6px';
+                            // b.style.borderRadius = '4px';
+                            // b.style.background = 'transparent';
+                            // b.style.color = '#111';
+                            // b.style.fontWeight = '700';
+                            // b.style.whiteSpace = 'nowrap';
+                            // b.style.textAlign = 'center';
+                            // b.style.overflow = 'hidden';
+                            // b.style.textOverflow = 'ellipsis';
+                            // return b;
                             //}
                             //const collectNum = extractFirstNumber(extendedProps.collectPallet);
                             //const threeNum = extractFirstNumber(extendedProps.threePointScan);
@@ -1065,7 +1065,7 @@ body, .fc {
                                 <h4>Order Information</h4>
                                 <dl>
                                     <dt>ShipDate:</dt>
-                                    <dd>${extendedProps.shipDate}</dd>                                
+                                    <dd>${extendedProps.shipDate}</dd>
                                   <dt>Plan Time:</dt>
                                     <dd class="plan-time-dd">${planTime}</dd>
                                     <dt>Actual Time:</dt>
@@ -1137,7 +1137,7 @@ body, .fc {
         }
     });
     calendar.render();
-    // --- THÊM MỚI: SignalR cho realtime status update (FIX: Cải thiện update logic - remove refetch/changeDate, chỉ render) - SỬA CLIP THEO LOCAL BKK + THÊM cap end
+    // --- THÊM MỚI: SignalR cho realtime status update (FIX: Cải thiện update logic - remove refetch/changeDate, chỉ render) - SỬA CLIP THEO LOCAL BKK + THÊM cap end + FIX: Lọc undefined resources/events
     let connection = null;
     function initSignalR() {
         // Kiểm tra SignalR mới có load chưa
@@ -1180,12 +1180,12 @@ body, .fc {
                     console.log('SignalR orders length:', data.orders ? data.orders.length : 0); // ← THÊM LOG LENGTH
                     const fetchedOrders = data.orders;
                     const fetchedCustomers = data.customers;
-                    // THÊM: Đảm bảo resourceId của mọi event đều có trong resources
-                    const allResourceIds = Array.from(new Set(fetchedOrders.map(o => o.resource)));
+                    // THÊM: Đảm bảo resourceId của mọi event đều có trong resources - FIX: Lọc rid undefined
+                    const allResourceIds = Array.from(new Set(fetchedOrders.map(o => o.resource).filter(rid => rid != null && rid !== '' && rid !== undefined))); // ← FIX: Lọc undefined
                     if (fetchedCustomers) {
                         const customerIds = fetchedCustomers.map(c => c.CustomerCode);
                         allResourceIds.forEach(rid => {
-                            if (!customerIds.includes(rid)) {
+                            if (rid && !customerIds.includes(rid)) { // ← FIX: Thêm kiểm tra rid truthy
                                 fetchedCustomers.push({ CustomerCode: rid, CustomerName: rid });
                             }
                         });
@@ -1195,12 +1195,12 @@ body, .fc {
                     fetchedCustomers.forEach(c => {
                         customerMap[c.CustomerCode] = c.CustomerName;
                     });
-                    // Rebuild resources từ local
+                    // Rebuild resources từ local - FIX: Lọc undefined
                     const resources = fetchedCustomers.map(c => ({
                         id: c.CustomerCode,
                         title: c.CustomerCode
-                    }));
-                    // Rebuild eventsData từ local (copy logic từ code gốc - với delay info + LOG/FALLBACK) - SỬA CLIP LOCAL BKK + THÊM cap end
+                    })).filter(r => r.id != null && r.id !== '' && r.id !== undefined); // ← FIX: Lọc resources undefined
+                    // Rebuild eventsData từ local (copy logic từ code gốc - với delay info + LOG/FALLBACK) - SỬA CLIP LOCAL BKK + THÊM cap end + FIX: Skip nếu customerCode undefined
                     const newEventsData = fetchedOrders.map((order) => { // ← BỎ index, dùng UId cho id
                         const planStart = parseAndValidate(order.startTime);
                         const planEnd = parseAndValidate(order.endTime);
@@ -1253,6 +1253,7 @@ body, .fc {
                         eventEnd = new Date(Math.min(eventEnd, viewEnd)); // ← THÊM: Cap end <= viewEnd
                         if (eventEnd <= eventStart) return null; // ← THÊM: Skip nếu không overlap view
                         const customerCode = order.customerCode || order.resource || 'Unknown';
+                        if (!customerCode || customerCode === 'undefined') return null; // ← FIX: Skip event nếu customerCode undefined/null/empty
                         // THÊM: Delay info nếu status=='Delay'
                         let delayStart = null, delayEnd = null, delayTime = 0;
                         if (status === 'Delay') {
