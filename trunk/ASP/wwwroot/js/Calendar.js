@@ -218,7 +218,11 @@
 }
 body, .fc {
     overflow-x: hidden; /* Áp dụng cho body nếu cần */
-} `;
+}
+.fc-timeline-event{
+margin-top: 20px !important;
+margin-bottom: 20px !important;
+}`;
     document.head.appendChild(style);
     // --- Tạo global tooltip element
     function createTooltip() {
@@ -556,7 +560,10 @@ body, .fc {
         resourceAreaHeaderContent: 'Customer',
         resourceAreaWidth: '120px',
         resources: resources,
-        eventOeverlap: false,
+        eventOverlap: false,
+        eventOrderStrict:true,
+        slotEventOverlap: false,    
+        eventOrderStrict: true,
         dayMaxEvents: true,
         events: eventsData.map(e => {
             const extendedProps = e.extendedProps;
@@ -564,8 +571,12 @@ body, .fc {
             const validActual = extendedProps.validActual;
             const delayTime = extendedProps.delayTime || 0; // THÊM: Lấy delayTime để check multi-day
             // SỬA: Fallback màu cho Delay + THÊM: Nếu Delay && delayTime >24 thì đỏ
-            const bgColor = e.hasBoth ? 'transparent' : getColorByStatus(status, validActual, delayTime);
-            const borderColor = e.hasBoth ? 'transparent' : getColorByStatus(status, validActual, delayTime);
+            // If the event is a union of plan+actual (hasBoth) OR it's plan-only (no valid actual),
+            // render the outer FC event container as transparent so the inner custom plan bar
+            // (which provides the desired gradient/size) is the visible element. This prevents
+            // the light-gray fallback box/border around plan-only events.
+            const bgColor = (e.hasBoth || !validActual) ? 'transparent' : getColorByStatus(status, validActual, delayTime);
+            const borderColor = (e.hasBoth || !validActual) ? 'transparent' : getColorByStatus(status, validActual, delayTime);
             // SỬA: Chỉ thêm class actual-event, XÓA delay-event để không apply viền đỏ + THÊM: Thêm class multi-day-delay nếu >24h
             let classNames = extendedProps.validActual ? ['actual-event'] : [];
             if (status === 'Delay' && delayTime > 24) {
@@ -820,7 +831,7 @@ body, .fc {
                         // Vẽ plan bar - giữ nguyên kích thước ban đầu
                         if (pStart && pEnd) {
                             if (aStart && aEnd) {
-                                // Nếu có both: vẽ plan overlay (top 15%, height 70%)
+                                // Nếu có both: vẽ plan overlay (top 15%, height 70%) - GIỮ NGUYÊN
                                 const planBar = document.createElement('div');
                                 planBar.classList.add('custom-gradient-box');
                                 planBar.style.position = 'absolute';
@@ -834,6 +845,8 @@ body, .fc {
                                 wrapper.appendChild(planBar);
                             } else {
                                 // Nếu chỉ plan: vẽ plan bar with same visual sizing as the overlay used when both plan+actual exist
+                                // SỬA MỚI: Set wrapper transparent để không có viền xám nhạt bao quanh
+                                wrapper.style.background = 'transparent'; // ← FIX: Loại bỏ fallback xám, chỉ giữ gradient của planBarFull
                                 const planBarFull = document.createElement('div');
                                 planBarFull.classList.add('custom-gradient-box');
                                 planBarFull.style.position = 'absolute';
@@ -841,8 +854,9 @@ body, .fc {
                                 // Match the overlay sizing used above (top 15%, height 70%) so visual size is consistent
                                 planBarFull.style.top = '15%';
                                 planBarFull.style.height = '70%';
-                                planBarFull.style.width = planWidth + '%'; // FIX: Dùng planWidth mới
-                                // Use planned color (fallback) for bar to keep consistency
+                                planBarFull.style.width = '100%'; // ← FIX: Đổi từ planWidth + '%' thành '100%' để lấp đầy wrapper (giống hệt overlay của both, không khoảng trống)
+                                // Use planned color (fallback) for bar to keep consistency - NHƯNG GIỮ GRADIENT TỪ CSS .custom-gradient-box (đen gradient)
+                                // Không cần set background vì class đã có gradient đen giống plan overlay
                                 planBarFull.style.borderRadius = '2px';
                                 //planBarFull.title = `Full Plan BKK: ${hhmmss(pStart)} - ${hhmmss(pEnd)}`;
                                 wrapper.appendChild(planBarFull);
@@ -1370,8 +1384,11 @@ body, .fc {
                         const status = extendedProps.status;
                         const validActual = extendedProps.validActual;
                         const delayTime = extendedProps.delayTime || 0;
-                        const bgColor = e.hasBoth ? 'transparent' : getColorByStatus(status, validActual, delayTime);
-                        const borderColor = e.hasBoth ? 'transparent' : getColorByStatus(status, validActual, delayTime);
+                        // Same logic as above for SignalR-updated events: make outer container
+                        // transparent for plan-only (no actual) so only the inner plan bar is visible
+                        // and the gray border/background disappears.
+                        const bgColor = (e.hasBoth || !validActual) ? 'transparent' : getColorByStatus(status, validActual, delayTime);
+                        const borderColor = (e.hasBoth || !validActual) ? 'transparent' : getColorByStatus(status, validActual, delayTime);
                         let classNames = extendedProps.validActual ? ['actual-event'] : [];
                         if (status === 'Delay' && delayTime > 24) {
                             classNames.push('multi-day-delay');

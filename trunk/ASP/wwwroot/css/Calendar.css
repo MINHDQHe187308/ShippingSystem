@@ -98,7 +98,7 @@ h1 {
 .calendar-title {
     font-size: 40px; /* keep current size */
     font-weight: 800;
-    line-height: 1.05;
+    line-height: 1.15; /* Increased slightly for better descender space */
     letter-spacing: -0.5px;
     margin-bottom: 12px;
     display: block; /* Block for full width centering */
@@ -109,6 +109,13 @@ h1 {
     overflow: visible; /* Allow text to extend if needed */
     /* Vertical animations (parent) */
     animation: slideInUp 700ms cubic-bezier(.2,.9,.3,1) both, floatUp 6s ease-in-out infinite, subtleRotate 10s linear infinite;
+    /* FIX: Sharp text rendering */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    backface-visibility: hidden;
+    transform-style: preserve-3d;
+    will-change: transform;
 }
 /* Inner element holds gradient text and horizontal/drift/shimmer animations */
 .calendar-title-inner {
@@ -116,6 +123,8 @@ h1 {
     position: relative;
     margin: 0 auto; /* Center horizontally */
     white-space: nowrap; /* Prevent wrapping to avoid cutoff */
+    /* FIX: Ensure descenders (g, p) have space */
+    padding-bottom: 2px; /* Extra padding for descenders */
     /* Enhanced multi-layer gradient for richer colors */
     background: linear-gradient(90deg, #ff6b6b 0%, /* Vibrant red-orange */
     #ffd93d 20%, /* Sunny yellow */
@@ -129,6 +138,13 @@ h1 {
     background-clip: text;
     -webkit-text-fill-color: transparent;
     color: transparent; /* fallback */
+    /* FIX: Sharp gradient text */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    /* Force hardware acceleration for smooth animations without blur */
+    transform: translateZ(0);
+    backface-visibility: hidden;
     /* Horizontal drift + gradient shift + pulse */
     animation: gradientShift 4s linear infinite, driftX 8s ease-in-out infinite alternate, subtlePulse 3s ease-in-out infinite;
 }
