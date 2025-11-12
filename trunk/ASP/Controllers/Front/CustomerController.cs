@@ -252,10 +252,15 @@ namespace ASP.Controllers.Front
                     var collectTime = sheet.Cells[row, 4].GetValue<decimal?>();
                     var prepareTime = sheet.Cells[row, 5].GetValue<decimal?>();
                     var loadingTime = sheet.Cells[row, 6].GetValue<decimal?>();
-                    var weekdayStr = sheet.Cells[row, 7].GetValue<string>()?.Trim(); // e.g., "Monday" or "1"
-                    var cutOffTimeStr = sheet.Cells[row, 8].GetValue<string>()?.Trim(); // e.g., "13:00:00"
+                    // Read weekday cell raw - can be string or numeric
+                    var weekdayCell = sheet.Cells[row, 7].Value;
+                    var weekdayStr = weekdayCell?.ToString()?.Trim(); // e.g., "Monday" or "1"
+                    // Read raw value for CutOffTime - can be string, DateTime, or Excel numeric (serial)
+                    var cutOffCell = sheet.Cells[row, 8].Value;
+                    var cutOffTimeStr = cutOffCell as string;
+                    if (cutOffTimeStr != null) cutOffTimeStr = cutOffTimeStr.Trim();
 
-                    if (string.IsNullOrEmpty(customerCode) || string.IsNullOrEmpty(customerName) || string.IsNullOrEmpty(transCd) || !collectTime.HasValue || !prepareTime.HasValue || !loadingTime.HasValue || string.IsNullOrEmpty(weekdayStr) || string.IsNullOrEmpty(cutOffTimeStr))
+                    if (string.IsNullOrEmpty(customerCode) || string.IsNullOrEmpty(customerName) || string.IsNullOrEmpty(transCd) || !collectTime.HasValue || !prepareTime.HasValue || !loadingTime.HasValue || weekdayCell == null || cutOffCell == null)
                     {
                         results.Errors.Add($"Row {row}: Invalid data (all fields required).");
                         continue;
@@ -287,11 +292,7 @@ namespace ASP.Controllers.Front
 
                     // Parse weekday: Accept number or day name
                     int weekdayInt;
-                    if (int.TryParse(weekdayStr, out weekdayInt))
-                    {
-                        // Already number
-                    }
-                    else
+                    if (!int.TryParse(weekdayStr, out weekdayInt))
                     {
                         if (Enum.TryParse<DayOfWeek>(weekdayStr, true, out var dayOfWeek))
                         {
@@ -299,34 +300,64 @@ namespace ASP.Controllers.Front
                         }
                         else
                         {
-                            results.Errors.Add($"Row {row}: Invalid weekday {weekdayStr}.");
+                            results.Errors.Add($"Row {row}: Invalid weekday {weekdayCell}.");
                             continue;
                         }
                     }
                     if (weekdayInt < 0 || weekdayInt > 6)
                     {
-                        results.Errors.Add($"Row {row}: Invalid weekday {weekdayStr}.");
+                        results.Errors.Add($"Row {row}: Invalid weekday {weekdayCell}.");
                         continue;
                     }
 
-                    // Parse TimeOnly
+                    // Parse TimeOnly from multiple possible Excel cell types and formats
                     TimeOnly cutOffTimeOnly;
-                    if (TimeOnly.TryParseExact(cutOffTimeStr, @"HH\:mm\:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out cutOffTimeOnly))
+                    bool parsedCutOff = false;
+
+                    if (cutOffCell == null)
                     {
-                        // Already full format
+                        results.Errors.Add($"Row {row}: Invalid cutOffTime (empty).");
+                        continue;
                     }
-                    else
+
+                    // If cell is DateTime (Excel stores times as DateTime sometimes)
+                    if (cutOffCell is DateTime dt)
                     {
-                        // Try HH:mm and add :00
-                        if (TimeOnly.TryParseExact(cutOffTimeStr + ":00", @"HH\:mm\:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out cutOffTimeOnly))
+                        cutOffTimeOnly = TimeOnly.FromDateTime(dt);
+                        parsedCutOff = true;
+                    }
+                    // If cell is double (Excel serial number for date/time)
+                    else if (cutOffCell is double dbl)
+                    {
+                        // Excel stores time as fraction of a day
+                        var ts = TimeSpan.FromDays(dbl);
+                        cutOffTimeOnly = TimeOnly.FromTimeSpan(ts);
+                        parsedCutOff = true;
+                    }
+                    else if (!string.IsNullOrEmpty(cutOffTimeStr))
+                    {
+                        // Try several common time formats: HH:mm, H:mm, HH:mm:ss, H:mm:ss
+                        var formats = new[] { "H:mm", "HH:mm", "H:mm:ss", "HH:mm:ss" };
+                        foreach (var fmt in formats)
                         {
-                            // Good
+                            if (TimeOnly.TryParseExact(cutOffTimeStr, fmt, CultureInfo.InvariantCulture, DateTimeStyles.None, out cutOffTimeOnly))
+                            {
+                                parsedCutOff = true;
+                                break;
+                            }
                         }
-                        else
+
+                        // Try a general parse as fallback (will handle culture-specifics)
+                        if (!parsedCutOff && TimeOnly.TryParse(cutOffTimeStr, CultureInfo.InvariantCulture, DateTimeStyles.None, out cutOffTimeOnly))
                         {
-                            results.Errors.Add($"Row {row}: Invalid cutOffTime {cutOffTimeStr}. Expected HH:mm:ss or HH:mm.");
-                            continue;
+                            parsedCutOff = true;
                         }
+                    }
+
+                    if (!parsedCutOff)
+                    {
+                        results.Errors.Add($"Row {row}: Invalid cutOffTime {cutOffCell}. Expected format HH:mm or HH:mm:ss (seconds optional).");
+                        continue;
                     }
 
                     // Create ShippingSchedule
@@ -381,7 +412,7 @@ namespace ASP.Controllers.Front
                 worksheet.Cells[2, 5].Value = 2.0; // PrepareTime
                 worksheet.Cells[2, 6].Value = 0.5; // LoadingTime
                 worksheet.Cells[2, 7].Value = "1"; // Monday (or "Monday")
-                worksheet.Cells[2, 8].Value = "13:00:00"; // CutOffTime
+                worksheet.Cells[2, 8].Value = "13:00"; // CutOffTime (hours:minutes)
                 // Auto-fit columns
                 worksheet.Cells.AutoFitColumns();
                 package.Save();
