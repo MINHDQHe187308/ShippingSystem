@@ -1,7 +1,7 @@
 ﻿$(document).ready(function () {
-    console.log("customer.js loaded"); // Xác nhận tệp được tải
+    console.log("customer.js loaded - jQuery ready"); // Debug: Xác nhận jQuery + script load
 
-    // Validation helper (thêm mới để tránh gửi dữ liệu rỗng)
+    // Validation helpers
     function validateShippingData(customerCode, transCd) {
         if (!customerCode || !transCd) {
             alert("Customer Code và Trans Cd không được để trống!");
@@ -26,6 +26,79 @@
         return true;
     }
 
+    // Helper function to show messages
+    function showMessage(element, message, type) {
+        element.innerHTML = `
+            <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        // Auto hide after 5s
+        setTimeout(() => element.innerHTML = '', 5000);
+    }
+
+    // ===== IMPORT EXCEL: Event delegation để fix modal dynamic =====
+    $(document).on('click', '#btnImportExcel', function () {
+        console.log("Import button clicked! (delegation works)"); // Debug log
+
+        const form = $('#importForm')[0];
+        const fileInput = $('#excelFile')[0];
+        const messageDiv = $('#importMessage')[0];
+
+        console.log("File selected:", fileInput.files[0]?.name || 'none'); // Debug log
+
+        if (!fileInput.files || fileInput.files.length === 0) {
+            showMessage(messageDiv, 'Please select a file.', 'danger');
+            return;
+        }
+
+        const formData = new FormData(form);
+        var importUrl = (typeof importExcelUrl !== 'undefined') ? importExcelUrl : '/Customer/ImportExcel';
+
+        console.log("Import URL:", importUrl); // Debug log
+
+        // Disable button to prevent double-click
+        $(this).prop('disabled', true).html('<i class="bi bi-hourglass-split me-1"></i>Importing...');
+
+        $.ajax({
+            url: importUrl,
+            type: 'POST',
+            data: formData,
+            processData: false, // Quan trọng cho FormData
+            contentType: false, // Không set contentType cho multipart
+            beforeSend: function () {
+                console.log("Sending AJAX request..."); // Debug log
+            },
+            success: function (response) {
+                console.log("Import response:", response); // Debug log
+                if (response.success) {
+                    showMessage(messageDiv, response.message, 'success');
+                    // Reload table hoặc close modal sau 2s
+                    setTimeout(() => {
+                        location.reload(); // Hoặc gọi hàm reload table nếu có
+                    }, 2000);
+                } else {
+                    showMessage(messageDiv, response.message || 'Import failed.', 'danger');
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error('Import error details:', { status, error, response: xhr.responseText }); // Debug chi tiết
+                showMessage(messageDiv, 'Network/Server error. Check console.', 'danger');
+            },
+            complete: function () {
+                // Re-enable button
+                $('#btnImportExcel').prop('disabled', false).html('<i class="bi bi-upload me-1"></i>Import');
+            }
+        });
+    });
+
+    // Log khi modal shown để confirm
+    $('#importExcelModal').on('shown.bs.modal', function () {
+        console.log("Import modal SHOWN - button should be ready now"); // Debug
+        console.log("Button exists after shown:", $('#btnImportExcel').length > 0);
+    });
+
     // Thêm nhà cung cấp
     $('#btnAddSupplier').click(function () {
         var customerCode = $('#customerCode').val().trim();
@@ -35,38 +108,31 @@
         if (!validateSupplierData(customerCode, customerName)) return;
 
         var data = {
-            customerCode: customerCode,
-            customerName: customerName,
-            descriptions: descriptions
+            CustomerCode: customerCode, // PascalCase cho model binding
+            CustomerName: customerName,
+            Descriptions: descriptions
         };
-        console.log("Add data being sent:", data);
+
+        console.log("Add data being sent:", data); // Debug log
+
         $.ajax({
             url: addSupplierUrl,
             type: 'POST',
             data: JSON.stringify(data),
             contentType: 'application/json',
             success: function (response) {
-                console.log("Add response:", response);
+                console.log("Add response:", response); // Debug log
                 if (response.success) {
-                    $('#addSupplierMessage')
-                        .text("Thêm nhà cung cấp thành công!")
-                        .removeClass('error')
-                        .addClass('success');
+                    showMessage($('#addSupplierMessage')[0], "Thêm nhà cung cấp thành công!", 'success');
                     $('#addSupplierForm')[0].reset();
-                    location.reload();
+                    setTimeout(() => location.reload(), 1500);
                 } else {
-                    $('#addSupplierMessage')
-                        .text(response.message)
-                        .removeClass('success')
-                        .addClass('error');
+                    showMessage($('#addSupplierMessage')[0], response.message || "Thêm thất bại", 'danger');
                 }
             },
             error: function (xhr, status, error) {
-                console.log("Add AJAX error:", xhr, status, error);
-                $('#addSupplierMessage')
-                    .text("Đã xảy ra lỗi khi thêm")
-                    .removeClass('success')
-                    .addClass('error');
+                console.error("Add AJAX error:", xhr, status, error); // Debug log
+                showMessage($('#addSupplierMessage')[0], "Đã xảy ra lỗi khi thêm", 'danger');
             }
         });
     });
@@ -75,7 +141,8 @@
     window.populateUpdateForm = function (customerCode, customerName, descriptions) {
         $('#updateCustomerCode').val(customerCode);
         $('#updateCustomerName').val(customerName);
-        $('#updateDescription').val(descriptions);
+        $('#updateDescription').val(descriptions || '');
+        console.log("Populated update form:", { customerCode, customerName }); // Debug log
     };
 
     // Cập nhật nhà cung cấp
@@ -87,37 +154,30 @@
         if (!validateSupplierData(customerCode, customerName)) return;
 
         var data = {
-            customerCode: customerCode,
-            customerName: customerName,
-            descriptions: descriptions
+            CustomerCode: customerCode,
+            CustomerName: customerName,
+            Descriptions: descriptions
         };
-        console.log("Update data being sent:", data);
+
+        console.log("Update data being sent:", data); // Debug log
+
         $.ajax({
             url: updateSupplierUrl,
             type: 'POST',
             data: JSON.stringify(data),
             contentType: 'application/json',
             success: function (response) {
-                console.log("Update response:", response);
+                console.log("Update response:", response); // Debug log
                 if (response.success) {
-                    $('#updateSupplierMessage')
-                        .text("Cập nhật nhà cung cấp thành công!")
-                        .removeClass('error')
-                        .addClass('success');
-                    location.reload();
+                    showMessage($('#updateSupplierMessage')[0], "Cập nhật nhà cung cấp thành công!", 'success');
+                    setTimeout(() => location.reload(), 1500);
                 } else {
-                    $('#updateSupplierMessage')
-                        .text(response.message)
-                        .removeClass('success')
-                        .addClass('error');
+                    showMessage($('#updateSupplierMessage')[0], response.message || "Cập nhật thất bại", 'danger');
                 }
             },
             error: function (xhr, status, error) {
-                console.log("Update AJAX error:", xhr, status, error);
-                $('#updateSupplierMessage')
-                    .text("Đã xảy ra lỗi khi cập nhật")
-                    .removeClass('success')
-                    .addClass('error');
+                console.error("Update AJAX error:", xhr, status, error); // Debug log
+                showMessage($('#updateSupplierMessage')[0], "Đã xảy ra lỗi khi cập nhật", 'danger');
             }
         });
     });
@@ -125,21 +185,22 @@
     // Xóa nhà cung cấp
     window.deleteSupplier = function (customerCode) {
         if (confirm("Bạn có chắc chắn muốn xóa nhà cung cấp này?")) {
+            console.log("Deleting supplier:", customerCode); // Debug log
             $.ajax({
                 url: deleteSupplierUrl + '?code=' + encodeURIComponent(customerCode),
                 type: 'POST',
                 contentType: 'application/json',
                 success: function (response) {
-                    console.log("Delete response:", response);
+                    console.log("Delete response:", response); // Debug log
                     if (response.success) {
-                        alert("Xóa nhà cung cấp thành công!");
-                        location.reload();
+                        showMessage(document.body, "Xóa nhà cung cấp thành công!", 'success'); // Global message
+                        setTimeout(() => location.reload(), 1000);
                     } else {
-                        alert(response.message);
+                        alert(response.message || "Xóa thất bại");
                     }
                 },
                 error: function (xhr, status, error) {
-                    console.log("Delete AJAX error:", xhr, status, error);
+                    console.error("Delete AJAX error:", xhr, status, error); // Debug log
                     alert("Đã xảy ra lỗi khi xóa");
                 }
             });
@@ -148,31 +209,36 @@
 
     // Load Leadtimes
     window.loadLeadtimes = function (customerCode) {
+        console.log("Loading leadtimes for:", customerCode); // Debug log
         $('#currentCustomerCodeLeadtime').val(customerCode);
-        $.get(getLeadtimesUrl + '?customerCode=' + encodeURIComponent(customerCode), function (response) {
-            console.log("Load leadtimes response:", response); // Debug
-            if (response.success) {
-                var html = '<table class="table table-hover"><thead class="table-light"><tr><th>Trans Cd</th><th>Collect Time</th><th>Prepare Time</th><th>Loading Time</th><th>Actions</th></tr></thead><tbody>';
-                if (response.data.length === 0) {
-                    html += '<tr><td colspan="5" class="text-center text-muted">No leadtimes found.</td></tr>';
+        $.get(getLeadtimesUrl + '?customerCode=' + encodeURIComponent(customerCode))
+            .done(function (response) {
+                console.log("Load leadtimes response:", response); // Debug log
+                if (response.success) {
+                    var html = '<table class="table table-hover"><thead class="table-light"><tr><th>Trans Cd</th><th>Collect Time</th><th>Prepare Time</th><th>Loading Time</th><th>Actions</th></tr></thead><tbody>';
+                    if (response.data.length === 0) {
+                        html += '<tr><td colspan="5" class="text-center text-muted">No leadtimes found.</td></tr>';
+                    } else {
+                        response.data.forEach(function (lt) {
+                            html += '<tr><td>' + lt.transCd + '</td><td>' + lt.collectTimePerPallet + '</td><td>' + lt.prepareTimePerPallet + '</td><td>' + lt.loadingTimePerColumn + '</td><td><button class="btn btn-warning btn-sm" onclick="populateEditLeadtime(\'' + lt.customerCode + '\', \'' + lt.transCd + '\', ' + lt.collectTimePerPallet + ', ' + lt.prepareTimePerPallet + ', ' + lt.loadingTimePerColumn + ')">Edit</button> <button class="btn btn-danger btn-sm" onclick="deleteLeadtime(\'' + lt.customerCode + '\', \'' + lt.transCd + '\')">Delete</button></td></tr>';
+                        });
+                    }
+                    html += '</tbody></table>';
+                    $('#leadtimeTableContainer').html(html);
+                    $('#leadtimeMessage').empty().removeClass('text-danger text-success');
                 } else {
-                    response.data.forEach(function (lt) {
-                        html += '<tr><td>' + lt.transCd + '</td><td>' + lt.collectTimePerPallet + '</td><td>' + lt.prepareTimePerPallet + '</td><td>' + lt.loadingTimePerColumn + '</td><td><button class="btn btn-warning btn-sm" onclick="populateEditLeadtime(\'' + lt.customerCode + '\', \'' + lt.transCd + '\', ' + lt.collectTimePerPallet + ', ' + lt.prepareTimePerPallet + ', ' + lt.loadingTimePerColumn + ')">Edit</button> <button class="btn btn-danger btn-sm" onclick="deleteLeadtime(\'' + lt.customerCode + '\', \'' + lt.transCd + '\')">Delete</button></td></tr>';
-                    });
+                    $('#leadtimeMessage').text(response.message || 'Load failed').addClass('text-danger');
                 }
-                html += '</tbody></table>';
-                $('#leadtimeTableContainer').html(html);
-                $('#leadtimeMessage').empty().removeClass('text-danger text-success');
-            } else {
-                $('#leadtimeMessage').text(response.message || 'Load failed').addClass('text-danger');
-            }
-        }).fail(function () {
-            $('#leadtimeMessage').text('Network error loading leadtimes').addClass('text-danger');
-        });
+            })
+            .fail(function (xhr) {
+                console.error("Load leadtimes error:", xhr); // Debug log
+                $('#leadtimeMessage').text('Network error loading leadtimes').addClass('text-danger');
+            });
     };
 
     // Populate Edit Leadtime
     window.populateEditLeadtime = function (customerCode, transCd, collectTime, prepareTime, loadingTime) {
+        console.log("Populating edit leadtime:", { customerCode, transCd }); // Debug log
         $('#currentCustomerCodeLeadtimeEdit').val(customerCode);
         $('#transCd').val(transCd);
         $('#collectTime').val(collectTime);
@@ -196,28 +262,31 @@
         var loadingTime = parseFloat($('#loadingTime').val());
 
         if (!validateLeadtimeData(customerCode, transCd)) return;
+
         if (isNaN(collectTime) || isNaN(prepareTime) || isNaN(loadingTime)) {
-            $('#leadtimeFormMessage').text('Thời gian phải là số hợp lệ').addClass('text-danger');
+            showMessage($('#leadtimeFormMessage')[0], 'Thời gian phải là số hợp lệ', 'danger');
             return;
         }
 
         var data = {
-            customerCode: customerCode,
-            transCd: transCd,
-            collectTimePerPallet: collectTime,
-            prepareTimePerPallet: prepareTime,
-            loadingTimePerColumn: loadingTime
+            CustomerCode: customerCode,
+            TransCd: transCd,
+            CollectTimePerPallet: collectTime,
+            PrepareTimePerPallet: prepareTime,
+            LoadingTimePerColumn: loadingTime
         };
-        console.log("Save leadtime data:", data); // Debug
+
+        console.log("Save leadtime data:", data); // Debug log
+
         $.ajax({
             url: url,
             type: 'POST',
             data: JSON.stringify(data),
             contentType: 'application/json',
             success: function (response) {
-                console.log("Save leadtime response:", response); // Debug
+                console.log("Save leadtime response:", response); // Debug log
                 if (response.success) {
-                    $('#leadtimeFormMessage').text(response.message || 'Success!').removeClass('text-danger').addClass('text-success');
+                    showMessage($('#leadtimeFormMessage')[0], response.message || 'Success!', 'success');
                     loadLeadtimes($('#currentCustomerCodeLeadtime').val());
                     $('#addLeadtimeModal').modal('hide');
                     setTimeout(() => {
@@ -227,12 +296,12 @@
                         $('#btnSaveLeadtime').text('Save');
                     }, 500);
                 } else {
-                    $('#leadtimeFormMessage').text(response.message).addClass('text-danger');
+                    showMessage($('#leadtimeFormMessage')[0], response.message, 'danger');
                 }
             },
             error: function (xhr) {
-                console.log("Save leadtime error:", xhr); // Debug
-                $('#leadtimeFormMessage').text('Error occurred: ' + xhr.status).addClass('text-danger');
+                console.error("Save leadtime error:", xhr); // Debug log
+                showMessage($('#leadtimeFormMessage')[0], 'Error occurred: ' + xhr.status, 'danger');
             }
         });
     });
@@ -240,19 +309,22 @@
     // Delete Leadtime
     window.deleteLeadtime = function (customerCode, transCd) {
         if (confirm('Are you sure you want to delete this leadtime?')) {
+            console.log("Deleting leadtime:", { customerCode, transCd }); // Debug log
             $.ajax({
                 url: deleteLeadtimeUrl,
                 type: 'POST',
                 data: { customerCode: customerCode, transCd: transCd },
                 success: function (response) {
-                    console.log("Delete leadtime response:", response); // Debug
+                    console.log("Delete leadtime response:", response); // Debug log
                     if (response.success) {
                         loadLeadtimes(customerCode);
+                        showMessage(document.body, "Xóa leadtime thành công!", 'success');
                     } else {
                         alert(response.message || 'Delete failed');
                     }
                 },
-                error: function () {
+                error: function (xhr) {
+                    console.error("Delete leadtime error:", xhr); // Debug log
                     alert('Error occurred during delete');
                 }
             });
@@ -261,32 +333,37 @@
 
     // Load Shipping Schedules
     window.loadShippingSchedules = function (customerCode) {
+        console.log("Loading shipping schedules for:", customerCode); // Debug log
         $('#currentCustomerCodeShipping').val(customerCode);
-        $.get(getShippingSchedulesUrl + '?customerCode=' + encodeURIComponent(customerCode), function (response) {
-            console.log("Load shipping response:", response); // Debug
-            if (response.success) {
-                var html = '<table class="table table-hover"><thead class="table-light"><tr><th>Trans Cd</th><th>Weekday</th><th>Cut Off Time</th><th>Description</th><th>Actions</th></tr></thead><tbody>';
-                if (response.data.length === 0) {
-                    html += '<tr><td colspan="5" class="text-center text-muted">No schedules found.</td></tr>';
+        $.get(getShippingSchedulesUrl + '?customerCode=' + encodeURIComponent(customerCode))
+            .done(function (response) {
+                console.log("Load shipping response:", response); // Debug log
+                if (response.success) {
+                    var html = '<table class="table table-hover"><thead class="table-light"><tr><th>Trans Cd</th><th>Weekday</th><th>Cut Off Time</th><th>Description</th><th>Actions</th></tr></thead><tbody>';
+                    if (response.data.length === 0) {
+                        html += '<tr><td colspan="5" class="text-center text-muted">No schedules found.</td></tr>';
+                    } else {
+                        response.data.forEach(function (ss) {
+                            var weekdayText = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][ss.weekday];
+                            html += '<tr><td>' + ss.transCd + '</td><td>' + weekdayText + '</td><td>' + ss.cutOffTime + '</td><td>' + (ss.description || '') + '</td><td><button class="btn btn-warning btn-sm" onclick="populateEditShipping(\'' + ss.customerCode + '\', \'' + ss.transCd + '\', ' + ss.weekday + ', \'' + ss.cutOffTime + '\', \'' + (ss.description || '') + '\')">Edit</button> <button class="btn btn-danger btn-sm" onclick="deleteShipping(\'' + ss.customerCode + '\', \'' + ss.transCd + '\', ' + ss.weekday + ')">Delete</button></td></tr>';
+                        });
+                    }
+                    html += '</tbody></table>';
+                    $('#shippingTableContainer').html(html);
+                    $('#shippingMessage').empty().removeClass('text-danger text-success');
                 } else {
-                    response.data.forEach(function (ss) {
-                        var weekdayText = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][ss.weekday];
-                        html += '<tr><td>' + ss.transCd + '</td><td>' + weekdayText + '</td><td>' + ss.cutOffTime + '</td><td>' + (ss.description || '') + '</td><td><button class="btn btn-warning btn-sm" onclick="populateEditShipping(\'' + ss.customerCode + '\', \'' + ss.transCd + '\', ' + ss.weekday + ', \'' + ss.cutOffTime + '\', \'' + (ss.description || '') + '\')">Edit</button> <button class="btn btn-danger btn-sm" onclick="deleteShipping(\'' + ss.customerCode + '\', \'' + ss.transCd + '\', ' + ss.weekday + ')">Delete</button></td></tr>';
-                    });
+                    $('#shippingMessage').text(response.message || 'Load failed').addClass('text-danger');
                 }
-                html += '</tbody></table>';
-                $('#shippingTableContainer').html(html);
-                $('#shippingMessage').empty().removeClass('text-danger text-success');
-            } else {
-                $('#shippingMessage').text(response.message || 'Load failed').addClass('text-danger');
-            }
-        }).fail(function () {
-            $('#shippingMessage').text('Network error loading schedules').addClass('text-danger');
-        });
+            })
+            .fail(function (xhr) {
+                console.error("Load shipping error:", xhr); // Debug log
+                $('#shippingMessage').text('Network error loading schedules').addClass('text-danger');
+            });
     };
 
     // Populate Edit Shipping
     window.populateEditShipping = function (customerCode, transCd, weekday, cutOffTime, description) {
+        console.log("Populating edit shipping:", { customerCode, transCd, weekday }); // Debug log
         $('#currentCustomerCodeShippingEdit').val(customerCode);
         $('#shippingTransCd').val(transCd);
         $('#weekday').val(weekday);
@@ -300,7 +377,7 @@
         addModal.show();
     };
 
-    // Save Shipping Schedule (phần sửa)
+    // Save Shipping Schedule
     $('#btnSaveShipping').click(function () {
         var isEdit = $('#editShippingId').val() !== '';
         var url = isEdit ? updateShippingScheduleUrl : addShippingScheduleUrl;
@@ -311,40 +388,44 @@
         var description = $('#shippingDescription').val().trim();
 
         if (!validateShippingData(customerCode, transCd)) return;
+
         if (isNaN(weekday)) {
-            $('#shippingFormMessage').text('Weekday phải là số hợp lệ (0-6)').addClass('text-danger');
+            showMessage($('#shippingFormMessage')[0], 'Weekday phải là số hợp lệ (0-6)', 'danger');
             return;
         }
-        // Fix: Append ":00" nếu cutOffTime chỉ có HH:mm (e.g., "13:00" → "13:00:00")
+
+        // Fix: Append ":00" nếu cutOffTime chỉ có HH:mm
         var cutOffTime = cutOffTimeInput;
         if (cutOffTimeInput && !cutOffTimeInput.includes(':')) {
-            $('#shippingFormMessage').text('Cut Off Time phải có định dạng HH:mm').addClass('text-danger');
+            showMessage($('#shippingFormMessage')[0], 'Cut Off Time phải có định dạng HH:mm', 'danger');
             return;
         }
         if (cutOffTimeInput.split(':').length === 2) {
             cutOffTime = cutOffTimeInput + ':00'; // Thêm giây
         } else if (cutOffTimeInput.split(':').length !== 3) {
-            $('#shippingFormMessage').text('Cut Off Time phải có định dạng HH:mm:ss').addClass('text-danger');
+            showMessage($('#shippingFormMessage')[0], 'Cut Off Time phải có định dạng HH:mm:ss', 'danger');
             return;
         }
 
         var data = {
-            customerCode: customerCode,
-            transCd: transCd,
-            weekday: weekday,
-            cutOffTime: cutOffTime,  // Bây giờ là "13:00:00"
-            description: description
+            CustomerCode: customerCode,
+            TransCd: transCd,
+            Weekday: weekday,
+            CutOffTime: cutOffTime, // "13:00:00"
+            Description: description
         };
-        console.log("Save shipping data:", data); // Debug: Check "13:00:00"
+
+        console.log("Save shipping data:", data); // Debug log
+
         $.ajax({
             url: url,
             type: 'POST',
             data: JSON.stringify(data),
             contentType: 'application/json',
             success: function (response) {
-                console.log("Save shipping response:", response); // Debug
+                console.log("Save shipping response:", response); // Debug log
                 if (response.success) {
-                    $('#shippingFormMessage').text(response.message || 'Success!').removeClass('text-danger').addClass('text-success');
+                    showMessage($('#shippingFormMessage')[0], response.message || 'Success!', 'success');
                     loadShippingSchedules($('#currentCustomerCodeShipping').val());
                     $('#addShippingModal').modal('hide');
                     setTimeout(() => {
@@ -355,31 +436,35 @@
                         $('#btnSaveShipping').text('Save');
                     }, 500);
                 } else {
-                    $('#shippingFormMessage').text(response.message).addClass('text-danger');
+                    showMessage($('#shippingFormMessage')[0], response.message, 'danger');
                 }
             },
             error: function (xhr) {
-                console.log("Save shipping error:", xhr); // Debug
-                $('#shippingFormMessage').text('Error occurred: ' + xhr.status).addClass('text-danger');
+                console.error("Save shipping error:", xhr); // Debug log
+                showMessage($('#shippingFormMessage')[0], 'Error occurred: ' + xhr.status, 'danger');
             }
         });
     });
+
     // Delete Shipping Schedule
     window.deleteShipping = function (customerCode, transCd, weekday) {
         if (confirm('Are you sure you want to delete this schedule?')) {
+            console.log("Deleting shipping:", { customerCode, transCd, weekday }); // Debug log
             $.ajax({
                 url: deleteShippingScheduleUrl,
                 type: 'POST',
                 data: { customerCode: customerCode, transCd: transCd, weekday: weekday },
                 success: function (response) {
-                    console.log("Delete shipping response:", response); // Debug
+                    console.log("Delete shipping response:", response); // Debug log
                     if (response.success) {
                         loadShippingSchedules(customerCode);
+                        showMessage(document.body, "Xóa shipping schedule thành công!", 'success');
                     } else {
                         alert(response.message || 'Delete failed');
                     }
                 },
-                error: function () {
+                error: function (xhr) {
+                    console.error("Delete shipping error:", xhr); // Debug log
                     alert('Error occurred during delete');
                 }
             });
@@ -406,7 +491,7 @@
         $('#shippingFormMessage').empty().removeClass('text-success text-danger');
     });
 
-    // Set customer name in modals (placeholder - enhance with AJAX if needed)
+    // Set customer name in modals
     $('#manageLeadtimeModal').on('shown.bs.modal', function () {
         var customerCode = $('#currentCustomerCodeLeadtime').val();
         $('#leadtimeCustomerName').text('Customer: ' + customerCode);

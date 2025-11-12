@@ -49,3 +49,93 @@ html, body, .container-fluid, .card, .modal, .modal-content, .btn, .table, .form
 /* Background image for the entire page - giữ nguyên ảnh gốc rõ nét */
 /* Use banner approach on pages that include .warehouse-banner; do not set a global body background here */
 /* body { background-image: url('/images/warehouse.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat; background-attachment: fixed; } */
+
+    /* Import Excel button specific styling (targets the button that opens #importExcelModal) */
+    button[data-bs-target="#importExcelModal"] {
+        background: linear-gradient(90deg, #0d6efd 0%, #0ea5e9 100%);
+        border: none;
+        color: #fff;
+        box-shadow: 0 6px 18px rgba(13,110,253,0.18);
+        transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
+    }
+
+    button[data-bs-target="#importExcelModal"]:hover {
+        transform: translateY(-2px) scale(1.02);
+        box-shadow: 0 12px 30px rgba(13,110,253,0.22);
+        filter: brightness(1.02);
+    }
+
+    button[data-bs-target="#importExcelModal"]:active {
+        transform: translateY(0) scale(0.995);
+        box-shadow: 0 6px 14px rgba(13,110,253,0.16);
+    }
+
+    button[data-bs-target="#importExcelModal"] .bi-upload {
+        transform: translateY(0);
+        transition: transform 0.18s ease;
+    }
+
+    button[data-bs-target="#importExcelModal"]:hover .bi-upload {
+        transform: translateY(-2px) rotate(-6deg);
+    }
+
+    /* Download Form Excel button specific styling (anchor with download attribute) */
+    a.btn-outline-secondary.btn-lg[download] {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding-left: 1.25rem;
+        padding-right: 1.25rem;
+        background: linear-gradient(90deg, #ffffff 0%, #f3f6fb 100%);
+        color: #0d6efd;
+        border: 1px solid rgba(13,110,253,0.18) !important;
+        box-shadow: 0 6px 18px rgba(13,110,253,0.06);
+        transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease, color 0.12s ease;
+        text-decoration: none;
+    }
+
+    a.btn-outline-secondary.btn-lg[download] .bi-download {
+        transform: translateY(0);
+        transition: transform 0.18s ease, color 0.12s ease;
+    }
+
+    a.btn-outline-secondary.btn-lg[download]:hover {
+        transform: translateY(-2px) scale(1.02);
+        background: linear-gradient(90deg, #0ea5e9 0%, #0d6efd 100%);
+        color: #fff !important;
+        box-shadow: 0 12px 30px rgba(13,110,253,0.22);
+        text-decoration: none;
+    }
+
+    a.btn-outline-secondary.btn-lg[download]:hover .bi-download {
+        transform: translateY(-2px) rotate(-6deg);
+        color: #fff;
+    }
+
+    a.btn-outline-secondary.btn-lg[download]:active {
+        transform: translateY(0) scale(0.995);
+        box-shadow: 0 6px 14px rgba(13,110,253,0.16);
+    }
+
+    a.btn-outline-secondary.btn-lg[download]:focus {
+        outline: none;
+        box-shadow: 0 0 0 0.25rem rgba(13,110,253,0.18);
+    }
+
+    /* Responsive tweaks for small screens */
+    @media (max-width: 576px) {
+        a.btn-outline-secondary.btn-lg[download] {
+            font-size: 0.95rem;
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }
+    }
+
+    /* Make it responsive on small screens */
+    @media (max-width: 576px) {
+        button[data-bs-target="#importExcelModal"] {
+            font-size: 0.95rem;
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }
+    }

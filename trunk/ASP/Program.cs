@@ -21,10 +21,48 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
+using OfficeOpenXml;
 using ReflectionIT.Mvc.Paging;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Đọc config EPPlus từ appsettings.json
+var epplusLicenseConfig = builder.Configuration.GetValue<string>("EPPlus:ExcelPackage:License");
+if (!string.IsNullOrEmpty(epplusLicenseConfig))
+{
+    // Parse và set license dựa trên config (ví dụ: "NonCommercialOrganization:Your Org Name")
+    var parts = epplusLicenseConfig.Split(':');
+    if (parts.Length == 2)
+    {
+        var licenseType = parts[0].Trim();
+        var orgName = parts[1].Trim();
+        switch (licenseType.ToLowerInvariant())
+        {
+            case "noncommercialorganization":
+                ExcelPackage.License.SetNonCommercialOrganization(orgName);
+                break;
+            case "noncommercialpersonal":
+                ExcelPackage.License.SetNonCommercialPersonal(orgName);
+                break;
+            default:
+                // Nếu commercial, set với key (nhưng config này là string đơn giản, cần adjust nếu cần)
+                Console.WriteLine("Warning: Unknown EPPlus license type in config.");
+                break;
+        }
+    }
+    else
+    {
+        Console.WriteLine("Warning: Invalid EPPlus license config format. Expected 'Type:Value'.");
+    }
+}
+else
+{
+    // Fallback nếu không có config: Set default non-commercial
+    ExcelPackage.License.SetNonCommercialOrganization("Default Dev Organization");
+}
+
+
 #region signalR
 builder.Services.AddSignalR();
 #endregion

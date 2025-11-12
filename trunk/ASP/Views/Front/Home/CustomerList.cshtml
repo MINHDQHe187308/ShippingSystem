@@ -27,9 +27,19 @@
 
     <!-- Add Button Card -->
     <div class="d-flex justify-content-end mb-4">
-        <button type="button" class="btn btn-primary btn-lg px-4 rounded-pill shadow-sm" data-bs-toggle="modal" data-bs-target="#addSupplierModal">
-            <i class="bi bi-plus-circle me-2"></i>Add New Customer
-        </button>
+        <a href="@Url.Action("DownloadTemplate", "Customer")" class="btn btn-outline-secondary btn-lg px-4 rounded-pill shadow-sm me-2" download>
+            <i class="bi bi-download me-2"></i>Download Form Excel
+        </a>
+        <div class="me-2">
+            <button type="button" class="btn btn-info btn-lg px-4 rounded-pill shadow-sm" data-bs-toggle="modal" data-bs-target="#importExcelModal">
+                <i class="bi bi-upload me-2"></i>Import Excel
+            </button>
+        </div>
+        <div>
+            <button type="button" class="btn btn-primary btn-lg px-4 rounded-pill shadow-sm" data-bs-toggle="modal" data-bs-target="#addSupplierModal">
+                <i class="bi bi-plus-circle me-2"></i>Add New Customer
+            </button>
+        </div>
     </div>
 
     @if (Model == null || Model.Count == 0)
@@ -337,7 +347,40 @@
             </div>
         </div>
     </div>
+    </div>
 </div>
+
+    <!-- Import Excel Modal (moved to page root so it can be triggered from anywhere) -->
+    <div class="modal fade" id="importExcelModal" tabindex="-1" aria-labelledby="importExcelModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header bg-info text-white border-0 rounded-top-4">
+                    <h5 class="modal-title fw-bold mb-0 d-flex align-items-center" id="importExcelModalLabel">
+                        <i class="bi bi-upload me-2"></i>Import from Excel
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form id="importForm" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="excelFile" class="form-label fw-semibold">Select Excel File <span class="text-danger">*</span></label>
+                            <input type="file" class="form-control" id="excelFile" name="excelFile" accept=".xlsx" required>
+                          
+                        </div>
+                    </form>
+                    <div id="importMessage" class="mt-2"></div>
+                </div>
+                <div class="modal-footer bg-light border-0 rounded-bottom-4 justify-content-center">
+                    <button type="button" class="btn btn-secondary px-4 rounded-pill" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-info px-4 rounded-pill" id="btnImportExcel">
+                        <i class="bi bi-upload me-1"></i>Import
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
 @section Styles {
     <link href="~/css/Home.css" rel="stylesheet" />
@@ -351,6 +394,9 @@
         var addSupplierUrl = '@Url.Action("AddSupplier", "Customer")';
         var updateSupplierUrl = '@Url.Action("UpdateSupplier", "Customer")';
         var deleteSupplierUrl = '@Url.Action("DeleteSupplier", "Customer")';
+
+        // URL for Import Excel (use Url.Action so it respects app base path)
+        var importExcelUrl = '@Url.Action("ImportExcel", "Customer")';
 
         // URLs for Leadtime actions
         var getLeadtimesUrl = '@Url.Action("GetLeadtimesByCustomer", "Customer")';

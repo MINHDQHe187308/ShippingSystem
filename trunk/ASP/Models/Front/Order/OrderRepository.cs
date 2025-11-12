@@ -8,6 +8,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Org.BouncyCastle.Utilities;
+using Org.BouncyCastle.Crypto.Generators;
 namespace ASP.Models.Front
 {
     public class OrderRepository : OrderRepositoryInterface

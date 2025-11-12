@@ -222,6 +222,27 @@ body, .fc {
 .fc-timeline-event{
 margin-top: 20px !important;
 margin-bottom: 20px !important;
+}
+.combined-label{
+display: inline-block;
+white-space : nowrap;
+overflow : hidden;
+position : relative;
+}
+.combined-label spam{
+    display : inlibe-block;
+    padding-left : 5px;
+    animation : marqueeScroll 10s linear infinite;
+    font-weight : 700;
+    color : darkblue;
+}
+@keyframes marqueeScroll {
+  0%{
+      transform : translatex(0);
+}
+100%{
+     transform : translatex(-100%);
+}
 }`;
     document.head.appendChild(style);
     // --- Tạo global tooltip element

@@ -1,6 +1,9 @@
 ﻿using ASP.Models.Front;
 using Microsoft.AspNetCore.Mvc;
+using OfficeOpenXml;
+using OfficeOpenXml.Style;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Threading.Tasks;
 
 namespace ASP.Controllers.Front
@@ -178,5 +181,221 @@ namespace ASP.Controllers.Front
                 return Json(new { success = true });
             return Json(new { success = false, message = "Cannot delete shipping schedule" });
         }
+        [HttpPost]
+        public async Task<IActionResult> ImportExcel(IFormFile excelFile)
+        {
+            // FIX: Set license mới cho EPPlus 8.2.1 (thay "Your Name" bằng tên thật hoặc tổ chức)
+            ExcelPackage.License.SetNonCommercialPersonal("Your Name"); // Hoặc SetNonCommercialOrganization("Your Org");
+
+            if (excelFile == null || excelFile.Length == 0)
+            {
+                return Json(new { success = false, message = "No file uploaded." });
+            }
+            if (!Path.GetExtension(excelFile.FileName).Equals(".xlsx", StringComparison.OrdinalIgnoreCase))
+            {
+                return Json(new { success = false, message = "Only .xlsx files are supported." });
+            }
+
+            var results = new ImportResult
+            {
+                CustomersAdded = 0,
+                LeadtimesAdded = 0,
+                ShippingSchedulesAdded = 0,
+                Errors = new List<string>()
+            };
+
+            try
+            {
+                using var stream = new MemoryStream();
+                await excelFile.CopyToAsync(stream);
+                // Không cần set LicenseContext nữa - đã set ở trên
+                using var package = new ExcelPackage(stream);
+
+                // Import from Single Sheet: "Data"
+                var sheet = package.Workbook.Worksheets["Data"];
+                if (sheet != null)
+                {
+                    await ImportFromSingleSheet(sheet, results);
+                }
+                else
+                {
+                    results.Errors.Add("Sheet 'Data' not found. Please use a single sheet named 'Data'.");
+                }
+            }
+            catch (Exception ex)
+            {
+                results.Errors.Add($"Error processing file: {ex.Message}");
+                // Log chi tiết (tùy chọn): _logger.LogError(ex, "Import Excel error");
+            }
+
+            if (results.Errors.Any())
+            {
+                return Json(new { success = false, message = string.Join("; ", results.Errors) });
+            }
+
+            return Json(new
+            {
+                success = true,
+                message = $"Import successful! Added {results.CustomersAdded} customers, {results.LeadtimesAdded} leadtimes, {results.ShippingSchedulesAdded} shipping schedules."
+            });
+        }
+        private async Task ImportFromSingleSheet(ExcelWorksheet sheet, ImportResult results)
+        {
+            var rowCount = sheet.Dimension?.Rows ?? 0;
+            for (int row = 2; row <= rowCount; row++) // Skip header row
+            {
+                try
+                {
+                    var customerCode = sheet.Cells[row, 1].GetValue<string>()?.Trim();
+                    var customerName = sheet.Cells[row, 2].GetValue<string>()?.Trim();
+                    var transCd = sheet.Cells[row, 3].GetValue<string>()?.Trim();
+                    var collectTime = sheet.Cells[row, 4].GetValue<decimal?>();
+                    var prepareTime = sheet.Cells[row, 5].GetValue<decimal?>();
+                    var loadingTime = sheet.Cells[row, 6].GetValue<decimal?>();
+                    var weekdayStr = sheet.Cells[row, 7].GetValue<string>()?.Trim(); // e.g., "Monday" or "1"
+                    var cutOffTimeStr = sheet.Cells[row, 8].GetValue<string>()?.Trim(); // e.g., "13:00:00"
+
+                    if (string.IsNullOrEmpty(customerCode) || string.IsNullOrEmpty(customerName) || string.IsNullOrEmpty(transCd) || !collectTime.HasValue || !prepareTime.HasValue || !loadingTime.HasValue || string.IsNullOrEmpty(weekdayStr) || string.IsNullOrEmpty(cutOffTimeStr))
+                    {
+                        results.Errors.Add($"Row {row}: Invalid data (all fields required).");
+                        continue;
+                    }
+
+                    // Create or update Customer
+                    var customer = new Customer
+                    {
+                        CustomerCode = customerCode,
+                        CustomerName = customerName,
+                        Descriptions = "" // Optional, set empty
+                    };
+                    var customerSuccess = await _customerRepository.CreateCustomer(customer); // Assume Create handles duplicates (e.g., upsert)
+                    if (customerSuccess) results.CustomersAdded++;
+                    else results.Errors.Add($"Row {row}: Failed to add/update customer {customerCode}.");
+
+                    // Create Leadtime
+                    var leadtime = new LeadtimeMaster
+                    {
+                        CustomerCode = customerCode,
+                        TransCd = transCd,
+                        CollectTimePerPallet = (double)collectTime.Value,
+                        PrepareTimePerPallet = (double)prepareTime.Value,
+                        LoadingTimePerColumn = (double)loadingTime.Value
+                    };
+                    var ltSuccess = await _leadtimeRepository.CreateLeadtime(leadtime);
+                    if (ltSuccess) results.LeadtimesAdded++;
+                    else results.Errors.Add($"Row {row}: Failed to add leadtime for {customerCode}-{transCd}.");
+
+                    // Parse weekday: Accept number or day name
+                    int weekdayInt;
+                    if (int.TryParse(weekdayStr, out weekdayInt))
+                    {
+                        // Already number
+                    }
+                    else
+                    {
+                        if (Enum.TryParse<DayOfWeek>(weekdayStr, true, out var dayOfWeek))
+                        {
+                            weekdayInt = (int)dayOfWeek;
+                        }
+                        else
+                        {
+                            results.Errors.Add($"Row {row}: Invalid weekday {weekdayStr}.");
+                            continue;
+                        }
+                    }
+                    if (weekdayInt < 0 || weekdayInt > 6)
+                    {
+                        results.Errors.Add($"Row {row}: Invalid weekday {weekdayStr}.");
+                        continue;
+                    }
+
+                    // Parse TimeOnly
+                    TimeOnly cutOffTimeOnly;
+                    if (TimeOnly.TryParseExact(cutOffTimeStr, @"HH\:mm\:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out cutOffTimeOnly))
+                    {
+                        // Already full format
+                    }
+                    else
+                    {
+                        // Try HH:mm and add :00
+                        if (TimeOnly.TryParseExact(cutOffTimeStr + ":00", @"HH\:mm\:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out cutOffTimeOnly))
+                        {
+                            // Good
+                        }
+                        else
+                        {
+                            results.Errors.Add($"Row {row}: Invalid cutOffTime {cutOffTimeStr}. Expected HH:mm:ss or HH:mm.");
+                            continue;
+                        }
+                    }
+
+                    // Create ShippingSchedule
+                    var schedule = new ShippingSchedule
+                    {
+                        CustomerCode = customerCode,
+                        TransCd = transCd,
+                        Weekday = (DayOfWeek)weekdayInt,
+                        CutOffTime = cutOffTimeOnly,
+                        Description = "" // Optional, set empty
+                    };
+                    var ssSuccess = await _shippingScheduleRepository.CreateShippingSchedule(schedule);
+                    if (ssSuccess) results.ShippingSchedulesAdded++;
+                    else results.Errors.Add($"Row {row}: Failed to add shipping schedule for {customerCode}-{transCd}-{weekdayInt}.");
+                }
+                catch (Exception ex)
+                {
+                    results.Errors.Add($"Row {row}: {ex.Message}");
+                }
+            }
+        }
+
+        [HttpGet]
+        public IActionResult DownloadTemplate()
+        {
+            var stream = new MemoryStream();
+            using (var package = new ExcelPackage(stream))
+            {
+                var worksheet = package.Workbook.Worksheets.Add("Data");
+                // Header (updated to new format)
+                worksheet.Cells[1, 1].Value = "CustomerCode";
+                worksheet.Cells[1, 2].Value = "CustomerName";
+                worksheet.Cells[1, 3].Value = "TransCode";
+                worksheet.Cells[1, 4].Value = "CollectTime";
+                worksheet.Cells[1, 5].Value = "PrepareTime";
+                worksheet.Cells[1, 6].Value = "LoadingTime";
+                worksheet.Cells[1, 7].Value = "Weekday";
+                worksheet.Cells[1, 8].Value = "CutOffTime";
+                // Style header
+                using (var range = worksheet.Cells[1, 1, 1, 8])
+                {
+                    range.Style.Font.Bold = true;
+                    range.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                    range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightBlue);
+                }
+                // Sample data (one row example)
+                // Row 2: Sample entry
+                worksheet.Cells[2, 1].Value = "CUST001";
+                worksheet.Cells[2, 2].Value = "Company ABC";
+                worksheet.Cells[2, 3].Value = "TRANS001";
+                worksheet.Cells[2, 4].Value = 1.5; // CollectTime
+                worksheet.Cells[2, 5].Value = 2.0; // PrepareTime
+                worksheet.Cells[2, 6].Value = 0.5; // LoadingTime
+                worksheet.Cells[2, 7].Value = "1"; // Monday (or "Monday")
+                worksheet.Cells[2, 8].Value = "13:00:00"; // CutOffTime
+                // Auto-fit columns
+                worksheet.Cells.AutoFitColumns();
+                package.Save();
+            }
+            stream.Position = 0;
+            return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Customer_Import_Template.xlsx");
+        }
     }
 }
+public class ImportResult
+{
+    public int CustomersAdded { get; set; }
+    public int LeadtimesAdded { get; set; }
+    public int ShippingSchedulesAdded { get; set; }
+    public List<string> Errors { get; set; } = new List<string>();
+}
+    
