@@ -1,6 +1,5 @@
 ﻿$(document).ready(function () {
     console.log("customer.js loaded - jQuery ready"); // Debug: Xác nhận jQuery + script load
-
     // Validation helpers
     function validateShippingData(customerCode, transCd) {
         if (!customerCode || !transCd) {
@@ -9,7 +8,6 @@
         }
         return true;
     }
-
     function validateLeadtimeData(customerCode, transCd) {
         if (!customerCode || !transCd) {
             alert("Customer Code và Trans Cd không được để trống!");
@@ -17,7 +15,6 @@
         }
         return true;
     }
-
     function validateSupplierData(customerCode, customerName) {
         if (!customerCode || !customerName) {
             alert("Mã và tên nhà cung cấp không được để trống!");
@@ -25,7 +22,6 @@
         }
         return true;
     }
-
     // Helper function to show messages
     function showMessage(element, message, type) {
         element.innerHTML = `
@@ -37,30 +33,22 @@
         // Auto hide after 5s
         setTimeout(() => element.innerHTML = '', 5000);
     }
-
     // ===== IMPORT EXCEL: Event delegation để fix modal dynamic =====
     $(document).on('click', '#btnImportExcel', function () {
         console.log("Import button clicked! (delegation works)"); // Debug log
-
         const form = $('#importForm')[0];
         const fileInput = $('#excelFile')[0];
         const messageDiv = $('#importMessage')[0];
-
         console.log("File selected:", fileInput.files[0]?.name || 'none'); // Debug log
-
         if (!fileInput.files || fileInput.files.length === 0) {
             showMessage(messageDiv, 'Please select a file.', 'danger');
             return;
         }
-
         const formData = new FormData(form);
         var importUrl = (typeof importExcelUrl !== 'undefined') ? importExcelUrl : '/Customer/ImportExcel';
-
         console.log("Import URL:", importUrl); // Debug log
-
         // Disable button to prevent double-click
         $(this).prop('disabled', true).html('<i class="bi bi-hourglass-split me-1"></i>Importing...');
-
         $.ajax({
             url: importUrl,
             type: 'POST',
@@ -92,29 +80,23 @@
             }
         });
     });
-
     // Log khi modal shown để confirm
     $('#importExcelModal').on('shown.bs.modal', function () {
         console.log("Import modal SHOWN - button should be ready now"); // Debug
         console.log("Button exists after shown:", $('#btnImportExcel').length > 0);
     });
-
     // Thêm nhà cung cấp
     $('#btnAddSupplier').click(function () {
         var customerCode = $('#customerCode').val().trim();
         var customerName = $('#customerName').val().trim();
         var descriptions = $('#description').val().trim();
-
         if (!validateSupplierData(customerCode, customerName)) return;
-
         var data = {
             CustomerCode: customerCode, // PascalCase cho model binding
             CustomerName: customerName,
             Descriptions: descriptions
         };
-
         console.log("Add data being sent:", data); // Debug log
-
         $.ajax({
             url: addSupplierUrl,
             type: 'POST',
@@ -136,7 +118,6 @@
             }
         });
     });
-
     // Điền dữ liệu vào form cập nhật
     window.populateUpdateForm = function (customerCode, customerName, descriptions) {
         $('#updateCustomerCode').val(customerCode);
@@ -144,23 +125,18 @@
         $('#updateDescription').val(descriptions || '');
         console.log("Populated update form:", { customerCode, customerName }); // Debug log
     };
-
     // Cập nhật nhà cung cấp
     $('#btnUpdateSupplier').click(function () {
         var customerCode = $('#updateCustomerCode').val().trim();
         var customerName = $('#updateCustomerName').val().trim();
         var descriptions = $('#updateDescription').val().trim();
-
         if (!validateSupplierData(customerCode, customerName)) return;
-
         var data = {
             CustomerCode: customerCode,
             CustomerName: customerName,
             Descriptions: descriptions
         };
-
         console.log("Update data being sent:", data); // Debug log
-
         $.ajax({
             url: updateSupplierUrl,
             type: 'POST',
@@ -181,7 +157,6 @@
             }
         });
     });
-
     // Xóa nhà cung cấp
     window.deleteSupplier = function (customerCode) {
         if (confirm("Bạn có chắc chắn muốn xóa nhà cung cấp này?")) {
@@ -193,8 +168,18 @@
                 success: function (response) {
                     console.log("Delete response:", response); // Debug log
                     if (response.success) {
-                        showMessage(document.body, "Xóa nhà cung cấp thành công!", 'success'); // Global message
-                        setTimeout(() => location.reload(), 1000);
+                        // Dynamically remove the row from the table without full page reload
+                        // Assuming the table has a tbody with tr rows, and customerCode is in the first td (adjust selector if needed)
+                        const $rowToRemove = $(`tbody tr td:contains('${customerCode}')`).closest('tr');
+                        if ($rowToRemove.length > 0) {
+                            $rowToRemove.remove();
+                            // Optional: Check if table is now empty and add "no data" row
+                            const $tbody = $('tbody');
+                            if ($tbody.find('tr').length === 0) {
+                                $tbody.html('<tr><td colspan="100%" class="text-center text-muted">No suppliers found.</td></tr>'); // Adjust colspan to match your table
+                            }
+                        }
+                        alert(response.message || "Chúc mừng bạn đã xóa nhà cung cấp thành công:))"); // Global message
                     } else {
                         alert(response.message || "Xóa thất bại");
                     }
@@ -206,7 +191,6 @@
             });
         }
     };
-
     // Load Leadtimes
     window.loadLeadtimes = function (customerCode) {
         console.log("Loading leadtimes for:", customerCode); // Debug log
@@ -235,7 +219,6 @@
                 $('#leadtimeMessage').text('Network error loading leadtimes').addClass('text-danger');
             });
     };
-
     // Populate Edit Leadtime
     window.populateEditLeadtime = function (customerCode, transCd, collectTime, prepareTime, loadingTime) {
         console.log("Populating edit leadtime:", { customerCode, transCd }); // Debug log
@@ -250,7 +233,6 @@
         var addModal = new bootstrap.Modal(document.getElementById('addLeadtimeModal'));
         addModal.show();
     };
-
     // Save Leadtime
     $('#btnSaveLeadtime').click(function () {
         var isEdit = $('#editLeadtimeId').val() !== '';
@@ -260,14 +242,11 @@
         var collectTime = parseFloat($('#collectTime').val());
         var prepareTime = parseFloat($('#prepareTime').val());
         var loadingTime = parseFloat($('#loadingTime').val());
-
         if (!validateLeadtimeData(customerCode, transCd)) return;
-
         if (isNaN(collectTime) || isNaN(prepareTime) || isNaN(loadingTime)) {
             showMessage($('#leadtimeFormMessage')[0], 'Thời gian phải là số hợp lệ', 'danger');
             return;
         }
-
         var data = {
             CustomerCode: customerCode,
             TransCd: transCd,
@@ -275,9 +254,7 @@
             PrepareTimePerPallet: prepareTime,
             LoadingTimePerColumn: loadingTime
         };
-
         console.log("Save leadtime data:", data); // Debug log
-
         $.ajax({
             url: url,
             type: 'POST',
@@ -305,7 +282,6 @@
             }
         });
     });
-
     // Delete Leadtime
     window.deleteLeadtime = function (customerCode, transCd) {
         if (confirm('Are you sure you want to delete this leadtime?')) {
@@ -330,7 +306,6 @@
             });
         }
     };
-
     // Load Shipping Schedules
     window.loadShippingSchedules = function (customerCode) {
         console.log("Loading shipping schedules for:", customerCode); // Debug log
@@ -360,7 +335,6 @@
                 $('#shippingMessage').text('Network error loading schedules').addClass('text-danger');
             });
     };
-
     // Populate Edit Shipping
     window.populateEditShipping = function (customerCode, transCd, weekday, cutOffTime, description) {
         console.log("Populating edit shipping:", { customerCode, transCd, weekday }); // Debug log
@@ -376,7 +350,6 @@
         var addModal = new bootstrap.Modal(document.getElementById('addShippingModal'));
         addModal.show();
     };
-
     // Save Shipping Schedule
     $('#btnSaveShipping').click(function () {
         var isEdit = $('#editShippingId').val() !== '';
@@ -386,14 +359,11 @@
         var weekday = parseInt($('#weekday').val());
         var cutOffTimeInput = $('#cutOffTime').val().trim();
         var description = $('#shippingDescription').val().trim();
-
         if (!validateShippingData(customerCode, transCd)) return;
-
         if (isNaN(weekday)) {
             showMessage($('#shippingFormMessage')[0], 'Weekday phải là số hợp lệ (0-6)', 'danger');
             return;
         }
-
         // Fix: Append ":00" nếu cutOffTime chỉ có HH:mm
         var cutOffTime = cutOffTimeInput;
         if (cutOffTimeInput && !cutOffTimeInput.includes(':')) {
@@ -406,7 +376,6 @@
             showMessage($('#shippingFormMessage')[0], 'Cut Off Time phải có định dạng HH:mm:ss', 'danger');
             return;
         }
-
         var data = {
             CustomerCode: customerCode,
             TransCd: transCd,
@@ -414,9 +383,7 @@
             CutOffTime: cutOffTime, // "13:00:00"
             Description: description
         };
-
         console.log("Save shipping data:", data); // Debug log
-
         $.ajax({
             url: url,
             type: 'POST',
@@ -445,7 +412,6 @@
             }
         });
     });
-
     // Delete Shipping Schedule
     window.deleteShipping = function (customerCode, transCd, weekday) {
         if (confirm('Are you sure you want to delete this schedule?')) {
@@ -470,7 +436,6 @@
             });
         }
     };
-
     // Reset forms on modal hide
     $('#addLeadtimeModal').on('hidden.bs.modal', function () {
         $('#leadtimeForm')[0].reset();
@@ -480,7 +445,6 @@
         $('#btnSaveLeadtime').text('Save');
         $('#leadtimeFormMessage').empty().removeClass('text-success text-danger');
     });
-
     $('#addShippingModal').on('hidden.bs.modal', function () {
         $('#shippingForm')[0].reset();
         $('#editShippingId').val('');
@@ -490,13 +454,11 @@
         $('#btnSaveShipping').text('Save');
         $('#shippingFormMessage').empty().removeClass('text-success text-danger');
     });
-
     // Set customer name in modals
     $('#manageLeadtimeModal').on('shown.bs.modal', function () {
         var customerCode = $('#currentCustomerCodeLeadtime').val();
         $('#leadtimeCustomerName').text('Customer: ' + customerCode);
     });
-
     $('#manageShippingModal').on('shown.bs.modal', function () {
         var customerCode = $('#currentCustomerCodeShipping').val();
         $('#shippingCustomerName').text('Customer: ' + customerCode);
