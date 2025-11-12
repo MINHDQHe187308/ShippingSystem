@@ -24,7 +24,7 @@ function loadDelayHistory(uid) {
     $('#delayModal').modal('show');
     console.log('Modal shown');
     // Gọi AJAX
-    $.get('/api/DelayHistory/' + encodeURIComponent(uid), function (data) {
+    $.get(window.appBaseUrl + 'api/DelayHistory/' + encodeURIComponent(uid), function (data) {
         console.log('AJAX success:', data);
         $('#delayTable tbody').empty();
         if (data && data.length > 0) {
@@ -70,6 +70,6 @@ function exportToExcel(uid) {
         $(btn).addClass('animate-scale-out').prop('disabled', true);
     }
     setTimeout(() => {
-        window.location.href = '/Order/ExportExcel?orderId=' + encodeURIComponent(uid);
+        window.location.href = window.appBaseUrl + 'Order/ExportExcel?orderId=' + encodeURIComponent(uid);
     }, 300);
 }

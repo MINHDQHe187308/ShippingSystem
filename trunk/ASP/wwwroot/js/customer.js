@@ -45,7 +45,7 @@
             return;
         }
         const formData = new FormData(form);
-        var importUrl = (typeof importExcelUrl !== 'undefined') ? importExcelUrl : '/Customer/ImportExcel';
+    var importUrl = (typeof importExcelUrl !== 'undefined') ? importExcelUrl : (window.appBaseUrl + 'Customer/ImportExcel');
         console.log("Import URL:", importUrl); // Debug log
         // Disable button to prevent double-click
         $(this).prop('disabled', true).html('<i class="bi bi-hourglass-split me-1"></i>Importing...');

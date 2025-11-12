@@ -667,7 +667,8 @@ position : relative;
             loadingEl.style.display = 'block';
             tableEl.style.display = 'none';
             bodyEl.innerHTML = '';
-            const fetchUrl = `/DensoWareHouse/GetOrderDetails?orderId=${uid}`;
+            // Use server-generated URL template from the Razor view to respect app virtual path
+            const fetchUrl = `${orderDetailsUrlTemplate}?orderId=${encodeURIComponent(uid)}`;
             console.log('Fetching from URL:', fetchUrl); // DEBUG: Log URL
             // AJAX gọi Controller để lấy OrderDetails
             fetch(fetchUrl)
@@ -1242,7 +1243,7 @@ position : relative;
         }
         // Tạo connection với Hub URL
         connection = new signalR.HubConnectionBuilder()
-            .withUrl('/orderHub') // URL hub từ backend
+            .withUrl(window.appBaseUrl + 'orderHub') // URL hub từ backend (use appBaseUrl to respect virtual path)
             .configureLogging(signalR.LogLevel.Information) // Optional: Log level
             .build();
         // Start connection
@@ -1258,7 +1259,7 @@ position : relative;
             console.log(`Realtime update: Order ${orderUid} status changed to ${newStatus}`);
             console.log('SignalR refetch starting...'); // ← THÊM LOG BẮT ĐẦU
             // Refetch data từ server để update calendar
-            fetch('/DensoWareHouse/GetCalendarData')
+            fetch(window.appBaseUrl + 'DensoWareHouse/GetCalendarData')
                 .then(response => {
                     console.log('SignalR response status:', response.status); // ← THÊM LOG STATUS
                     if (!response.ok) throw new Error('SignalR refetch failed');
@@ -1641,7 +1642,7 @@ position : relative;
                 DelayTime: parseFloat(formData.get('DelayTime')) || 0
             };
             // THÊM MỚI: Gọi API POST để save
-            fetch('/api/DelayHistory/SaveDelay', { // Route mới trong DelayController
+            fetch(window.appBaseUrl + 'api/DelayHistory/SaveDelay', { // Route mới trong DelayController
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

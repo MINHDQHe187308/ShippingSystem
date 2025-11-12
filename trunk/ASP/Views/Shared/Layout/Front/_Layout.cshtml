@@ -89,6 +89,11 @@
     <script src="~/js/front-theme.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
     <script type="text/javascript">
+        // Application base path (includes virtual application path). Use this in client scripts
+        // so that absolute-looking URLs work when the app is deployed under a sub-path.
+        window.appBaseUrl = '@(Url.Content("~").TrimEnd('/') + "/")';
+    </script>
+    <script type="text/javascript">
         $(document).ready(function () {
             // select 2
             $('.select2').select2({

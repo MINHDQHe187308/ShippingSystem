@@ -326,6 +326,8 @@
 <script>
     // Gửi dữ liệu model (orders và customers) xuống JS
     const modelData = @Html.Raw(modelJson);
+    // Use server-generated action URL to respect virtual application paths when published
+    const orderDetailsUrlTemplate = '@Url.Action("GetOrderDetails", "DensoWareHouse")';
     const orders = modelData.Orders;
     const customers = modelData.Customers;
 </script>
