@@ -23,7 +23,16 @@ namespace ASP.Controllers.Front
             _leadtimeRepository = leadtimeRepository;
             _shippingScheduleRepository = shippingScheduleRepository;
         }
-
+        private bool IsRowEmpty(ExcelWorksheet sheet, int row)
+        {
+            for (int col = 1; col <= 8; col++)
+            {
+                var value = sheet.Cells[row, col].Value;
+                if (value != null && !string.IsNullOrWhiteSpace(value.ToString().Trim()))
+                    return false; // Có ít nhất 1 ô có dữ liệu → Không trống
+            }
+            return true; // Toàn bộ trống
+        }
         // Danh sách Customers
         public async Task<IActionResult> CustomerList()
         {
@@ -242,8 +251,26 @@ namespace ASP.Controllers.Front
         private async Task ImportFromSingleSheet(ExcelWorksheet sheet, ImportResult results)
         {
             var rowCount = sheet.Dimension?.Rows ?? 0;
-            for (int row = 2; row <= rowCount; row++) // Skip header row
+
+            // Trim hàng trống ở cuối sheet tự động
+            while (rowCount >= 2 && IsRowEmpty(sheet, rowCount))
             {
+                rowCount--;
+            }
+            if (rowCount < 2)
+            {
+                results.Errors.Add("No data rows found (only header or empty sheet).");
+                return;
+            }
+
+            for (int row = 2; row <= rowCount; row++)
+            {
+                // Bỏ qua ngay nếu hàng trống (không báo lỗi)
+                if (IsRowEmpty(sheet, row))
+                {
+                    continue;
+                }
+
                 try
                 {
                     var customerCode = sheet.Cells[row, 1].GetValue<string>()?.Trim();
@@ -252,15 +279,19 @@ namespace ASP.Controllers.Front
                     var collectTime = sheet.Cells[row, 4].GetValue<decimal?>();
                     var prepareTime = sheet.Cells[row, 5].GetValue<decimal?>();
                     var loadingTime = sheet.Cells[row, 6].GetValue<decimal?>();
+
                     // Read weekday cell raw - can be string or numeric
                     var weekdayCell = sheet.Cells[row, 7].Value;
                     var weekdayStr = weekdayCell?.ToString()?.Trim(); // e.g., "Monday" or "1"
+
                     // Read raw value for CutOffTime - can be string, DateTime, or Excel numeric (serial)
                     var cutOffCell = sheet.Cells[row, 8].Value;
                     var cutOffTimeStr = cutOffCell as string;
                     if (cutOffTimeStr != null) cutOffTimeStr = cutOffTimeStr.Trim();
 
-                    if (string.IsNullOrEmpty(customerCode) || string.IsNullOrEmpty(customerName) || string.IsNullOrEmpty(transCd) || !collectTime.HasValue || !prepareTime.HasValue || !loadingTime.HasValue || weekdayCell == null || cutOffCell == null)
+                    // Validation: Chỉ báo lỗi nếu có dữ liệu nhưng thiếu trường (không phải trống hoàn toàn)
+                    if (string.IsNullOrEmpty(customerCode) || string.IsNullOrEmpty(customerName) || string.IsNullOrEmpty(transCd) ||
+                        !collectTime.HasValue || !prepareTime.HasValue || !loadingTime.HasValue || weekdayCell == null || cutOffCell == null)
                     {
                         results.Errors.Add($"Row {row}: Invalid data (all fields required).");
                         continue;
@@ -313,13 +344,11 @@ namespace ASP.Controllers.Front
                     // Parse TimeOnly from multiple possible Excel cell types and formats
                     TimeOnly cutOffTimeOnly;
                     bool parsedCutOff = false;
-
                     if (cutOffCell == null)
                     {
                         results.Errors.Add($"Row {row}: Invalid cutOffTime (empty).");
                         continue;
                     }
-
                     // If cell is DateTime (Excel stores times as DateTime sometimes)
                     if (cutOffCell is DateTime dt)
                     {
@@ -346,14 +375,12 @@ namespace ASP.Controllers.Front
                                 break;
                             }
                         }
-
                         // Try a general parse as fallback (will handle culture-specifics)
                         if (!parsedCutOff && TimeOnly.TryParse(cutOffTimeStr, CultureInfo.InvariantCulture, DateTimeStyles.None, out cutOffTimeOnly))
                         {
                             parsedCutOff = true;
                         }
                     }
-
                     if (!parsedCutOff)
                     {
                         results.Errors.Add($"Row {row}: Invalid cutOffTime {cutOffCell}. Expected format HH:mm or HH:mm:ss (seconds optional).");
