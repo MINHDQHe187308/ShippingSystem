@@ -37,11 +37,37 @@ namespace ASP.Models.ASPModel
 
             foreach (var entityEntry in entries)
             {
-                ((BaseEntity)entityEntry.Entity).UpdatedDate = DateTime.Now;
+                // Use a single timestamp for consistency
+                var now = DateTime.Now;
+
+                // Update CLR properties for in-memory use (keeps existing behavior)
+                try
+                {
+                    ((BaseEntity)entityEntry.Entity).UpdatedDate = now;
+                    if (entityEntry.State == EntityState.Added)
+                    {
+                        ((BaseEntity)entityEntry.Entity).CreatedDate = now;
+                    }
+                }
+                catch
+                {
+                    // If for some reason casting fails, continue to set shadow properties below
+                }
+
+                // Also set EF shadow properties so values are persisted even though CLR properties are [NotMapped]
+                var updatedProp = entityEntry.Property("UpdatedDate");
+                if (updatedProp != null)
+                {
+                    updatedProp.CurrentValue = now;
+                }
 
                 if (entityEntry.State == EntityState.Added)
                 {
-                    ((BaseEntity)entityEntry.Entity).CreatedDate = DateTime.Now;
+                    var createdProp = entityEntry.Property("CreatedDate");
+                    if (createdProp != null)
+                    {
+                        createdProp.CurrentValue = now;
+                    }
                 }
             }
         }

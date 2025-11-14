@@ -10,6 +10,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Org.BouncyCastle.Utilities;
 using Org.BouncyCastle.Crypto.Generators;
+
 namespace ASP.Models.Front
 {
     public class OrderRepository : OrderRepositoryInterface
@@ -17,252 +18,309 @@ namespace ASP.Models.Front
         private readonly ASPDbContext _context;
         private readonly IHubContext<OrderHub> _hubContext;
         private readonly ILogger<OrderRepository> _logger;
+
         public OrderRepository(ASPDbContext context, IHubContext<OrderHub> hubContext, ILogger<OrderRepository> logger)
         {
             _context = context;
             _hubContext = hubContext;
             _logger = logger;
         }
+
         public async Task<Order?> GetOrderByPCOrderIdAsync(string pcOrderId)
         {
             if (string.IsNullOrEmpty(pcOrderId))
                 throw new ArgumentException("PCOrderId cannot be null or empty");
+
             return await _context.Orders.AsNoTracking()
                 .FirstOrDefaultAsync(o => o.PCOrderId == pcOrderId);
         }
+
         public async Task UpsertOrderAsync(OrderDTO orderDto)
         {
             if (orderDto == null || orderDto.PcOrderId == Guid.Empty)
                 throw new ArgumentException("OrderDTO or PcOrderId cannot be null");
-            var trackedOrder = _context.ChangeTracker.Entries<Order>()
-                .FirstOrDefault(e => e.Entity.UId == orderDto.PcOrderId);
-            Order orderToUpdate;
-            bool isNewOrder = false;
-            if (trackedOrder != null)
+
+            // Wrap toàn bộ trong transaction để atomic (rollback nếu fail)
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
             {
-                orderToUpdate = trackedOrder.Entity;
-            }
-            else
-            {
-                var existing = await _context.Orders
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(o => o.UId == orderDto.PcOrderId);
-                if (existing != null)
+                var trackedOrder = _context.ChangeTracker.Entries<Order>()
+                    .FirstOrDefault(e => e.Entity.UId == orderDto.PcOrderId);
+                Order orderToUpdate;
+                bool isNewOrder = false;
+                if (trackedOrder != null)
                 {
-                    orderToUpdate = existing;
-                    _context.Orders.Update(orderToUpdate);
+                    orderToUpdate = trackedOrder.Entity;
                 }
                 else
                 {
-                    orderToUpdate = new Order
+                    var existing = await _context.Orders
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(o => o.UId == orderDto.PcOrderId);
+                    if (existing != null)
                     {
-                        UId = orderDto.PcOrderId,
-                        PCOrderId = orderDto.PcOrderId.ToString(),
-                        ShipDate = orderDto.ShippingDate,
-                        CustomerCode = orderDto.CustomerCode,
-                        TransCd = orderDto.TranCd,
-                        TotalPallet = orderDto.TotalPallet,
-                        OrderCreateDate = orderDto.OrderCreatedDate,
-                        ApiOrderStatus = (short)orderDto.OrderStatus,
-                        OrderStatus = 0,
-                        StartTime = orderDto.OrderCreatedDate,
-                        EndTime = orderDto.OrderCreatedDate.AddHours(3),
-                        AcStartTime = null,
-                        AcEndTime = null,
-                        TransMethod = 0,
-                        ContSize = 0,
-                        //// Bỏ TotalColumn vì không sử dụng
-                        //PartList = string.Join(",", orderDto.OrderDetails.Select(od => od.PartNo)),
-                    };
-                    await _context.Orders.AddAsync(orderToUpdate);
-                    isNewOrder = true;
-                }
-            }
-            // Map ApiOrderStatus cho cả update case (nếu existing)
-            orderToUpdate.ApiOrderStatus = (short)orderDto.OrderStatus;
-            // Update ShipDate nếu thay đổi từ API
-            if (orderToUpdate.ShipDate != orderDto.ShippingDate)
-            {
-                _logger.LogInformation("Order {OrderId}: ShipDate changed from {OldDate} to {NewDate}",
-                    orderDto.PcOrderId, orderToUpdate.ShipDate, orderDto.ShippingDate);
-                orderToUpdate.ShipDate = orderDto.ShippingDate;
-            }
-            var shippingSchedule = await _context.ShippingSchedules
-                .FirstOrDefaultAsync(s => s.CustomerCode == orderDto.CustomerCode &&
-                                         s.TransCd == orderDto.TranCd &&
-                                         s.Weekday == orderDto.ShippingDate.DayOfWeek);
-            if (shippingSchedule != null)
-            {
-                var leadtimeMaster = await _context.LeadtimeMasters
-                    .FirstOrDefaultAsync(l => l.CustomerCode == orderDto.CustomerCode && l.TransCd == orderDto.TranCd);
-                if (leadtimeMaster != null)
-                {
-                    // Tính thời gian tải hàng từ ThreePointCheckTime
-                    double loadingTime = 0;
-                    var deliveredPallets = orderDto.OrderDetails
-                        .SelectMany(od => od.ShoppingLists)
-                        .Where(sl => sl.PalletStatus == (int)CollectionStatusEnumDTO.Delivered && sl.ThreePointCheckTime.HasValue)
-                        .ToList();
-                    if (deliveredPallets.Any())
-                    {
-                        loadingTime = deliveredPallets
-                            .Sum(sl => (sl.ThreePointCheckTime.Value - (sl.CollectedDate ?? orderDto.OrderCreatedDate)).TotalMinutes);
-                        _logger.LogInformation("Order {OrderId}: Calculated loadingTime={LoadingTime} minutes from {DeliveredCount} delivered pallets",
-                            orderDto.PcOrderId, loadingTime, deliveredPallets.Count);
+                        orderToUpdate = existing;
+                        _context.Orders.Update(orderToUpdate);
                     }
                     else
                     {
-                        // Dự phòng: Sử dụng LoadingTimePerPallet
-                        double loadingTimePerPallet = 0.5; // Giả định 0.5 phút nếu không có
-                        loadingTime = loadingTimePerPallet * orderDto.TotalPallet;
-                        _logger.LogWarning("Order {OrderId}: No delivered pallets or ThreePointCheckTime available, using LoadingTimePerPallet={LoadingTimePerPallet} minutes/pallet, TotalPallet={TotalPallet}, loadingTime={LoadingTime} minutes",
-                            orderDto.PcOrderId, loadingTimePerPallet, orderDto.TotalPallet, loadingTime);
+                        orderToUpdate = new Order
+                        {
+                            UId = orderDto.PcOrderId,
+                            PCOrderId = orderDto.PcOrderId.ToString(),
+                            ShipDate = orderDto.ShippingDate,
+                            CustomerCode = orderDto.CustomerCode,
+                            TransCd = orderDto.TranCd,
+                            TotalPallet = orderDto.TotalPallet,
+                            OrderCreateDate = orderDto.OrderCreatedDate,
+                            ApiOrderStatus = (short)orderDto.OrderStatus,
+                            OrderStatus = 0,
+                            StartTime = orderDto.OrderCreatedDate,
+                            EndTime = orderDto.OrderCreatedDate.AddHours(3),
+                            AcStartTime = null,
+                            AcEndTime = null,
+                            TransMethod = 0,
+                            ContSize = 0,
+                            TotalColumn = 0,
+                        };
+                        await _context.Orders.AddAsync(orderToUpdate);
+                        isNewOrder = true;
                     }
-                    // Tính totalProcessTime
-                    double totalProcessTime = (leadtimeMaster.CollectTimePerPallet * orderDto.TotalPallet) +
-                                              (leadtimeMaster.PrepareTimePerPallet * orderDto.TotalPallet) +
-                                              loadingTime;
-                    // Kiểm tra ngưỡng
-                    if (totalProcessTime > 1440) // 1 ngày
+                }
+
+                // Map ApiOrderStatus cho cả update case
+                orderToUpdate.ApiOrderStatus = (short)orderDto.OrderStatus;
+
+                // Update ShipDate nếu thay đổi từ API
+                if (orderToUpdate.ShipDate != orderDto.ShippingDate)
+                {
+                    _logger.LogInformation("Order {OrderId}: ShipDate changed from {OldDate} to {NewDate}",
+                        orderDto.PcOrderId, orderToUpdate.ShipDate, orderDto.ShippingDate);
+                    orderToUpdate.ShipDate = orderDto.ShippingDate;
+                }
+
+                // Tính Start/EndTime (giữ nguyên toàn bộ phần shippingSchedule, leadtimeMaster, fallback...)
+                var shippingSchedule = await _context.ShippingSchedules
+                    .FirstOrDefaultAsync(s => s.CustomerCode == orderDto.CustomerCode &&
+                                             s.TransCd == orderDto.TranCd &&
+                                             s.Weekday == orderDto.ShippingDate.DayOfWeek);
+                if (shippingSchedule != null)
+                {
+                    var leadtimeMaster = await _context.LeadtimeMasters
+                        .FirstOrDefaultAsync(l => l.CustomerCode == orderDto.CustomerCode && l.TransCd == orderDto.TranCd);
+                    if (leadtimeMaster != null)
                     {
-                        _logger.LogWarning("totalProcessTime quá lớn: {Time} phút cho order {OrderId}. Sử dụng giá trị mặc định 180 phút.",
-                            totalProcessTime, orderDto.PcOrderId);
-                        totalProcessTime = 180; // 8 giờ
-                    }
-                    // Tính StartTime và EndTime
-                    var cutOffDateTime = orderDto.ShippingDate.Date.Add(shippingSchedule.CutOffTime.ToTimeSpan());
-                    orderToUpdate.EndTime = cutOffDateTime;
-                    orderToUpdate.StartTime = cutOffDateTime.AddMinutes(-totalProcessTime);
-                    _logger.LogInformation("Calculated plan times for order {OrderId}: StartTime={StartTime}, EndTime={EndTime}, totalProcessTime={TotalProcessTime} minutes, loadingTime={LoadingTime} minutes",
-                        orderDto.PcOrderId, orderToUpdate.StartTime, orderToUpdate.EndTime, totalProcessTime, loadingTime);
-                }
-                else
-                {
-                    // Không có LeadtimeMaster
-                    var cutOffDateTime = orderDto.ShippingDate.Date.Add(shippingSchedule.CutOffTime.ToTimeSpan());
-                    orderToUpdate.EndTime = cutOffDateTime;
-                    orderToUpdate.StartTime = cutOffDateTime.AddHours(-3);
-                    _logger.LogInformation("No LeadtimeMaster found for order {OrderId}. Using default 8-hour processing time.", orderDto.PcOrderId);
-                }
-            }
-            else
-            {
-                // Fallback
-                orderToUpdate.StartTime = orderDto.OrderCreatedDate;
-                orderToUpdate.EndTime = orderDto.OrderCreatedDate.AddHours(3);
-                _logger.LogInformation("No ShippingSchedule found for order {OrderId}. Using OrderCreatedDate-based times.", orderDto.PcOrderId);
-            }
-            if (isNewOrder)
-            {
-                orderToUpdate.OrderStatus = (short)OrderStatusEnumDTO.Available; // Default cho progress local (có thể là 0 nếu Planned)
-            }
-            // Upsert OrderDetails (giữ nguyên phần này)
-            foreach (var detailDto in orderDto.OrderDetails)
-            {
-                var existingDetail = await _context.OrderDetails
-                    .FirstOrDefaultAsync(od => od.BookContDetailId == detailDto.BookContDetailId);
-                OrderDetail detailToUpdate;
-                if (existingDetail != null)
-                {
-                    detailToUpdate = existingDetail;
-                    detailToUpdate.ShippingId = detailDto.ShippingId;
-                    detailToUpdate.ContNo = detailDto.ContNo;
-                    detailToUpdate.PartNo = detailDto.PartNo;
-                    detailToUpdate.PalletSize = detailDto.PalletSize;
-                    detailToUpdate.Quantity = detailDto.Quantity;
-                    detailToUpdate.TotalPallet = detailDto.TotalPallet;
-                    detailToUpdate.Warehouse = detailDto.Warehouse;
-                    detailToUpdate.BookContStatus = (short)detailDto.BookContStatus;
-                    _context.OrderDetails.Update(detailToUpdate);
-                }
-                else
-                {
-                    detailToUpdate = new OrderDetail
-                    {
-                        UId = Guid.NewGuid(),
-                        OId = orderToUpdate.UId,
-                        BookContDetailId = detailDto.BookContDetailId,
-                        ShippingId = detailDto.ShippingId,
-                        ContNo = detailDto.ContNo,
-                        PartNo = detailDto.PartNo,
-                        PalletSize = detailDto.PalletSize,
-                        Quantity = detailDto.Quantity,
-                        TotalPallet = detailDto.TotalPallet,
-                        Warehouse = detailDto.Warehouse,
-                        BookContStatus = (short)detailDto.BookContStatus,
-                    };
-                    await _context.OrderDetails.AddAsync(detailToUpdate);
-                }
-                var slCount = detailDto.ShoppingLists?.Count ?? 0;
-                _logger.LogDebug("Detail {BookContId}: {SL} shopping lists to upsert", detailDto.BookContDetailId, slCount);
-                // Upsert ShoppingLists (giữ nguyên)
-                foreach (var slDto in detailDto.ShoppingLists ?? new List<ShoppingListDTO>())
-                {
-                    var existingSL = await _context.ShoppingLists
-                        .FirstOrDefaultAsync(sl => sl.CollectionId == slDto.CollectionId);
-                    ShoppingList slToUpdate;
-                    if (existingSL != null)
-                    {
-                        slToUpdate = existingSL;
-                        slToUpdate.PalletId = slDto.PalletId;
-                        slToUpdate.PalletNo = slDto.PalletNo;
-                        slToUpdate.PLStatus = (short)slDto.PalletStatus;
-                        slToUpdate.CollectedDate = slDto.CollectedDate;
-                        _context.ShoppingLists.Update(slToUpdate);
-                        _logger.LogDebug("Updated SL CollectionId={Id}, PalletNo={No}, Status={Status}",
-                            slDto.CollectionId, slDto.PalletNo, slDto.PalletStatus);
+                        double loadingTimePerPallet = 0.5;
+                        double loadingTime = loadingTimePerPallet * orderDto.TotalPallet;
+                        _logger.LogInformation("Order {OrderId}: Estimated loadingTime={LoadingTime} minutes using {LoadingTimePerPallet} min/pallet for {TotalPallet} pallets",
+                            orderDto.PcOrderId, loadingTime, loadingTimePerPallet, orderDto.TotalPallet);
+                        double totalProcessTime = (leadtimeMaster.CollectTimePerPallet * orderDto.TotalPallet) +
+                                                  (leadtimeMaster.PrepareTimePerPallet * orderDto.TotalPallet) +
+                                                  loadingTime;
+                        if (totalProcessTime > 1440)
+                        {
+                            _logger.LogWarning("totalProcessTime quá lớn: {Time} phút cho order {OrderId}. Sử dụng giá trị mặc định 180 phút.",
+                                totalProcessTime, orderDto.PcOrderId);
+                            totalProcessTime = 180;
+                        }
+                        var cutOffDateTime = orderDto.ShippingDate.Date.Add(shippingSchedule.CutOffTime.ToTimeSpan());
+                        orderToUpdate.EndTime = cutOffDateTime;
+                        orderToUpdate.StartTime = cutOffDateTime.AddMinutes(-totalProcessTime);
+                        _logger.LogInformation("Calculated plan times for order {OrderId}: StartTime={StartTime}, EndTime={EndTime}, totalProcessTime={TotalProcessTime} minutes, loadingTime={LoadingTime} minutes",
+                            orderDto.PcOrderId, orderToUpdate.StartTime, orderToUpdate.EndTime, totalProcessTime, loadingTime);
                     }
                     else
                     {
-                        slToUpdate = new ShoppingList
+                        var cutOffDateTime = orderDto.ShippingDate.Date.Add(shippingSchedule.CutOffTime.ToTimeSpan());
+                        orderToUpdate.EndTime = cutOffDateTime;
+                        orderToUpdate.StartTime = cutOffDateTime.AddHours(-3);
+                        _logger.LogInformation("No LeadtimeMaster found for order {OrderId}. Using default 8-hour processing time.", orderDto.PcOrderId);
+                    }
+                }
+                else
+                {
+                    orderToUpdate.StartTime = orderDto.OrderCreatedDate;
+                    orderToUpdate.EndTime = orderDto.OrderCreatedDate.AddHours(3);
+                    _logger.LogInformation("No ShippingSchedule found for order {OrderId}. Using OrderCreatedDate-based times.", orderDto.PcOrderId);
+                }
+
+                if (isNewOrder)
+                {
+                    orderToUpdate.OrderStatus = (short)OrderStatusEnumDTO.Available;
+                }
+
+                // FIX: Nếu new Order, SAVE NGAY để insert UId trước khi add details (tránh FK violation)
+                if (isNewOrder)
+                {
+                    _logger.LogDebug("New order {OrderId}: Saving parent Order first to ensure FK exists", orderDto.PcOrderId);
+                    await _context.SaveChangesAsync(); // Insert Order.UId ngay
+                }
+
+                // Upsert OrderDetails
+                foreach (var detailDto in orderDto.OrderDetails)
+                {
+                    // Safety check: Đảm bảo parent Order tồn tại trước khi add detail
+                    var parentOrderExists = await _context.Orders.AsNoTracking().AnyAsync(o => o.UId == orderToUpdate.UId);
+                    if (!parentOrderExists)
+                    {
+                        _logger.LogError("FK violation risk: Parent Order {OrderId} not found in DB before adding detail {DetailId}",
+                            orderToUpdate.UId, detailDto.BookContDetailId);
+                        throw new InvalidOperationException($"Parent Order {orderToUpdate.UId} missing - cannot add detail.");
+                    }
+
+                    var existingDetail = await _context.OrderDetails
+                        .FirstOrDefaultAsync(od => od.BookContDetailId == detailDto.BookContDetailId);
+                    OrderDetail detailToUpdate;
+                    if (existingDetail != null)
+                    {
+                        detailToUpdate = existingDetail;
+                        detailToUpdate.ShippingId = detailDto.ShippingId;
+                        detailToUpdate.ContNo = detailDto.ContNo;
+                        detailToUpdate.PartNo = detailDto.PartNo;
+                        detailToUpdate.PalletSize = detailDto.PalletSize;
+                        detailToUpdate.Quantity = detailDto.Quantity;
+                        detailToUpdate.TotalPallet = detailDto.TotalPallet;
+                        detailToUpdate.Warehouse = detailDto.Warehouse;
+                        detailToUpdate.BookContStatus = (short)detailDto.BookContStatus;
+                        _context.OrderDetails.Update(detailToUpdate);
+                    }
+                    else
+                    {
+                        detailToUpdate = new OrderDetail
                         {
                             UId = Guid.NewGuid(),
-                            ODId = detailToUpdate.UId,
-                            CollectionId = slDto.CollectionId,
-                            PalletId = slDto.PalletId,
-                            PalletNo = slDto.PalletNo,
-                            PLStatus = (short)slDto.PalletStatus,
-                            CollectedDate = slDto.CollectedDate,
+                            OId = orderToUpdate.UId, // FK an toàn vì Order đã save nếu new
+                            BookContDetailId = detailDto.BookContDetailId,
+                            ShippingId = detailDto.ShippingId,
+                            ContNo = detailDto.ContNo,
+                            PartNo = detailDto.PartNo,
+                            PalletSize = detailDto.PalletSize,
+                            Quantity = detailDto.Quantity,
+                            TotalPallet = detailDto.TotalPallet,
+                            Warehouse = detailDto.Warehouse,
+                            BookContStatus = (short)detailDto.BookContStatus,
                         };
-                        await _context.ShoppingLists.AddAsync(slToUpdate);
-                        _logger.LogDebug("Inserted new SL CollectionId={Id}, PalletNo={No}, Status={Status}",
-                            slDto.CollectionId, slDto.PalletNo, slDto.PalletStatus);
+                        await _context.OrderDetails.AddAsync(detailToUpdate);
                     }
-                    if (slDto.IsThreePointCheck)
+
+                    var slCount = detailDto.ShoppingLists?.Count ?? 0;
+                    _logger.LogDebug("Detail {BookContId}: {SL} shopping lists to upsert", detailDto.BookContDetailId, slCount);
+
+                    // Upsert ShoppingLists (giữ nguyên toàn bộ, bao gồm becameDelivered logic và ThreePointCheck)
+                    foreach (var slDto in detailDto.ShoppingLists ?? new List<ShoppingListDTO>())
                     {
-                        var existingTPC = await _context.ThreePointChecks
-                            .FirstOrDefaultAsync(tpc => tpc.SPId == slToUpdate.UId);
-                        if (existingTPC == null)
+                        var existingSL = await _context.ShoppingLists
+                            .FirstOrDefaultAsync(sl => sl.CollectionId == slDto.CollectionId);
+                        ShoppingList slToUpdate;
+                        short newStatus = (short)slDto.PalletStatus;
+                        short? oldStatus = null;
+                        if (existingSL != null)
                         {
-                            var tpc = new ThreePointCheck
-                            {
-                                UId = Guid.NewGuid(),
-                                SPId = slToUpdate.UId,
-                                PalletMarkQrContent = slDto.PlMarkQr,
-                                PalletNoQrContent = slDto.PlNoQr,
-                                CasemarkQrContent = slDto.CasemarkQr,
-                                IssuedDate = slDto.ThreePointCheckTime ?? DateTime.Now,
-                            };
-                            await _context.ThreePointChecks.AddAsync(tpc);
-                            slToUpdate.ThreePointCheck = tpc;
-                            _logger.LogDebug("Inserted new ThreePointCheck for SL {CollectionId}", slDto.CollectionId);
+                            slToUpdate = existingSL;
+                            oldStatus = existingSL.PLStatus;
+                            slToUpdate.PalletId = slDto.PalletId;
+                            slToUpdate.PalletNo = slDto.PalletNo;
+                            slToUpdate.PLStatus = newStatus;
+                            slToUpdate.CollectedDate = slDto.CollectedDate;
+                            _context.ShoppingLists.Update(slToUpdate);
+                            _logger.LogDebug("Updated SL CollectionId={Id}, PalletNo={No}, Status={Status}",
+                                slDto.CollectionId, slDto.PalletNo, slDto.PalletStatus);
                         }
                         else
                         {
-                            existingTPC.PalletMarkQrContent = slDto.PlMarkQr;
-                            existingTPC.PalletNoQrContent = slDto.PlNoQr;
-                            existingTPC.CasemarkQrContent = slDto.CasemarkQr;
-                            existingTPC.IssuedDate = slDto.ThreePointCheckTime ?? DateTime.Now;
-                            _context.ThreePointChecks.Update(existingTPC);
-                            _logger.LogDebug("Updated ThreePointCheck for SL {CollectionId}", slDto.CollectionId);
+                            slToUpdate = new ShoppingList
+                            {
+                                UId = Guid.NewGuid(),
+                                ODId = detailToUpdate.UId,
+                                CollectionId = slDto.CollectionId,
+                                PalletId = slDto.PalletId,
+                                PalletNo = slDto.PalletNo,
+                                PLStatus = newStatus,
+                                CollectedDate = slDto.CollectedDate,
+                            };
+                            await _context.ShoppingLists.AddAsync(slToUpdate);
+                            _logger.LogDebug("Inserted new SL CollectionId={Id}, PalletNo={No}, Status={Status}",
+                                slDto.CollectionId, slDto.PalletNo, slDto.PalletStatus);
+                        }
+
+                        // If this shopping list's status changed to Delivered (3), update the parent Order's UpdatedDate and AcEndTime (giữ nguyên)
+                        try
+                        {
+                            const short deliveredStatus = (short)CollectionStatusEnumDTO.Delivered;
+                            bool becameDelivered = newStatus == deliveredStatus && (oldStatus == null || oldStatus != deliveredStatus);
+                            if (becameDelivered)
+                            {
+                                var now = DateTime.Now;
+                                orderToUpdate. AcEndTime = now;
+                                orderToUpdate.UpdatedDate = now;
+                                var entry = _context.Entry(orderToUpdate);
+                                if (entry != null)
+                                {
+                                    var prop = entry.Property("UpdatedDate");
+                                    if (prop != null)
+                                    {
+                                        prop.CurrentValue = now;
+                                    }
+                                }
+                                _context.Orders.Update(orderToUpdate);
+                                _logger.LogInformation("Order {OrderId}: ShoppingList {CollectionId} became Delivered - UpdatedDate and AcEndTime set to {Now}",
+                                    orderToUpdate.UId, slDto.CollectionId, now);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Error updating Order timestamps when SL {CollectionId} became Delivered", slDto.CollectionId);
+                        }
+
+                        // ThreePointCheck (giữ nguyên)
+                        if (slDto.IsThreePointCheck)
+                        {
+                            var existingTPC = await _context.ThreePointChecks
+                                .FirstOrDefaultAsync(tpc => tpc.SPId == slToUpdate.UId);
+                            if (existingTPC == null)
+                            {
+                                var tpc = new ThreePointCheck
+                                {
+                                    UId = Guid.NewGuid(),
+                                    SPId = slToUpdate.UId,
+                                    PalletMarkQrContent = slDto.PlMarkQr,
+                                    PalletNoQrContent = slDto.PlNoQr,
+                                    CasemarkQrContent = slDto.CasemarkQr,
+                                    IssuedDate = slDto.ThreePointCheckTime ?? DateTime.Now,
+                                };
+                                await _context.ThreePointChecks.AddAsync(tpc);
+                                slToUpdate.ThreePointCheck = tpc;
+                                _logger.LogDebug("Inserted new ThreePointCheck for SL {CollectionId}", slDto.CollectionId);
+                            }
+                            else
+                            {
+                                existingTPC.PalletMarkQrContent = slDto.PlMarkQr;
+                                existingTPC.PalletNoQrContent = slDto.PlNoQr;
+                                existingTPC.CasemarkQrContent = slDto.CasemarkQr;
+                                existingTPC.IssuedDate = slDto.ThreePointCheckTime ?? DateTime.Now;
+                                _context.ThreePointChecks.Update(existingTPC);
+                                _logger.LogDebug("Updated ThreePointCheck for SL {CollectionId}", slDto.CollectionId);
+                            }
                         }
                     }
                 }
+
+                // SAVE cuối: Details + SL + updates (Order đã save nếu new)
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync(); // Commit transaction
+
+                // Trigger status update (giữ nguyên)
+                await UpdateOrderStatusIfNeeded(orderToUpdate.UId);
             }
-            await _context.SaveChangesAsync();
-            // Trigger status update sau khi upsert để recalculate cumulative counts và push SignalR
-            await UpdateOrderStatusIfNeeded(orderToUpdate.UId);
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Failed to upsert order {OrderId}: Rolling back transaction. Inner: {Message}",
+                    orderDto.PcOrderId, ex.Message);
+                throw; // Re-throw để service handle (ví dụ: retry)
+            }
         }
+
         public async Task<List<Order>> GetOrdersByDate(DateTime date)
         {
             return await _context.Orders.AsNoTracking()
@@ -274,6 +332,7 @@ namespace ASP.Models.Front
                 .AsSplitQuery()
                 .ToListAsync();
         }
+
         public async Task<List<Order>> GetOrdersForWeek(DateTime weekStart)
         {
             var weekEnd = weekStart.AddDays(7);
@@ -286,10 +345,12 @@ namespace ASP.Models.Front
                 .AsSplitQuery()
                 .ToListAsync();
         }
+
         public async Task SaveChangesAsync()
         {
             await _context.SaveChangesAsync();
         }
+
         // Cập nhật: Sử dụng cumulative count với >= cho status logic
         public async Task<bool> UpdateOrderStatusIfNeeded(Guid orderId)
         {
@@ -303,8 +364,10 @@ namespace ASP.Models.Front
                 _logger.LogWarning("Order {OrderId} not found for status update", orderId);
                 return false;
             }
+
             short oldStatus = order.OrderStatus; // Sử dụng short để nhất quán
             var allShoppingLists = order.OrderDetails.SelectMany(od => od.ShoppingLists ?? new List<ShoppingList>()).ToList();
+
             // Cumulative: Đã Collected (status >=1, loại trừ Canceled)
             var collectedPallets = allShoppingLists
                 .Where(sl => sl.PLStatus >= (short)CollectionStatusEnumDTO.Collected &&
@@ -312,6 +375,7 @@ namespace ASP.Models.Front
                 .Select(sl => sl.PalletId)
                 .Distinct()
                 .Count();
+
             // Tất cả pallets đã LOADED lên cont (status >= Delivered, tức là đã qua Collected + ThreePointCheck + Loaded)
             var loadedPallets = allShoppingLists
                 .Where(sl => sl.PLStatus >= (short)CollectionStatusEnumDTO.Delivered &&
@@ -319,12 +383,15 @@ namespace ASP.Models.Front
                 .Select(sl => sl.PalletId)
                 .Distinct()
                 .Count();
+
             // ... (phần load order và tính collectedPallets, loadedPallets giữ nguyên)
             var totalOrderPallet = order.TotalPallet;
             bool isCompleted = totalOrderPallet > 0 && loadedPallets >= totalOrderPallet;
+
             // Shipped: Tất cả completed VÀ BookContStatus >= Exported
             bool isShipped = isCompleted &&
                              order.OrderDetails.All(od => od.BookContStatus >= (short)BookingStatusEnumDTO.Exported);
+
             if (isShipped)
                 order.OrderStatus = 3; // Shipped
             else if (isCompleted)
@@ -333,12 +400,14 @@ namespace ASP.Models.Front
                 order.OrderStatus = 1; // Pending (Đang thu thập hoặc loading, nhưng chưa đủ)
             else
                 order.OrderStatus = 0; // Planned
+
             // ... (phần actualTimesChanged giữ nguyên)
             bool actualTimesChanged = false;
+
             // SỬA: Loại bỏ filter today, lấy tất cả collectedDates từ quá khứ
             var validCollectedDates = allShoppingLists
                 .Where(sl => sl.CollectedDate.HasValue)
-                .Select(sl => sl.CollectedDate.Value)
+                .Select(sl => sl.CollectedDate!.Value)
                 .ToList();
             if (validCollectedDates.Any())
             {
@@ -351,44 +420,39 @@ namespace ASP.Models.Front
                         orderId, earliestCollectedDate, validCollectedDates.Count);
                 }
             }
-            // SỬA: Loại bỏ reset logic cho new day. Giữ AcStartTime từ quá khứ
-            if (order.AcStartTime.HasValue)
+
+            // SỬA: Mở rộng fallback để normalize fake Now (offset >30min và same day)
+            bool needsEndTimeFallback = (order.OrderStatus >= 2) &&  // Completed or Shipped
+                (!order.AcEndTime.HasValue ||  // Original: null
+                  (order.AcEndTime.Value.Date == DateTime.Today &&  // Same day as sync
+                   order.AcEndTime.Value > order.EndTime.AddMinutes(30)));  // Offset >30min, coi như fake Now
+
+            if (needsEndTimeFallback)
             {
-                // SỬA: Lấy tất cả ThreePointChecks từ quá khứ, không filter today
-                var validThreePointChecks = allShoppingLists
-                    .Where(sl => sl.ThreePointCheck != null)
-                    .Select(sl => sl.ThreePointCheck)
-                    .Where(tpc => tpc.IssuedDate >= order.AcStartTime.Value) // Chỉ >= AcStartTime, không filter date
-                    .Select(tpc => tpc.IssuedDate)
-                    .ToList();
-                if (validThreePointChecks.Any())
+                var fallbackTime = order.EndTime;
+                if (order.AcEndTime.HasValue)  // Normalize existing fake
                 {
-                    var latestIssuedDate = validThreePointChecks.Max();
-                    if (!order.AcEndTime.HasValue || order.AcEndTime.Value != latestIssuedDate)
-                    {
-                        order.AcEndTime = latestIssuedDate;
-                        actualTimesChanged = true;
-                        _logger.LogInformation("Order {OrderId}: AcEndTime updated to {AcEndTime} (from all historical dates, {Count} total)",
-                            orderId, latestIssuedDate, validThreePointChecks.Count);
-                    }
+                    _logger.LogWarning("Order {OrderId}: Normalizing fake AcEndTime {Fake} to PlanEndTime={Plan} (offset >30min, likely batch sync artifact)",
+                        orderId, order.AcEndTime.Value, fallbackTime);
                 }
-                else if (isShipped)
+                else
                 {
-                    var fallbackEnd = DateTime.Now; // Full now nếu shipped
-                    if (!order.AcEndTime.HasValue || order.AcEndTime.Value != fallbackEnd)
-                    {
-                        order.AcEndTime = fallbackEnd;
-                        actualTimesChanged = true;
-                        _logger.LogInformation("Order {OrderId}: Shipped but no TPC available, fallback AcEndTime to {FallbackEnd}",
-                            orderId, fallbackEnd);
-                    }
+                    _logger.LogWarning("Order {OrderId}: Backfilled AcEndTime with PlanEndTime={PlanEnd} (status={Status}, no actual captured - likely app started late)",
+                        orderId, order.EndTime, order.OrderStatus);
                 }
-                // SỬA: Loại bỏ reset AcEndTime nếu không có data fresh
+                order.AcEndTime = fallbackTime; // Fallback: Dùng PlanEndTime trực tiếp (no .Value)
+                order.UpdatedDate = fallbackTime; // Giả sử UpdatedDate là DateTime (non-nullable)
+                actualTimesChanged = true;
             }
-            else
+
+            // Thêm log so sánh AcEndTime vs EndTime
+            if (order.AcEndTime.HasValue)
             {
-                // Nếu AcStartTime null, cũng không reset AcEndTime nữa
+                var offsetMin = (order.AcEndTime.Value - order.EndTime).TotalMinutes;
+                _logger.LogDebug("Order {OrderId}: AcEndTime={Ac} vs EndTime={End} (offset {Offset:F1} min)",
+                    orderId, order.AcEndTime.Value, order.EndTime, offsetMin);
             }
+
             bool statusChanged = order.OrderStatus != oldStatus;
             if (statusChanged || actualTimesChanged)
             {
@@ -398,8 +462,10 @@ namespace ASP.Models.Front
                     orderId, oldStatus, order.OrderStatus, order.ApiOrderStatus, actualTimesChanged);
                 await _hubContext.Clients.All.SendAsync("OrderStatusUpdated", order.UId.ToString(), order.OrderStatus, order.ApiOrderStatus);
             }
+
             return statusChanged || actualTimesChanged;
         }
+
         public async Task<Order?> GetOrderById(Guid orderId)
         {
             return await _context.Orders.AsNoTracking()
@@ -410,6 +476,7 @@ namespace ASP.Models.Front
                 .AsSplitQuery()
                 .FirstOrDefaultAsync(o => o.UId == orderId);
         }
+
         public async Task<List<Order>> GetOrdersWithDelayByDate(DateTime date)
         {
             return await _context.Orders.AsNoTracking()
@@ -423,6 +490,7 @@ namespace ASP.Models.Front
                 .AsSplitQuery()
                 .ToListAsync();
         }
+
         public async Task UpdateOrderStatusToDelay(Guid orderId, DateTime delayStartTime, double delayTime)
         {
             var order = await _context.Orders.FirstOrDefaultAsync(o => o.UId == orderId);
@@ -431,6 +499,7 @@ namespace ASP.Models.Front
                 _logger.LogWarning("Order {OrderId} not found for delay status update", orderId);
                 return;
             }
+
             short oldStatus = order.OrderStatus;
             order.OrderStatus = 4;
             order.DelayStartTime = delayStartTime;
