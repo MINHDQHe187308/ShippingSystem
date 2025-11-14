@@ -32,6 +32,8 @@
     }
     // --- Biến global cho delay mode
     let delayMode = false;
+    // --- Biến global cho scroll mode (face icon)
+    let scrollMode = false;
     // --- Thêm nút Delay Mode
     const delayBtn = document.createElement('button');
     delayBtn.id = 'delayModeBtn';
@@ -53,6 +55,65 @@
         } else {
             document.body.style.cursor = 'default';
             calendarEl.classList.remove('delay-mode');
+        }
+    });
+    // --- THÊM: Cute scroll-face button (click to enable calendar pan/scroll mode)
+    const scrollFaceBtn = document.createElement('button');
+    scrollFaceBtn.id = 'scrollFaceBtn';
+    scrollFaceBtn.className = 'btn btn-light scroll-face-btn';
+    scrollFaceBtn.title = 'Toggle Scroll Mode';
+    // Use an emoji inside so it's easy and cute — will flip to an angry face when active
+    scrollFaceBtn.innerHTML = '<span class="scroll-face-emoji" role="img" aria-label="face">😊</span>';
+    // Insert after delay button
+    delayBtn.parentNode.insertBefore(scrollFaceBtn, delayBtn.nextSibling);
+
+    // --- THÊM: Speech bubble attached to the face button
+    const scrollFaceBubble = document.createElement('div');
+    scrollFaceBubble.className = 'scroll-face-bubble';
+    scrollFaceBubble.setAttribute('aria-hidden', 'true');
+    scrollFaceBubble.textContent = 'Use Left Mouse Scroll right to view History';
+    // Ensure button is positioned relative so bubble absolute positioning works
+    scrollFaceBtn.style.position = 'relative';
+    scrollFaceBtn.appendChild(scrollFaceBubble);
+
+    // Toggle behavior for scroll face
+    scrollFaceBtn.addEventListener('click', function (ev) {
+        ev.stopPropagation();
+        scrollMode = !scrollMode;
+        const emoji = this.querySelector('.scroll-face-emoji');
+        if (scrollMode) {
+            // Active: angry face, change styles, enable scroll-mode class, play stronger beep
+            emoji.textContent = '😠';
+            this.classList.add('active');
+            this.classList.remove('btn-light');
+            this.classList.add('btn-danger');
+            document.body.style.cursor = 'grab';
+            calendarEl.classList.add('scroll-mode');
+            try { playBeep(0.6, 1100, 140); } catch (e) { console.warn('playBeep failed', e); }
+            // Show speech bubble briefly to guide users
+            scrollFaceBubble.setAttribute('aria-hidden', 'false');
+            scrollFaceBubble.classList.add('visible');
+            // Auto-hide after 4 seconds if still visible
+            setTimeout(() => {
+                if (scrollFaceBubble) {
+                    scrollFaceBubble.classList.remove('visible');
+                    scrollFaceBubble.setAttribute('aria-hidden', 'true');
+                }
+            }, 4000);
+        } else {
+            // Inactive: smiling face, revert styles, play subtle beep
+            emoji.textContent = '😊';
+            this.classList.remove('active');
+            this.classList.remove('btn-danger');
+            this.classList.add('btn-light');
+            document.body.style.cursor = 'default';
+            calendarEl.classList.remove('scroll-mode');
+            // Hide bubble immediately when turning off
+            if (scrollFaceBubble) {
+                scrollFaceBubble.classList.remove('visible');
+                scrollFaceBubble.setAttribute('aria-hidden', 'true');
+            }
+            try { playBeep(0.35, 700, 100); } catch (e) { console.warn('playBeep failed', e); }
         }
     });
     // --- Thêm CSS styles cho z-index, height, centering và CUSTOM TOOLTIP + HOVER EFFECT CHỈ CHO DELAY MODE + THÊM STYLE CHO DELAY BAR (COMMENT CLASS DELAY-EVENT)
@@ -222,6 +283,77 @@ body, .fc {
 .fc-timeline-event{
 margin-top: 20px !important;
 margin-bottom: 20px !important;
+}
+/* Cute scroll-face button styles */
+.scroll-face-btn {
+    margin-left: 8px;
+    padding: 6px 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+    position: relative; /* so bubble positions correctly */
+}
+.scroll-face-btn .scroll-face-emoji {
+    font-size: 20px;
+    line-height: 1;
+    display: inline-block;
+    transform-origin: center center;
+    transition: transform 0.18s ease;
+}
+.scroll-face-btn:active .scroll-face-emoji { transform: scale(0.92) translateY(1px); }
+.scroll-face-btn.active {
+    box-shadow: 0 6px 14px rgba(0,0,0,0.18);
+    transform: translateY(-2px) scale(1.02);
+}
+/* subtle wobble when activating */
+@keyframes faceWobble {
+    0% { transform: rotate(0deg); }
+    25% { transform: rotate(-8deg); }
+    50% { transform: rotate(6deg); }
+    75% { transform: rotate(-3deg); }
+    100% { transform: rotate(0deg); }
+}
+.scroll-face-btn.active .scroll-face-emoji { animation: faceWobble 420ms ease; }
+/* While scroll mode active, make event elements non-interactive so user can drag anywhere */
+.scroll-mode .fc-event { pointer-events: none; opacity: 0.98; }
+.scroll-mode { cursor: grab; }
+/* Speech bubble attached to face button */
+.scroll-face-bubble {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-6px);
+    background: #ffffff;
+    color: #111;
+    padding: 10px 16px; /* increased padding for larger bubble */
+    border-radius: 14px;
+    box-shadow: 0 8px 26px rgba(0,0,0,0.18);
+    font-size: 17px; /* larger font for readability */
+    line-height: 1.2;
+    min-width: 220px; /* ensure wider bubble */
+    max-width: 360px;
+    text-align: center;
+    white-space: normal; /* allow wrapping */
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 180ms ease, transform 220ms cubic-bezier(.2,.9,.3,1);
+    z-index: 10002;
+}
+.scroll-face-bubble.visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-20px);
+}
+.scroll-face-bubble::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 8px; /* larger arrow */
+    border-style: solid;
+    border-color: #ffffff transparent transparent transparent;
 }
 .combined-label{
 display: inline-block;
@@ -397,8 +529,7 @@ position : relative;
                 return getColorByStatus('Completed'); // Xanh lá nếu có actual
             } else {
                 return getColorByStatus('Planned'); // Đen nếu chỉ plan
-            }  
-
+            }
         }
         const colors = {
             // Use a light neutral for Planned so planned-only events render softly
@@ -473,7 +604,7 @@ position : relative;
         console.log(`Parsed "${timeStr}" (DB local) → Local BKK: ${d.toLocaleString('vi-VN', { timeZone: 'Asia/Bangkok' })}`);
         return d; // Date object với ms UTC đúng → Render local BKK
     }
-    // --- Tạo event data từ dữ liệu Order - THÊM UId VÀO EXTENDEDPROPS VÀ THÊM CÁC TRƯỜNG PROGRESS + THÊM DELAY INFO NẾU STATUS=4 + FIX: Cap eventEnd <= viewEnd + FIX: Skip nếu customerCode undefined
+    // --- Tạo event data từ dữ liệu Order - THÊM UId VÀO EXTENDEDPROPS VÀ THÊM CÁC TRƯỜNG PROGRESS + THÊM DELAY INFO NẾU STATUS=4 + FIX: BỎ CLIPPING ĐỂ HIỂN THỊ ĐẦY ĐỦ KHI PAN/ROLL + FIX: Skip nếu customerCode undefined
     const eventsData = orders.map((order, index) => {
         const planStart = parseAndValidate(order.StartTime);
         const planEnd = parseAndValidate(order.EndTime);
@@ -496,25 +627,16 @@ position : relative;
         } else {
             return null; // Skip invalid order
         }
-        // FIX: Extend span to union nếu có cả actual và plan
+        // FIX: Extend span to union nếu có cả actual và plan (KHÔNG CLIP Ở ĐÂY ĐỂ GIỮ FULL DB RANGE)
         let hasBoth = false;
         if (validActual && validPlan) {
             eventStart = new Date(Math.min(actualStart, planStart));
             eventEnd = new Date(Math.max(actualEnd, planEnd));
             hasBoth = true;
         }
-        // FIX MỚI: Clip event union chỉ trong view range (slotMinTime đến slotMaxTime) - LOCAL BKK + THÊM: Cap end <= viewEnd
-        const now = new Date();
-        const nowHour = now.getHours();
-        const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
-        let slotMin = new Date(now);
-        slotMin.setHours(nowHour - 6, 0, 0, 0); // Approx slotMinTime local
-        if (slotMin < todayMidnight) slotMin = new Date(todayMidnight); // Cap tại 00:00 local
-        let viewEnd = new Date(now);
-        viewEnd.setHours(nowHour + 4, 0, 0, 0); // Approx slotMaxTime local
-        eventStart = new Date(Math.max(eventStart, slotMin));
-        eventEnd = new Date(Math.min(eventEnd, viewEnd)); // ← THÊM: Cap end <= viewEnd
-        if (eventEnd <= eventStart) return null; // ← THÊM: Skip nếu không overlap view (sau fix cap)
+        // BỎ CLIPPING: Để event có full start/end từ DB, FullCalendar sẽ tự handle overlap với slots khi pan
+        // Không cần: eventStart = Math.max(eventStart, slotMin); eventEnd = Math.min(eventEnd, viewEnd);
+        // Không cần: if (eventEnd <= eventStart) return null; // Giờ luôn render nếu overlap slots
         const customerCode = order.CustomerCode || order.Resource || 'Unknown';
         if (!customerCode || customerCode === 'undefined') return null; // ← FIX: Skip event nếu customerCode undefined/null/empty
         // THÊM: Delay info nếu status=='Delay' (giả sử fetch từ API hoặc include trong data)
@@ -585,13 +707,15 @@ position : relative;
         resourceAreaWidth: '120px',
         resources: resources,
         // Render resource label with CustomerCode (top) and CustomerName (bottom)
-        resourceLabelContent: function(arg) {
+        resourceLabelContent: function (arg) {
             const container = document.createElement('div');
             container.style.display = 'flex';
             container.style.flexDirection = 'column';
+            container.style.alignItems = 'flex-start';
             container.style.lineHeight = '1.1';
-            container.style.padding = '2px 6px';
+            container.style.padding = '4px 8px';
             container.style.boxSizing = 'border-box';
+            container.style.width = '100%';
             const code = document.createElement('div');
             code.textContent = arg.resource.title || arg.resource.id || '';
             code.style.fontWeight = '700';
@@ -599,21 +723,24 @@ position : relative;
             code.style.whiteSpace = 'nowrap';
             code.style.overflow = 'hidden';
             code.style.textOverflow = 'ellipsis';
+            code.style.flex = '0 0 auto';
+            // name below code with smaller font and slight top margin
             const name = document.createElement('div');
-            // Use the customerName property if present, otherwise fall back to title
             name.textContent = arg.resource.extendedProps && arg.resource.extendedProps.customerName ? arg.resource.extendedProps.customerName : (arg.resource.customerName || '');
             name.style.fontSize = '13px';
             name.style.color = '#666';
             name.style.whiteSpace = 'nowrap';
             name.style.overflow = 'hidden';
             name.style.textOverflow = 'ellipsis';
+            name.style.marginTop = '8px';
+            name.style.width = '100%';
             container.appendChild(code);
             if (name.textContent) container.appendChild(name);
             return { domNodes: [container] };
         },
         eventOverlap: false,
-        eventOrderStrict:true,
-        slotEventOverlap: false,    
+        eventOrderStrict: true,
+        slotEventOverlap: false,
         eventOrderStrict: true,
         dayMaxEvents: true,
         events: eventsData.map(e => {
@@ -741,7 +868,7 @@ position : relative;
                                             <div class="progress" style="height: 8px;">
                                                 <div class="progress-bar bg-primary" style="width: ${collectPercent}%"></div>
                                             </div>
-                                     
+                                   
                                             <!-- Prepare Stage -->
                                             <div class="d-flex align-items-center mb-2 mt-2">
                                                 <i class="bi bi-tools text-success me-2"></i>
@@ -800,67 +927,69 @@ position : relative;
                 });
         },
         eventContent: function (arg) {
-            // ... (giữ nguyên code eventContent từ mã trước, dùng hhmmss local BKK)
-            // FIX: Lấy status từ extendedProps
+            // FIX MỚI: Tính % relative đến VISIBLE PART của event (intersection với current slots) để tránh lệch khi pan/scroll
+            // Lấy status từ extendedProps
             const status = arg.event.extendedProps.status;
             const extendedProps = arg.event.extendedProps;
-            const eventStart = arg.event.start;
-            const eventEnd = arg.event.end;
+            const eventStart = arg.event.start; // Full DB start
+            const eventEnd = arg.event.end; // Full DB end
             // Parse từ ISO
             const pStart = extendedProps.planStart ? new Date(extendedProps.planStart) : null;
             const pEnd = extendedProps.planEnd ? new Date(extendedProps.planEnd) : null;
             const aStart = extendedProps.actualStart ? new Date(extendedProps.actualStart) : null;
             const aEnd = extendedProps.actualEnd ? new Date(extendedProps.actualEnd) : null;
-            // FIX MỚI: Lấy view range từ calendar (slotMinTime làm mốc 0%) - LOCAL BKK
-            const view = calendar.view;
-            const viewDate = view.currentStart; // Ngày hiện tại của view (local)
-            const [minH, minM, minS] = timeRange.startHour.split(':').map(Number); // Từ getTimeRange global (local)
-            const viewStart = new Date(viewDate);
-            viewStart.setHours(minH, minM, minS, 0);
-            const [maxH, maxM, maxS] = timeRange.endHour.split(':').map(Number);
-            const viewEnd = new Date(viewDate);
-            viewEnd.setHours(maxH, maxM, maxS, 0);
-            // THÊM: Tính relative đến event span (clipped)
-            const eventDuration = eventEnd - eventStart; // ms của event trong view
-            if (eventDuration <= 0) return { html: '<div>Invalid duration</div>' }; // Safety
+            // THÊM MỚI: Tính current view slots (local BKK) để clip visible
+            const now = new Date(); // Current date (same day as view)
+            const slotMinStr = calendar.getOption('slotMinTime'); // e.g., '07:00:00'
+            const slotMaxStr = calendar.getOption('slotMaxTime'); // e.g., '24:00:00'
+            const [minH, minM, minS] = slotMinStr.split(':').map(Number);
+            const [maxH, maxM, maxS] = slotMaxStr.split(':').map(Number);
+            const viewStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), minH, minM, minS);
+            const viewEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), maxH, maxM, maxS);
+            // Visible intersection của event với view
+            const visibleStart = new Date(Math.max(eventStart, viewStart));
+            const visibleEnd = new Date(Math.min(eventEnd, viewEnd));
+            if (visibleEnd <= visibleStart) return { html: '<div>Invalid duration</div>' }; // Không overlap view
+            const visibleDuration = visibleEnd.getTime() - visibleStart.getTime(); // ms visible
             let actualPercent = 0, actualWidth = 0;
             let planPercent = 0, planWidth = 0;
-            // FIX: Tính % so với EVENT DURATION local, clip nếu ngoài range
-            if (aStart && aEnd && aEnd > eventStart) { // Chỉ vẽ nếu overlap view
-                const actualViewStart = new Date(Math.max(aStart, eventStart));
-                const actualViewEnd = new Date(Math.min(aEnd, eventEnd));
-                if (actualViewStart < actualViewEnd) {
-                    actualPercent = ((actualViewStart - eventStart) / eventDuration) * 100;
-                    actualWidth = ((actualViewEnd - actualViewStart) / eventDuration) * 100;
+            // Tính % cho actual relative đến visibleDuration (chính xác, không lệch DB)
+            if (aStart && aEnd && aEnd > visibleStart) {
+                const actualVisibleStart = new Date(Math.max(aStart, visibleStart));
+                const actualVisibleEnd = new Date(Math.min(aEnd, visibleEnd));
+                if (actualVisibleStart < actualVisibleEnd) {
+                    actualPercent = ((actualVisibleStart.getTime() - visibleStart.getTime()) / visibleDuration) * 100;
+                    actualWidth = ((actualVisibleEnd.getTime() - actualVisibleStart.getTime()) / visibleDuration) * 100;
                 }
             }
-            if (pStart && pEnd && pEnd > eventStart) {
-                const planViewStart = new Date(Math.max(pStart, eventStart));
-                const planViewEnd = new Date(Math.min(pEnd, eventEnd));
-                if (planViewStart < planViewEnd) {
-                    planPercent = ((planViewStart - eventStart) / eventDuration) * 100;
-                    planWidth = ((planViewEnd - planViewStart) / eventDuration) * 100;
+            // Tương tự cho plan
+            if (pStart && pEnd && pEnd > visibleStart) {
+                const planVisibleStart = new Date(Math.max(pStart, visibleStart));
+                const planVisibleEnd = new Date(Math.min(pEnd, visibleEnd));
+                if (planVisibleStart < planVisibleEnd) {
+                    planPercent = ((planVisibleStart.getTime() - visibleStart.getTime()) / visibleDuration) * 100;
+                    planWidth = ((planVisibleEnd.getTime() - planVisibleStart.getTime()) / visibleDuration) * 100;
                 }
             }
-            // Debug log cho rendering (xóa sau khi test OK) - LOCAL BKK
-            console.log(`Event ${extendedProps.uid}: Actual %: ${actualPercent.toFixed(1)}-${(actualPercent + actualWidth).toFixed(1)} | Plan %: ${planPercent.toFixed(1)}-${(planPercent + planWidth).toFixed(1)} (BKK)`);
-            // THÊM: Delay bar info nếu Delay
+            // Debug log cho rendering (xóa sau khi test OK) - LOCAL BKK + VISIBLE
+            console.log(`Event ${extendedProps.uid}: Visible ${hhmmss(visibleStart)}-${hhmmss(visibleEnd)} | Actual %: ${actualPercent.toFixed(1)}-${(actualPercent + actualWidth).toFixed(1)} | Plan %: ${planPercent.toFixed(1)}-${(planPercent + planWidth).toFixed(1)} (BKK)`);
+            // THÊM: Delay bar info nếu Delay - relative đến visible
             const dStart = extendedProps.delayStart ? new Date(extendedProps.delayStart) : null;
             const dEnd = extendedProps.delayEnd ? new Date(extendedProps.delayEnd) : null;
             let delayLeftPercent = 0, delayWidthPercent = 0;
             if (status === 'Delay' && dStart && dEnd) {
-                const delayViewStart = new Date(Math.max(dStart, eventStart));
-                const delayViewEnd = new Date(Math.min(dEnd, eventEnd));
-                if (delayViewStart < delayViewEnd) {
-                    delayLeftPercent = ((delayViewStart - eventStart) / eventDuration) * 100;
-                    delayWidthPercent = ((delayViewEnd - delayViewStart) / eventDuration) * 100;
-                } else if (dStart >= eventEnd) {
-                    // Extend right nếu delay future > eventEnd
+                const delayVisibleStart = new Date(Math.max(dStart, visibleStart));
+                const delayVisibleEnd = new Date(Math.min(dEnd, visibleEnd));
+                if (delayVisibleStart < delayVisibleEnd) {
+                    delayLeftPercent = ((delayVisibleStart.getTime() - visibleStart.getTime()) / visibleDuration) * 100;
+                    delayWidthPercent = ((delayVisibleEnd.getTime() - delayVisibleStart.getTime()) / visibleDuration) * 100;
+                } else if (dStart >= visibleEnd) {
+                    // Extend right nếu delay future > visibleEnd (left=100%, width dựa trên delayTime)
                     delayLeftPercent = 100;
-                    delayWidthPercent = (extendedProps.delayTime / ((eventEnd - eventStart) / (1000 * 60 * 60))) * 100;
+                    const visibleHours = visibleDuration / (1000 * 60 * 60);
+                    delayWidthPercent = (extendedProps.delayTime / visibleHours) * 100;
                 }
-                const delayPercent = dStart ? ((dStart - eventStart) / eventDuration) * 100 : 100; // Nối tiếp nên left=100%
-                const delayWidth = extendedProps.delayTime ? (extendedProps.delayTime / (eventDuration / (1000 * 60 * 60))) * 100 : 0; // % dựa trên giờ local
+                console.log('Delay bar positioned BKK (visible):', { left: delayLeftPercent.toFixed(1), width: delayWidthPercent.toFixed(1), isExtend: delayWidthPercent > 100 });
             }
             return {
                 domNodes: [
@@ -880,17 +1009,17 @@ position : relative;
                         wrapper.style.alignItems = 'center';
                         wrapper.style.justifyContent = 'space-around'; // Phân bố đều các phần
                         wrapper.style.padding = '2px'; // Thêm padding nhẹ để không sát mép
-                        // Vẽ plan bar - giữ nguyên kích thước ban đầu
+                        // Vẽ plan bar - giữ nguyên kích thước ban đầu, relative visible
                         if (pStart && pEnd) {
                             if (aStart && aEnd) {
                                 // Nếu có both: vẽ plan overlay (top 15%, height 70%) - GIỮ NGUYÊN
                                 const planBar = document.createElement('div');
                                 planBar.classList.add('custom-gradient-box');
                                 planBar.style.position = 'absolute';
-                                planBar.style.left = Math.max(0, planPercent) + '%'; // FIX: Dùng planPercent mới
+                                planBar.style.left = Math.max(0, planPercent) + '%'; // FIX: Dùng planPercent visible
                                 planBar.style.top = '10%'; // Raise slightly to visually center with increased height
                                 planBar.style.height = '80%'; // Tăng chiều cao của plan block từ 70% lên 80%
-                                planBar.style.width = planWidth + '%'; // FIX: Dùng planWidth mới
+                                planBar.style.width = planWidth + '%'; // FIX: Dùng planWidth visible
                                 //planBar.style.background = getColorByStatus('Planned'); // Đen cho plan overlay
                                 planBar.style.borderRadius = '2px';
                                 // planBar.title = `Full Plan BKK: ${hhmmss(pStart)} - ${hhmmss(pEnd)}`; // SỬA: Local BKK
@@ -902,7 +1031,7 @@ position : relative;
                                 const planBarFull = document.createElement('div');
                                 planBarFull.classList.add('custom-gradient-box');
                                 planBarFull.style.position = 'absolute';
-                                planBarFull.style.left = Math.max(0, planPercent) + '%'; // FIX: Dùng planPercent mới
+                                planBarFull.style.left = Math.max(0, planPercent) + '%'; // FIX: Dùng planPercent visible
                                 // Match the overlay sizing used above (top 15%, height 70%) so visual size is consistent
                                 planBarFull.style.top = '10%';
                                 planBarFull.style.height = '80%';
@@ -914,14 +1043,14 @@ position : relative;
                                 wrapper.appendChild(planBarFull);
                             }
                         }
-                        // Vẽ actual bar (nếu có) - đè lên plan với mờ và opacity, giữ full height
+                        // Vẽ actual bar (nếu có) - đè lên plan với mờ và opacity, giữ full height, relative visible
                         if (aStart && aEnd) {
                             const actualBar = document.createElement('div');
                             actualBar.style.position = 'absolute';
-                            actualBar.style.left = Math.max(0, actualPercent) + '%'; // FIX: Dùng actualPercent mới
+                            actualBar.style.left = Math.max(0, actualPercent) + '%'; // FIX: Dùng actualPercent visible
                             actualBar.style.top = '0';
                             actualBar.style.height = '100%';
-                            actualBar.style.width = actualWidth + '%'; // FIX: Dùng actualWidth mới
+                            actualBar.style.width = actualWidth + '%'; // FIX: Dùng actualWidth visible
                             actualBar.style.background = fallbackColor; // SỬA: Fallback cho actual nếu Delay
                             actualBar.style.borderRadius = '4px';
                             if (pStart && pEnd) { // Mờ nếu có plan
@@ -935,25 +1064,12 @@ position : relative;
                             actualBar.title = `Actual BKK: ${hhmmss(aStart)} - ${hhmmss(aEnd)}`; // SỬA: Local BKK
                             wrapper.appendChild(actualBar);
                         }
-                        // THÊM: Vẽ delay bar nối tiếp nếu Delay (từ max(eventEnd, delayStart) đến delayEnd, extend ra phải nếu >100%)
+                        // THÊM: Vẽ delay bar nối tiếp nếu Delay (từ max(visibleEnd, delayStart) đến delayEnd, extend ra phải nếu >100%)
                         if (status === 'Delay' && dStart && dEnd) {
-                            // Calc position relative to viewStart local
-                            let delayLeftPercent = ((dStart - eventStart) / eventDuration) * 100;
-                            let delayWidthPercent = ((dEnd - dStart) / eventDuration) * 100;
-                            // FIX: Nếu delay nối từ end (delayStart ≈ eventEnd), set left=100%, width=delayTime hours %
-                            if (Math.abs(dStart - eventEnd) < 60000) { // <1min tolerance
-                                delayLeftPercent = Math.max(0, ((eventEnd - eventStart) / eventDuration) * 100); // Bắt đầu từ end trong view
-                                delayWidthPercent = (extendedProps.delayTime / (eventDuration / (1000 * 60 * 60))) * 100; // % dựa trên giờ local
-                            } else if (dStart > eventEnd) {
-                                // Nếu delayStart future > end, vẽ từ position end + offset
-                                const offsetPercent = ((dStart - eventEnd) / eventDuration) * 100;
-                                delayLeftPercent = ((eventEnd - eventStart) / eventDuration) * 100 + offsetPercent;
-                                delayWidthPercent = ((dEnd - dStart) / eventDuration) * 100;
-                            }
                             const delayBar = document.createElement('div');
                             delayBar.className = 'delay-bar';
-                            delayBar.style.left = Math.max(0, delayLeftPercent) + '%'; // Min 0 để không âm
-                            delayBar.style.width = delayWidthPercent + '%'; // Có thể >100% để extend
+                            delayBar.style.left = Math.max(0, delayLeftPercent) + '%'; // Min 0 để không âm, dùng visible
+                            delayBar.style.width = Math.max(0, delayWidthPercent) + '%'; // Có thể >100% để extend, dùng visible
                             delayBar.style.background = '#ff0000';
                             delayBar.style.right = 'auto'; // Để left calc đúng
                             delayBar.title = `Delay BKK: ${hhmmss(dStart)} - ${hhmmss(dEnd)} (${extendedProps.delayTime}h)`; // SỬA: Local BKK
@@ -963,7 +1079,6 @@ position : relative;
                                 delayBar.style.position = 'absolute';
                                 delayBar.style.clipPath = 'none'; // Đảm bảo không clip
                             }
-                            console.log('Delay bar positioned BKK:', { left: delayLeftPercent.toFixed(1), width: delayWidthPercent.toFixed(1), isExtend: delayWidthPercent > 100 });
                         }
                         (function createCombinedBlock() {
                             // ... (giữ nguyên code createCombinedBlock từ mã trước)
@@ -985,9 +1100,9 @@ position : relative;
                                 }
                                 // fallback: approximate using wrapper width and eventDuration
                                 const wrapperW = wrapper.getBoundingClientRect().width || 0;
-                                if (eventDuration > 0) {
-                                    // convert 2.5 hours to fraction of event duration, then to px
-                                    const frac = (twoAndHalfHours * 60 * 60 * 1000) / eventDuration;
+                                if (visibleDuration > 0) {
+                                    // convert 2.5 hours to fraction of visible duration, then to px
+                                    const frac = (twoAndHalfHours * 60 * 60 * 1000) / visibleDuration;
                                     // increase the computed pixel target slightly as well
                                     return Math.round(Math.min(wrapperW, Math.max(40, wrapperW * frac * 0.75)));
                                 }
@@ -1019,7 +1134,6 @@ position : relative;
                             combined.style.zIndex = '4';
                             combined.style.top = '20%';
                             combined.style.height = '60%';
-
                             function positionCombinedByLabel() {
                                 try {
                                     const wrapperWNow = wrapper.getBoundingClientRect().width || 0;
@@ -1033,8 +1147,7 @@ position : relative;
                                     const finalW = Math.min(labelW, Math.max(24, wrapperWNow));
                                     combined.style.width = finalW + 'px';
                                     combined.style.flex = '0 0 ' + finalW + 'px';
-
-                                    // Compute plan segment pixel width/left
+                                    // Compute plan segment pixel width/left (dùng visible %)
                                     const planLeftPx = wrapperWNow * (planPercent / 100);
                                     const planWidthPx = wrapperWNow * (planWidth / 100);
                                     let leftPx = 0;
@@ -1052,7 +1165,6 @@ position : relative;
                                     // best-effort fallback
                                 }
                             }
-
                             // Initial position after paint
                             setTimeout(positionCombinedByLabel, 0);
                             // Responsive label: scales font-size and uses ellipsis if event too narrow
@@ -1195,7 +1307,7 @@ position : relative;
                                 //progressGroup.style.justifyContent = 'flex-end';
                             } catch (err) {
                                 // ignore
-                            } 
+                            }
                             wrapper.appendChild(combined);
                         })();
                         // THÊM: Hover listener cho effect (đã có CSS, nhưng thêm sound subtle nếu delayMode)
@@ -1297,7 +1409,148 @@ position : relative;
         }
     });
     calendar.render();
-    // --- THÊM MỚI: SignalR cho realtime status update (FIX: Cải thiện update logic - remove refetch/changeDate, chỉ render) - SỬA CLIP THEO LOCAL BKK + THÊM cap end + FIX: Lọc undefined resources/events
+    // --- THÊM MỚI: Horizontal pan/scroll to shift visible time window (view past hours)
+    // This allows the user to scroll horizontally (wheel or drag) to move the slot window
+    // left/right by hour steps without changing other FullCalendar config.
+    // FIX MỚI: Tăng độ mượt mà - Sử dụng requestAnimationFrame + throttle + tăng PIXELS_PER_HOUR + debounce applyPan để tránh khựng khi scroll về quá khứ
+    (function enableHorizontalPan() {
+        // Base values from initial timeRange
+        const baseStartParts = timeRange.startHour.split(':').map(Number);
+        const baseStartHourNum = baseStartParts[0] + (baseStartParts[1] / 60);
+        const viewHours = (timeRange.end - timeRange.start) / (1000 * 60 * 60); // window size in hours
+        let panOffset = 0; // hours shifted from baseStartHourNum (can be negative)
+        function clamp(val, min, max) { return Math.max(min, Math.min(max, val)); }
+        function formatHHMMSS(hourFloat) {
+            // hourFloat may be fractional; convert to HH:MM:SS
+            let h = Math.floor(hourFloat);
+            let m = Math.round((hourFloat - h) * 60);
+            if (m === 60) { h += 1; m = 0; }
+            h = clamp(h, 0, 24);
+            const hh = String(h).padStart(2, '0');
+            const mm = String(m).padStart(2, '0');
+            return `${hh}:${mm}:00`;
+        }
+        // THÊM MỚI: Debounce function để delay applyPan sau khi ngừng scroll (giảm re-render)
+        function debounce(fn, delay) {
+            let timeoutId;
+            return function (...args) {
+                clearTimeout(timeoutId);
+                timeoutId = setTimeout(() => fn.apply(this, args), delay);
+            };
+        }
+        // THÊM MỚI: Throttled version của applyPan để gọi trong rAF
+        let applyPanQueued = false;
+        function applyPanThrottled(offsetHours) {
+            if (applyPanQueued) return;
+            applyPanQueued = true;
+            requestAnimationFrame(() => {
+                applyPan(offsetHours);
+                applyPanQueued = false;
+            });
+        }
+        // THÊM MỚI: Debounced applyPan (gọi sau 150ms ngừng scroll để mượt)
+        const debouncedApplyPan = debounce((offsetHours) => {
+            applyPan(offsetHours);
+        }, 150); // Delay 150ms sau khi ngừng scroll
+        function applyPan(offsetHours) {
+            panOffset = offsetHours;
+            // compute allowed start range
+            const minStart = 0;
+            const maxStart = Math.max(0, 24 - viewHours);
+            // Raw start (may be fractional) then snap to nearest whole hour
+            const rawStart = baseStartHourNum + panOffset;
+            const snappedStart = Math.round(rawStart); // snap to nearest integer hour
+            const newStart = clamp(snappedStart, minStart, maxStart);
+            const newEnd = newStart + viewHours;
+            const newStartStr = formatHHMMSS(newStart);
+            const newEndStr = formatHHMMSS(newEnd);
+            try {
+                calendar.setOption('slotMinTime', newStartStr);
+                calendar.setOption('slotMaxTime', newEndStr);
+                // Align scrollTime to the left edge (start) so visible timeline shows round hour
+                const scrollStr = formatHHMMSS(newStart);
+                calendar.setOption('scrollTime', scrollStr);
+                // update global timeRange so other computations use updated values
+                timeRange = getTimeRange();
+            } catch (err) {
+                console.error('Failed to apply horizontal pan:', err);
+            }
+        }
+        // Wheel handling: accumulate pixels to convert to hour steps - THÊM: Throttle wheelAcc và dùng debouncedApplyPan
+        let wheelAcc = 0;
+        const PIXELS_PER_HOUR = 120; // TĂNG TỪ 80 LÊN 120 để giảm tần suất cập nhật (mượt hơn khi scroll nhanh về quá khứ)
+        let lastWheelTime = 0;
+        const wheelThrottleDelay = 50; // Throttle wheel events mỗi 50ms
+        calendarEl.addEventListener('wheel', function (ev) {
+            // Only allow horizontal pan when scrollMode is active (angry face)
+            if (!scrollMode) return; // do nothing, allow default scrolling
+            // If user scrolls vertically normally, don't hijack unless Shift pressed or horizontal delta present
+            const horiz = Math.abs(ev.deltaX) > Math.abs(ev.deltaY) ? ev.deltaX : (ev.shiftKey ? ev.deltaY : 0);
+            if (!horiz) return; // not a horizontal intent
+            ev.preventDefault();
+            const nowTime = Date.now();
+            if (nowTime - lastWheelTime < wheelThrottleDelay) return; // Throttle wheel events
+            lastWheelTime = nowTime;
+            wheelAcc += horiz;
+            const hoursDelta = Math.trunc(wheelAcc / PIXELS_PER_HOUR);
+            if (hoursDelta !== 0) {
+                wheelAcc -= hoursDelta * PIXELS_PER_HOUR;
+                // scrolling left (negative delta) should move view right (earlier times visible) depending on sign
+                // delta positive usually means scroll right → move view later
+                const newOffset = clamp(panOffset + hoursDelta * (horiz > 0 ? 1 : -1), -24, 24);
+                applyPanThrottled(newOffset); // Throttled với rAF
+                // Sử dụng debounced để finalize sau khi ngừng scroll
+                debouncedApplyPan(newOffset);
+            }
+        }, { passive: false });
+        // Pointer drag panning for click-and-drag behavior - THÊM: Throttle move events với rAF
+        let isPanning = false;
+        let panStartX = 0;
+        let panStartOffset = 0;
+        const PIXELS_FOR_ONE_HOUR_DRAG = 150; // TĂNG TỪ 120 LÊN 150 để mượt hơn (thay đổi chậm hơn)
+        let dragThrottleRafId = null;
+        calendarEl.addEventListener('pointerdown', function (ev) {
+            // Only allow drag-pan when scrollMode is active (angry face)
+            if (!scrollMode) return;
+            // Only respond to primary button
+            if (ev.button !== 0) return;
+            // don't start pan if interacting with inputs/modals inside calendar
+            if (ev.target.closest('.fc-event') || ev.target.closest('button') || ev.target.closest('a') || ev.target.closest('input')) return;
+            isPanning = true;
+            panStartX = ev.clientX;
+            panStartOffset = panOffset;
+            calendarEl.style.cursor = 'grabbing';
+            ev.preventDefault();
+        });
+        window.addEventListener('pointermove', function (ev) {
+            if (!isPanning) return;
+            if (dragThrottleRafId) cancelAnimationFrame(dragThrottleRafId);
+            dragThrottleRafId = requestAnimationFrame(() => {
+                const dx = ev.clientX - panStartX;
+                const deltaHours = dx / PIXELS_FOR_ONE_HOUR_DRAG;
+                const newOffset = panStartOffset - deltaHours; // dragging right should show earlier times
+                applyPanThrottled(clamp(newOffset, -24, 24)); // Throttled với rAF
+                // Debounce finalize cho drag (delay ngắn hơn vì drag liên tục)
+                debouncedApplyPan(clamp(newOffset, -24, 24));
+            });
+        });
+        window.addEventListener('pointerup', function () {
+            if (!isPanning) return;
+            isPanning = false;
+            calendarEl.style.cursor = '';
+            if (dragThrottleRafId) {
+                cancelAnimationFrame(dragThrottleRafId);
+                dragThrottleRafId = null;
+            }
+            // Force applyPan cuối cùng sau drag
+            setTimeout(() => applyPan(panOffset), 50);
+        });
+        // Optional: double-click to reset pan
+        calendarEl.addEventListener('dblclick', function () {
+            applyPan(0);
+        });
+    })();
+    // --- THÊM MỚI: SignalR cho realtime status update (FIX: Cải thiện update logic - remove refetch/changeDate, chỉ render) - SỬA CLIP THEO LOCAL BKK + THÊM cap end + FIX: Lọc undefined resources/events + BỎ CLIPPING TRONG REFETCH
     let connection = null;
     function initSignalR() {
         // Kiểm tra SignalR mới có load chưa
@@ -1361,7 +1614,7 @@ position : relative;
                         title: c.CustomerCode,
                         customerName: c.CustomerName || ''
                     })).filter(r => r.id != null && r.id !== '' && r.id !== undefined); // ← FIX: Lọc resources undefined
-                    // Rebuild eventsData từ local (copy logic từ code gốc - với delay info + LOG/FALLBACK) - SỬA CLIP LOCAL BKK + THÊM cap end + FIX: Skip nếu customerCode undefined
+                    // Rebuild eventsData từ local (copy logic từ code gốc - với delay info + LOG/FALLBACK) - SỬA: BỎ CLIPPING ĐỂ GIỮ FULL DB RANGE
                     const newEventsData = fetchedOrders.map((order) => { // ← BỎ index, dùng UId cho id
                         const planStart = parseAndValidate(order.startTime);
                         const planEnd = parseAndValidate(order.endTime);
@@ -1401,18 +1654,8 @@ position : relative;
                             eventEnd = new Date(Math.max(actualEnd, planEnd));
                             hasBoth = true;
                         }
-                        // FIX MỚI: Clip event union chỉ trong view range local BKK (tương tự initial) + THÊM cap end
-                        const now = new Date();
-                        const nowHour = now.getHours();
-                        const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0); // LOCAL BKK
-                        let slotMin = new Date(now);
-                        slotMin.setHours(nowHour - 6, 0, 0, 0); // Approx slotMinTime local
-                        if (slotMin < todayMidnight) slotMin = new Date(todayMidnight); // Cap tại 00:00 local
-                        let viewEnd = new Date(now);
-                        viewEnd.setHours(nowHour + 4, 0, 0, 0); // Approx slotMaxTime local
-                        eventStart = new Date(Math.max(eventStart, slotMin));
-                        eventEnd = new Date(Math.min(eventEnd, viewEnd)); // ← THÊM: Cap end <= viewEnd
-                        if (eventEnd <= eventStart) return null; // ← THÊM: Skip nếu không overlap view
+                        // BỎ CLIPPING: Để full start/end từ DB, FullCalendar handle overlap
+                        // Không cần: eventStart = Math.max(eventStart, slotMin); etc.
                         const customerCode = order.customerCode || order.resource || 'Unknown';
                         if (!customerCode || customerCode === 'undefined') return null; // ← FIX: Skip event nếu customerCode undefined/null/empty
                         // THÊM: Delay info nếu status=='Delay'
