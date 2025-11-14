@@ -89,7 +89,7 @@
             display: flex;
             align-items: center;
             height: 100%;
-            font-size: 16px; /* Tăng font-size từ 14px lên 16px để dễ đọc hơn */
+            font-size: 17px; /* Tăng font-size để dễ đọc hơn */
         }
         /* Tăng chiều cao resource rows để chứa event lớn hơn */
         .fc-resource-timeline .fc-resource-cell {
@@ -379,10 +379,11 @@ position : relative;
             }
         });
     }
-    // Tạo resources từ customers hiển thị CustomerCode theo CustomerCode
+    // Tạo resources từ customers, lưu riêng CustomerName để render hai dòng (code above, name below)
     const resources = customers.map(c => ({
         id: c.CustomerCode,
-        title: c.CustomerCode // SỬA: Hiển thị CustomerCode thay vì CustomerName
+        title: c.CustomerCode,
+        customerName: c.CustomerName || ''
     })).filter(r => r.id != null && r.id !== '' && r.id !== undefined); // ← FIX: Lọc resources undefined
     // --- SỬA: Hàm lấy màu dựa trên status (fallback cho Delay để giữ màu cũ) + THÊM: Nếu Delay && delayTime >24 thì return #ff0000 (đỏ)
     function getColorByStatus(status, validActual = false, delayTime = 0) {
@@ -396,7 +397,8 @@ position : relative;
                 return getColorByStatus('Completed'); // Xanh lá nếu có actual
             } else {
                 return getColorByStatus('Planned'); // Đen nếu chỉ plan
-            }
+            }  
+
         }
         const colors = {
             // Use a light neutral for Planned so planned-only events render softly
@@ -538,8 +540,9 @@ position : relative;
                 customerCode: customerCode, // THÊM: Lưu CustomerCode vào extendedProps để dùng trong modal title
                 planStart: validPlan ? planStart.toISOString() : null, // Lưu ISO string để tránh re-parse
                 planEnd: validPlan ? planEnd.toISOString() : null,
-                actualStart: validActual ? actualStart.toISOString() : null,
-                actualEnd: validActual ? actualEnd.toISOString() : null,
+                // Always expose actualStart/actualEnd if present; validActual still indicates both exist and are ordered
+                actualStart: actualStart ? actualStart.toISOString() : null,
+                actualEnd: actualEnd ? actualEnd.toISOString() : null,
                 validActual: validActual,
                 status: status, // ← SỬA: Di chuyển status vào extendedProps
                 totalPallet: order.TotalPallet || 0, // THÊM: Lưu TotalPallet vào extendedProps để dùng trong eventContent
@@ -581,6 +584,33 @@ position : relative;
         resourceAreaHeaderContent: 'Customer',
         resourceAreaWidth: '120px',
         resources: resources,
+        // Render resource label with CustomerCode (top) and CustomerName (bottom)
+        resourceLabelContent: function(arg) {
+            const container = document.createElement('div');
+            container.style.display = 'flex';
+            container.style.flexDirection = 'column';
+            container.style.lineHeight = '1.1';
+            container.style.padding = '2px 6px';
+            container.style.boxSizing = 'border-box';
+            const code = document.createElement('div');
+            code.textContent = arg.resource.title || arg.resource.id || '';
+            code.style.fontWeight = '700';
+            code.style.fontSize = '15px';
+            code.style.whiteSpace = 'nowrap';
+            code.style.overflow = 'hidden';
+            code.style.textOverflow = 'ellipsis';
+            const name = document.createElement('div');
+            // Use the customerName property if present, otherwise fall back to title
+            name.textContent = arg.resource.extendedProps && arg.resource.extendedProps.customerName ? arg.resource.extendedProps.customerName : (arg.resource.customerName || '');
+            name.style.fontSize = '13px';
+            name.style.color = '#666';
+            name.style.whiteSpace = 'nowrap';
+            name.style.overflow = 'hidden';
+            name.style.textOverflow = 'ellipsis';
+            container.appendChild(code);
+            if (name.textContent) container.appendChild(name);
+            return { domNodes: [container] };
+        },
         eventOverlap: false,
         eventOrderStrict:true,
         slotEventOverlap: false,    
@@ -858,8 +888,8 @@ position : relative;
                                 planBar.classList.add('custom-gradient-box');
                                 planBar.style.position = 'absolute';
                                 planBar.style.left = Math.max(0, planPercent) + '%'; // FIX: Dùng planPercent mới
-                                planBar.style.top = '15%'; // Giữ nguyên như ban đầu
-                                planBar.style.height = '70%'; // Giữ nguyên như ban đầu
+                                planBar.style.top = '10%'; // Raise slightly to visually center with increased height
+                                planBar.style.height = '80%'; // Tăng chiều cao của plan block từ 70% lên 80%
                                 planBar.style.width = planWidth + '%'; // FIX: Dùng planWidth mới
                                 //planBar.style.background = getColorByStatus('Planned'); // Đen cho plan overlay
                                 planBar.style.borderRadius = '2px';
@@ -874,8 +904,8 @@ position : relative;
                                 planBarFull.style.position = 'absolute';
                                 planBarFull.style.left = Math.max(0, planPercent) + '%'; // FIX: Dùng planPercent mới
                                 // Match the overlay sizing used above (top 15%, height 70%) so visual size is consistent
-                                planBarFull.style.top = '15%';
-                                planBarFull.style.height = '70%';
+                                planBarFull.style.top = '10%';
+                                planBarFull.style.height = '80%';
                                 planBarFull.style.width = '100%'; // ← FIX: Đổi từ planWidth + '%' thành '100%' để lấp đầy wrapper (giống hệt overlay của both, không khoảng trống)
                                 // Use planned color (fallback) for bar to keep consistency - NHƯNG GIỮ GRADIENT TỪ CSS .custom-gradient-box (đen gradient)
                                 // Không cần set background vì class đã có gradient đen giống plan overlay
@@ -896,7 +926,11 @@ position : relative;
                             actualBar.style.borderRadius = '4px';
                             if (pStart && pEnd) { // Mờ nếu có plan
                                 actualBar.style.filter = 'blur(1px)';
-                                actualBar.style.opacity = '0.7';
+                                // Tăng opacity để actual bar rõ ràng hơn
+                                actualBar.style.opacity = '0.55';
+                            } else {
+                                // Nếu không có plan, ensure actual is fully opaque
+                                actualBar.style.opacity = '0.55';
                             }
                             actualBar.title = `Actual BKK: ${hhmmss(aStart)} - ${hhmmss(aEnd)}`; // SỬA: Local BKK
                             wrapper.appendChild(actualBar);
@@ -977,16 +1011,50 @@ position : relative;
                             combined.style.boxSizing = 'border-box';
                             combined.style.position = 'relative';
                             combined.style.zIndex = '2';
-                            // IMPORTANT: make width fixed to desiredPx when there is space; do NOT scale up with parent
-                            const wrapperWNow = wrapper.getBoundingClientRect().width || 0;
-                            if (wrapperWNow >= desiredPx) {
-                                combined.style.width = desiredPx + 'px';
-                                combined.style.flex = '0 0 ' + desiredPx + 'px';
-                            } else {
-                                // If event is smaller than desiredPx, allow combined to shrink to fit
-                                combined.style.width = '100%';
-                                combined.style.flex = '0 0 100%';
+                            // Position combined BLOCK: make its width equal to the measured label width
+                            // (so combined visually equals `.combined-label`) and center it inside
+                            // the PLAN segment when available. Use absolute positioning and recompute
+                            // on resize to keep it centered responsively.
+                            combined.style.position = 'absolute';
+                            combined.style.zIndex = '4';
+                            combined.style.top = '20%';
+                            combined.style.height = '60%';
+
+                            function positionCombinedByLabel() {
+                                try {
+                                    const wrapperWNow = wrapper.getBoundingClientRect().width || 0;
+                                    // measure the label natural width (no wrapping)
+                                    // ensure label uses natural width for measurement
+                                    txtContent.style.whiteSpace = 'nowrap';
+                                    txtContent.style.display = 'inline-block';
+                                    // small padding to avoid tight clipping
+                                    const labelW = Math.ceil(txtContent.scrollWidth) + 12;
+                                    // clamp to wrapper width
+                                    const finalW = Math.min(labelW, Math.max(24, wrapperWNow));
+                                    combined.style.width = finalW + 'px';
+                                    combined.style.flex = '0 0 ' + finalW + 'px';
+
+                                    // Compute plan segment pixel width/left
+                                    const planLeftPx = wrapperWNow * (planPercent / 100);
+                                    const planWidthPx = wrapperWNow * (planWidth / 100);
+                                    let leftPx = 0;
+                                    if (planWidthPx > 4) {
+                                        // center inside plan segment (preferably)
+                                        leftPx = planLeftPx + Math.max(0, (planWidthPx - finalW) / 2);
+                                    } else {
+                                        // fallback: center inside full event area
+                                        leftPx = Math.max(0, (wrapperWNow - finalW) / 2);
+                                    }
+                                    // Clamp within wrapper
+                                    leftPx = Math.max(0, Math.min(leftPx, Math.max(0, wrapperWNow - finalW)));
+                                    combined.style.left = leftPx + 'px';
+                                } catch (err) {
+                                    // best-effort fallback
+                                }
                             }
+
+                            // Initial position after paint
+                            setTimeout(positionCombinedByLabel, 0);
                             // Responsive label: scales font-size and uses ellipsis if event too narrow
                             const txtContent = document.createElement('div');
                             txtContent.className = 'combined-label';
@@ -1001,7 +1069,7 @@ position : relative;
                             txtContent.style.whiteSpace = 'nowrap';
                             txtContent.style.boxSizing = 'border-box';
                             txtContent.style.padding = '0 6px';
-                            txtContent.style.fontSize = '1.1rem'; // initial; will be adjusted
+                            txtContent.style.fontSize = '1.2rem'; // initial; will be adjusted (bigger)
                             txtContent.style.fontWeight = '700';
                             txtContent.style.color = 'darkblue';
                             txtContent.textContent = extendedProps.customerCode + " " + `(${extendedProps.totalPallet || 0})` + " - " + extractFirstNumber(extendedProps.collectPallet) +
@@ -1109,26 +1177,13 @@ position : relative;
                             // Ensure responsive font sizing / adapt when parent changes size (very large range)
                             try {
                                 const ro = new ResizeObserver(() => {
-                                    // adjust font size relative to height (much larger sizes)
+                                    // adjust font size relative to height (if needed)
                                     const h = Math.max(1, wrapper.getBoundingClientRect().height);
-                                    // Reduced responsive font sizing: smaller multiplier and caps
                                     const fs = Math.max(12, Math.min(22, Math.floor(h * 0.28)));
-                                    //cust.style.fontSize = fs + 'px';
-                                    //totalP.style.fontSize = Math.max(12, fs - 2) + 'px';
-                                    //collectBadge.style.fontSize = fs + 'px';
-                                    //threeBadge.style.fontSize = fs + 'px';
-                                    //loadBadge.style.fontSize = fs + 'px';
-                                    // Recompute desiredPx in case the timeline/responsive layout changed
-                                    const newDesired = computeDesiredPx();
-                                    const wrapperW = wrapper.getBoundingClientRect().width || 0;
-                                    if (wrapperW >= newDesired) {
-                                        // keep fixed pixel width
-                                        combined.style.width = newDesired + 'px';
-                                        combined.style.flex = '0 0 ' + newDesired + 'px';
-                                    } else {
-                                        combined.style.width = '100%';
-                                        combined.style.flex = '0 0 100%';
-                                    }
+                                    // apply to label (if desired) - keep boldness but smaller sizes handled by fitTextToWidth
+                                    txtContent.style.fontSize = Math.max(12, Math.min(18, fs)) + 'px';
+                                    // Reposition & resize combined to match label width when wrapper changes
+                                    positionCombinedByLabel();
                                 });
                                 ro.observe(wrapper);
                             } catch (err) {
@@ -1140,7 +1195,7 @@ position : relative;
                                 //progressGroup.style.justifyContent = 'flex-end';
                             } catch (err) {
                                 // ignore
-                            }
+                            } 
                             wrapper.appendChild(combined);
                         })();
                         // THÊM: Hover listener cho effect (đã có CSS, nhưng thêm sound subtle nếu delayMode)
@@ -1151,10 +1206,19 @@ position : relative;
                             }
                             // Cập nhật nội dung tooltip với tất cả thông tin - SỬA SANG LOCAL BKK + THÊM: Tách riêng PlanTime và ActualTime + luôn hiển thị ngày + giờ
                             const now = new Date(); // Giờ local BKK hiện tại để check past
-                            // For plan and actual time: always show dd/mm/yyyy HH:MM to avoid ambiguity for late-night times (e.g., 20:00)
-                            // Use date without year per request (dd/mm HH:MM)
+                            // For plan and actual time: always show dd/mm HH:MM (no year) for readability
+                            // If there's no actual end time, show only the actual start so users know when execution began
                             const planTime = (pStart && pEnd) ? (formatDateTimeNoYear(pStart) + ' - ' + formatDateTimeNoYear(pEnd)) : 'N/A';
-                            const actualTime = (aStart && aEnd) ? (formatDateTimeNoYear(aStart) + ' - ' + formatDateTimeNoYear(aEnd)) : 'N/A';
+                            let actualLabel = 'Actual Time:';
+                            let actualDisplay = 'N/A';
+                            // Only show actual end time when we consider it 'final'.
+                            // Treat 'Completed' and 'Shipped' as final states; otherwise display only the Actual Start.
+                            if (aStart && aEnd && (status === 'Completed' || status === 'Shipped')) {
+                                actualDisplay = formatDateTimeNoYear(aStart) + ' - ' + formatDateTimeNoYear(aEnd);
+                            } else if (aStart) {
+                                actualLabel = 'Actual Start:'; // show only start time while end time is still changing
+                                actualDisplay = formatDateTimeNoYear(aStart);
+                            }
                             const delayTimeRange = formatTimeRange(dStart, dEnd, now);
                             const tooltip = createTooltip();
                             tooltip.innerHTML = `
@@ -1164,8 +1228,8 @@ position : relative;
                                     <dd>${extendedProps.shipDate}</dd>
                                   <dt>Plan Time:</dt>
                                     <dd class="plan-time-dd">${planTime}</dd>
-                                    <dt>Actual Time:</dt>
-                                    <dd class="actual-time-dd">${actualTime}</dd>
+                                    <dt>${actualLabel}</dt>
+                                    <dd class="actual-time-dd">${actualDisplay}</dd>
                                     ${status === 'Delay' ? `<dt>Delay Time (BKK):</dt><dd>${delayTimeRange}</dd>` : ''}
                                     <dt>TransCD:</dt>
                                     <dd>${extendedProps.transCd}</dd>
@@ -1291,10 +1355,11 @@ position : relative;
                     fetchedCustomers.forEach(c => {
                         customerMap[c.CustomerCode] = c.CustomerName;
                     });
-                    // Rebuild resources từ local - FIX: Lọc undefined
+                    // Rebuild resources từ local - include customerName separately for two-line label
                     const resources = fetchedCustomers.map(c => ({
                         id: c.CustomerCode,
-                        title: c.CustomerCode
+                        title: c.CustomerCode,
+                        customerName: c.CustomerName || ''
                     })).filter(r => r.id != null && r.id !== '' && r.id !== undefined); // ← FIX: Lọc resources undefined
                     // Rebuild eventsData từ local (copy logic từ code gốc - với delay info + LOG/FALLBACK) - SỬA CLIP LOCAL BKK + THÊM cap end + FIX: Skip nếu customerCode undefined
                     const newEventsData = fetchedOrders.map((order) => { // ← BỎ index, dùng UId cho id
@@ -1477,7 +1542,7 @@ position : relative;
         padding: '3px 8px',
         fontSize: '16px',
         fontWeight: 'bold',
-        transform: 'translate(-50%, -100%)', // FIX: Đổi từ -120% sang -100% để di chuyển lên đúng chiều cao của chính nó
+        transform: 'translate(-50%, 0)', // center horizontally; we'll set top so label sits above the red line
         zIndex: 11, // FIX: Giảm từ 10000 xuống 11 (vẫn trên vạch nhưng dưới modal)
         boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
         left: '0px', // SỬA: Ban đầu set left=0 cho midnight mode
@@ -1526,10 +1591,27 @@ position : relative;
         }
         customNow.style.left = left + 'px';
         clockLabel.style.left = left + 'px';
-        // FIX MỚI: Tính toán top động dựa trên chiều cao header toolbar để đặt clockLabel ngay trên khu vực timeline
-        const headerToolbar = document.querySelector('.fc-header-toolbar');
-        const headerHeight = headerToolbar ? headerToolbar.offsetHeight : 60; // Fallback 60px nếu không tìm thấy
-        clockLabel.style.top = headerHeight + 'px'; // Đặt ngay dưới header, trên timeline
+        // Compute top based on the actual position of the red now indicator
+        try {
+            const calRect = calendarEl.getBoundingClientRect();
+            const nowRect = customNow.getBoundingClientRect();
+            // nowTop relative to calendarEl
+            const nowTop = Math.max(0, nowRect.top - calRect.top);
+            const lblRect = clockLabel.getBoundingClientRect();
+            const lblH = lblRect.height || clockLabel.offsetHeight || 20;
+            // place label so its bottom is ~6px above the top of the red line
+            let topPx = Math.round(nowTop - lblH - 6);
+            // clamp within calendar bounds
+            if (topPx < 2) topPx = 2;
+            const calH = calRect.height || calendarEl.offsetHeight || 0;
+            if (topPx + lblH > calH - 2) topPx = Math.max(2, calH - lblH - 2);
+            clockLabel.style.top = topPx + 'px';
+        } catch (err) {
+            // Fallback: put label under header if measurement fails
+            const headerToolbar = document.querySelector('.fc-header-toolbar');
+            const headerHeight = headerToolbar ? headerToolbar.offsetHeight : 60;
+            clockLabel.style.top = Math.max(2, headerHeight - (clockLabel.offsetHeight || 20) - 6) + 'px';
+        }
     }
     // SỬA: updateClockLabel() - Hiển thị giờ local BKK
     function updateClockLabel() {
